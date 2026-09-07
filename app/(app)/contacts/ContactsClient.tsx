@@ -88,8 +88,6 @@ export function ContactsClient({ businessName, businessModel, users }: { busines
           <p className="cts__muted">{businessName} · {stats.total} contact{stats.total !== 1 ? 's' : ''}</p>
         </div>
         <nav className="cts__nav">
-          <Link href="/inbox">Inbox</Link>
-          <Link href="/dashboard">Dashboard</Link>
           <button className="cts__add" onClick={() => setShowAdd(true)}><Plus size={16} /> Add contact</button>
         </nav>
       </header>
