@@ -7,6 +7,8 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { HeroShader } from './HeroShader';
+import { LandingNav } from './LandingNav';
+import { JourneyLoop } from './JourneyLoop';
 import { HeroScene } from './HeroScene';
 import './landing.css';
 
@@ -148,23 +150,7 @@ export default function LandingPage() {
   return (
     <div className="land">
       {/* ===== Nav ===== */}
-      <header className="land__nav">
-        <div className="land__nav-in">
-          <Link href="/" className="land__brand">
-            <span className="land__logo">TT</span>
-            <span className="land__word">TalkTrack</span>
-          </Link>
-          <nav className="land__nav-links">
-            <a href="#modules">Platform</a>
-            <a href="#lifecycle">Customer journey</a>
-            <a href="#india">Built for India</a>
-            <a href="#pricing">Pricing</a>
-            <a href="#how">How it works</a>
-            <Link href="/login" className="land__nav-login">Log in</Link>
-            <Link href="/signup" className="land__btn land__btn--gold land__btn--sm">Get started</Link>
-          </nav>
-        </div>
-      </header>
+      <LandingNav />
 
       {/* ===== Hero ===== */}
       <section className="land__hero">
@@ -291,8 +277,8 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-          <div className="land__life-art" aria-hidden="true">
-            <img src="/gen/lifecycle.jpg" alt="" />
+          <div className="land__life-art">
+            <JourneyLoop />
           </div>
         </div>
       </section>

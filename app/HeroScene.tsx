@@ -9,6 +9,7 @@ import { useEffect, useRef } from 'react';
  * honours prefers-reduced-motion by drawing a single static frame.
  */
 type Kind = 'emerald' | 'gold';
+type P = { x: number; y: number };
 
 function grad(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, kind: Kind) {
   const g = ctx.createLinearGradient(x, y, x, y + h);
@@ -113,17 +114,68 @@ export function HeroScene() {
       ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
     };
 
+    /** Quadratic point + a soft trail, used for the message in flight. */
+    const qp = (a: P, c: P, b: P, u: number): P => {
+      const v = 1 - u;
+      return { x: v * v * a.x + 2 * v * u * c.x + u * u * b.x, y: v * v * a.y + 2 * v * u * c.y + u * u * b.y };
+    };
+
     const draw = (t: number) => {
       ctx.clearRect(0, 0, W, H);
       const base = Math.min(W, H);
-      glow(W * (0.34 + Math.sin(t * 0.15) * 0.04), H * 0.4, base * 0.62, 'rgba(27,122,107,0.24)');
-      glow(W * (0.72 + Math.cos(t * 0.12) * 0.04), H * 0.28, base * 0.5, 'rgba(201,162,39,0.15)');
+
+      // Layered ambient light — a third, dimmer pool adds depth behind the props.
+      glow(W * (0.34 + Math.sin(t * 0.15) * 0.04), H * 0.4, base * 0.66, 'rgba(27,122,107,0.26)');
+      glow(W * (0.72 + Math.cos(t * 0.12) * 0.04), H * 0.28, base * 0.52, 'rgba(201,162,39,0.17)');
+      glow(W * (0.5 + Math.sin(t * 0.09 + 1) * 0.06), H * 0.78, base * 0.44, 'rgba(43,165,143,0.10)');
+
       const fy = (a: number, spd: number, ph: number) => Math.sin(t * spd + ph) * a;
-      // keep objects in the top / left safe zone (chat mock overlays bottom-right)
+
+      // Anchor points, recomputed each frame so the flight path tracks the bob.
+      const ask: P = { x: W * 0.34, y: H * 0.42 + fy(H * 0.028, 0.7, 0) };
+      const reply: P = { x: W * 0.70, y: H * 0.26 + fy(H * 0.035, 0.95, 1.6) };
+      const ctrl: P = { x: (ask.x + reply.x) / 2, y: Math.min(ask.y, reply.y) - H * 0.2 };
+
+      // Dotted arc from question to answer — the conversation, made literal.
+      ctx.save();
+      ctx.setLineDash([2, 9]); ctx.lineWidth = 2; ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(190,232,220,0.3)';
+      ctx.beginPath(); ctx.moveTo(ask.x, ask.y);
+      ctx.quadraticCurveTo(ctrl.x, ctrl.y, reply.x, reply.y); ctx.stroke();
+      ctx.restore();
+
+      // Dust motes drifting through the light.
+      for (let i = 0; i < 14; i++) {
+        const seed = i * 2.399;
+        const px = ((Math.sin(seed) * 0.5 + 0.5) * W + t * (8 + (i % 4) * 5)) % W;
+        const py = H * (0.12 + ((Math.cos(seed * 1.7) * 0.5 + 0.5) * 0.76)) + fy(H * 0.012, 0.4 + i * 0.05, seed);
+        ctx.globalAlpha = 0.14 + 0.16 * (Math.sin(t * 0.8 + seed) * 0.5 + 0.5);
+        ctx.fillStyle = i % 3 === 0 ? '#e2c15a' : '#7fd8c4';
+        ctx.beginPath(); ctx.arc(px, py, base * 0.0055, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Props — kept in the top / left safe zone (the chat mock overlays bottom-right).
       tag(ctx, W * 0.60, H * 0.15 + fy(H * 0.03, 1.2, 2.0), base * 0.13, 'gold', -0.35 + Math.sin(t * 0.6) * 0.08);
-      bubble(ctx, W * 0.70, H * 0.26 + fy(H * 0.035, 0.95, 1.6), W * 0.24, 'gold', 'ticks');
+      bubble(ctx, reply.x, reply.y, W * 0.24, 'gold', 'ticks');
       coin(ctx, W * 0.19, H * 0.72 + fy(H * 0.03, 0.85, 0.4), base * 0.075, t * 0.85);
-      bubble(ctx, W * 0.34, H * 0.42 + fy(H * 0.028, 0.7, 0), W * 0.36, 'emerald', 'dots');
+      bubble(ctx, ask.x, ask.y, W * 0.36, 'emerald', 'dots');
+
+      // A message travelling the arc: eases out, pauses, repeats.
+      const cycle = 3.6;
+      const phase = (t % cycle) / cycle;
+      if (phase < 0.72) {
+        const u = 1 - Math.pow(1 - phase / 0.72, 2.2);
+        const fade = Math.sin(Math.min(1, phase / 0.72) * Math.PI);
+        for (let k = 0; k < 5; k++) {
+          const pu = Math.max(0, u - k * 0.035);
+          const pt = qp(ask, ctrl, reply, pu);
+          ctx.globalAlpha = fade * (1 - k / 5) * 0.85;
+          ctx.fillStyle = k === 0 ? '#ffffff' : '#8ee8d2';
+          ctx.beginPath(); ctx.arc(pt.x, pt.y, base * (0.014 - k * 0.002), 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
     };
 
     if (reduce) { draw(0.6); window.removeEventListener('resize', size); return; }
