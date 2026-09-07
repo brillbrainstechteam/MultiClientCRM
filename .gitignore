@@ -31,3 +31,6 @@ next-env.d.ts
 
 # build info
 tsconfig.tsbuildinfo
+
+# local admin helper (not for repo)
+reset-password.mjs

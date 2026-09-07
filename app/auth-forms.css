@@ -89,6 +89,16 @@
   font-size: var(--crm-font-size-md);
 }
 
+.crm-authform__ok {
+  margin-top: var(--crm-space-4);
+  padding: var(--crm-space-3);
+  border: 1px solid var(--crm-green-border);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-green-tint);
+  color: var(--crm-green-dark);
+  font-size: var(--crm-font-size-md);
+}
+
 .crm-authform__footer {
   margin-top: var(--crm-space-6);
   padding-top: var(--crm-space-4);

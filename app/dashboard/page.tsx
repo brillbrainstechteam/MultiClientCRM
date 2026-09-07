@@ -49,6 +49,7 @@ export default async function DashboardPage() {
       <p style={{ margin: '20px 0 4px', display: 'flex', gap: 16 }}>
         <Link href="/inbox" style={{ color: 'var(--crm-text-brand)', fontWeight: 600 }}>Inbox</Link>
         <Link href="/contacts" style={{ color: 'var(--crm-text-brand)', fontWeight: 600 }}>Contacts</Link>
+        <Link href="/account" style={{ color: 'var(--crm-text-brand)', fontWeight: 600 }}>Account</Link>
       </p>
       <p style={{ color: 'var(--crm-text-muted)', fontSize: 13, margin: '8px 0 24px' }}>
         Signed in as {user.email}. The full CRM dashboard is ported in a later stage.
