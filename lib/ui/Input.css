@@ -1,0 +1,68 @@
+.crm-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+}
+
+.crm-field__label {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-secondary);
+}
+
+.crm-field__control {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-card);
+  overflow: hidden;
+  transition: border-color var(--crm-motion-fast), box-shadow var(--crm-motion-fast);
+}
+.crm-field__control:focus-within {
+  border-color: var(--crm-border-focus);
+  box-shadow: var(--crm-focus-ring);
+}
+.crm-field__control--error {
+  border-color: var(--crm-danger);
+}
+
+.crm-field__addon {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--crm-space-3);
+  background: var(--crm-surface-band);
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-row);
+  border-right: 1px solid var(--crm-border-strong);
+}
+
+.crm-field__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 10px 12px;
+  font-size: var(--crm-font-size-row);
+  color: var(--crm-text-primary);
+}
+.crm-field__input::placeholder { color: var(--crm-text-muted); }
+
+.crm-field__hint {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+.crm-field__hint--error { color: var(--crm-danger); }
+
+.crm-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

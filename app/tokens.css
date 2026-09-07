@@ -1,0 +1,121 @@
+/*
+ * TalkTrack design tokens (ported from the crm-integration prototype).
+ * Font families resolve to the next/font variables set on <html>.
+ */
+
+:root {
+  /* ---- Raw palette ----------------------------------------------------- */
+  --crm-navy: #0e2438;
+  --crm-navy-2: #12304c;
+  --crm-navy-line: #1e3a57;
+
+  --crm-green: #1b7a6b;
+  --crm-green-dark: #14655a;
+  --crm-green-tint: #e7f3f0;
+  --crm-green-border: #a9d5cb;
+
+  --crm-gold: #c9a227;
+  --crm-gold-dark: #9c7d19;
+  --crm-gold-tint: #fbf4de;
+  --crm-gold-border: #e7d59a;
+
+  --crm-canvas: #fcfbf9;
+  --crm-cream: #fbf8f2;
+  --crm-card: #ffffff;
+  --crm-table-header-band: #f6f3ec;
+  --crm-rule: #e7e2d6;
+  --crm-rule-soft: #efebe1;
+
+  --crm-ink: #12263a;
+  --crm-ink-2: #4a5d6e;
+  --crm-muted: #8c8578;
+  --crm-on-dark: #ffffff;
+  --crm-on-dark-muted: #93a9be;
+
+  --crm-danger: #b0453f;
+  --crm-danger-tint: #fceeed;
+  --crm-danger-border: #ebb7b4;
+  --crm-warn: #b8892b;
+  --crm-warn-tint: #fcf4e4;
+  --crm-warn-border: #ebd199;
+
+  --crm-info-50: #e9eef3;
+  --crm-info-200: #b9c8d6;
+  --crm-info-600: var(--crm-navy-2);
+
+  /* ---- Semantic surfaces ---------------------------------------------- */
+  --crm-surface-page: var(--crm-canvas);
+  --crm-surface-raised: var(--crm-card);
+  --crm-surface-sunken: var(--crm-cream);
+  --crm-surface-band: var(--crm-table-header-band);
+  --crm-surface-inverse: var(--crm-navy);
+  --crm-surface-hover: var(--crm-table-header-band);
+
+  --crm-border-subtle: var(--crm-rule-soft);
+  --crm-border-strong: var(--crm-rule);
+  --crm-border-focus: var(--crm-green);
+
+  --crm-text-primary: var(--crm-ink);
+  --crm-text-secondary: var(--crm-ink-2);
+  --crm-text-muted: var(--crm-muted);
+  --crm-text-inverse: var(--crm-on-dark);
+  --crm-text-brand: var(--crm-green-dark);
+  --crm-text-title: var(--crm-navy);
+
+  /* ---- Typography (resolve to next/font variables) --------------------- */
+  --crm-font-sans: var(--font-inter), 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --crm-font-brand: var(--font-montserrat), 'Segoe UI', system-ui, sans-serif;
+
+  --crm-font-size-xs: 11px;
+  --crm-font-size-sm: 12px;
+  --crm-font-size-md: 13px;
+  --crm-font-size-row: 14px;
+  --crm-font-size-lg: 15px;
+  --crm-font-size-xl: 18px;
+  --crm-font-size-2xl: 20px;
+  --crm-font-size-title: 24px;
+  --crm-font-size-3xl: 28px;
+
+  --crm-line-tight: 1.2;
+  --crm-line-normal: 1.45;
+  --crm-line-relaxed: 1.6;
+
+  --crm-weight-regular: 400;
+  --crm-weight-medium: 500;
+  --crm-weight-semibold: 600;
+  --crm-weight-bold: 700;
+
+  /* ---- Spacing (4px base) ---------------------------------------------- */
+  --crm-space-1: 4px;
+  --crm-space-2: 8px;
+  --crm-space-3: 12px;
+  --crm-space-4: 16px;
+  --crm-space-5: 20px;
+  --crm-space-6: 24px;
+  --crm-space-8: 32px;
+  --crm-space-10: 40px;
+  --crm-space-12: 48px;
+  --crm-space-16: 64px;
+
+  /* ---- Radius ---------------------------------------------------------- */
+  --crm-radius-sm: 4px;
+  --crm-radius-md: 6px;
+  --crm-radius-lg: 10px;
+  --crm-radius-xl: 14px;
+  --crm-radius-pill: 999px;
+
+  /* ---- Elevation ------------------------------------------------------- */
+  --crm-shadow-sm: 0 1px 2px rgba(14, 36, 56, 0.06);
+  --crm-shadow-md: 0 2px 10px rgba(14, 36, 56, 0.08);
+  --crm-shadow-lg: 0 16px 40px rgba(14, 36, 56, 0.18);
+
+  /* ---- Motion / focus / z ---------------------------------------------- */
+  --crm-motion-fast: 120ms ease;
+  --crm-motion-base: 180ms ease;
+  --crm-focus-ring: 0 0 0 3px rgba(27, 122, 107, 0.22);
+  --crm-z-sticky: 100;
+  --crm-z-popover: 200;
+  --crm-z-drawer: 300;
+  --crm-z-modal: 400;
+  --crm-z-toast: 500;
+}

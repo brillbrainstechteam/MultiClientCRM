@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: talktrackcrm_postgres
+    environment:
+      POSTGRES_USER: talktrack
+      POSTGRES_PASSWORD: talktrack
+      POSTGRES_DB: talktrack
+    ports:
+      - "5434:5432"
+    volumes:
+      - talktrack_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U talktrack"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  talktrack_pgdata:

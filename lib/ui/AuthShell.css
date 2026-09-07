@@ -1,0 +1,72 @@
+.crm-auth {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  min-height: 100vh;
+  background: var(--crm-canvas, #faf7f0);
+}
+
+/* ---------- brand rail (matches landing hero) ---------- */
+.crm-auth__brand {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background: radial-gradient(120% 120% at 70% 0%, #0b1d31, #081321 60%);
+}
+.crm-auth__brand-shader { position: absolute; inset: 0; z-index: 0; }
+.crm-auth__brand-shader .land__shader { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .5; }
+.crm-auth__brand-veil { position: absolute; inset: 0; z-index: 1; background: radial-gradient(90% 80% at 30% 40%, transparent, rgba(8,19,33,.7)); }
+.crm-auth__brand-inner {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 40px;
+  height: 100%; padding: 48px;
+}
+
+.crm-auth__brand-top { display: inline-flex; align-items: center; gap: 12px; width: fit-content; }
+.crm-auth__logo {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 11px;
+  background: linear-gradient(150deg, #e2c15a, #c9a227); color: #2a2205;
+  font-family: var(--crm-font-brand, var(--font-montserrat, sans-serif)); font-weight: 800; font-size: 16px;
+  box-shadow: 0 6px 18px -6px rgba(201,162,39,.6);
+}
+.crm-auth__wordmark { font-family: var(--crm-font-brand, var(--font-montserrat, sans-serif)); font-weight: 800; font-size: 22px; color: #fff; }
+
+.crm-auth__eyebrow {
+  display: inline-flex; align-items: center; gap: 8px; width: fit-content;
+  font-size: 13px; font-weight: 700; color: #e2c15a;
+  background: rgba(201,162,39,.12); border: 1px solid rgba(201,162,39,.3);
+  padding: 6px 14px; border-radius: 999px; margin-bottom: 20px;
+}
+.crm-auth__eyebrow svg { width: 15px; height: 15px; }
+
+.crm-auth__brand-headline {
+  font-family: var(--crm-font-brand, var(--font-montserrat, sans-serif));
+  font-size: clamp(28px, 3vw, 40px); font-weight: 800; line-height: 1.08; letter-spacing: -.02em;
+  max-width: 15ch; margin: 0 0 28px;
+}
+.crm-auth__brand-headline span { background: linear-gradient(120deg, #e2c15a, #2ba58f); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+.crm-auth__highlights { display: flex; flex-direction: column; gap: 16px; list-style: none; padding: 0; margin: 0; }
+.crm-auth__highlights li { display: flex; align-items: center; gap: 13px; font-size: 15.5px; color: rgba(255,255,255,.86); }
+.crm-auth__highlight-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; flex: none; border-radius: 10px;
+  background: rgba(43,165,143,.14); border: 1px solid rgba(43,165,143,.28); color: #5fd6bd;
+}
+.crm-auth__highlight-icon svg { width: 18px; height: 18px; }
+
+.crm-auth__endorsement-label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.5); }
+.crm-auth__endorsement-name { font-family: var(--crm-font-brand, var(--font-montserrat, sans-serif)); font-weight: 700; color: rgba(255,255,255,.85); }
+
+/* ---------- form panel ---------- */
+.crm-auth__panel { position: relative; display: flex; align-items: center; justify-content: center; padding: 40px; overflow-y: auto; }
+.crm-auth__back { position: absolute; top: 22px; right: 26px; font-size: 13.5px; font-weight: 600; color: var(--crm-text-muted, #3d5468); text-decoration: none; }
+.crm-auth__back:hover { color: var(--crm-green-dark, #12705f); }
+.crm-auth__card { width: 100%; max-width: 430px; }
+
+@media (max-width: 860px) {
+  .crm-auth { grid-template-columns: 1fr; }
+  .crm-auth__brand { display: none; }
+  .crm-auth__panel { padding: 24px; }
+  .crm-auth__back { top: 16px; right: 18px; }
+}

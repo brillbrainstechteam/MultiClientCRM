@@ -1,0 +1,258 @@
+// TalkTrack CRM — data model (auth + onboarding foundation).
+// Grows into the full CRM schema as modules are ported. Multi-tenant from the
+// start: every business is a Tenant; users, sessions and WhatsApp accounts hang
+// off it.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Tenant {
+  id          String   @id @default(cuid())
+  businessName String
+  // Business WhatsApp number captured at signup (E.164), before it is connected.
+  businessPhone String?
+  gstNumber   String?
+  cin         String?
+  entityType  String   @default("proprietorship") // proprietorship | company | ...
+  // Selling model — drives contact fields and business-unit structure.
+  businessModel String @default("both")           // b2b | b2c | both
+  plan        String   @default("trial")           // trial | starter | growth | advanced
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users            User[]
+  whatsappAccounts WhatsAppAccount[]
+  conversations    Conversation[]
+  contacts         Contact[]
+  segments         Segment[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("owner") // owner | admin | manager | agent
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions Session[]
+
+  @@index([tenantId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Opaque token stored in an httpOnly cookie.
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model WhatsAppAccount {
+  id                String   @id @default(cuid())
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // Meta identifiers, filled in when Embedded Signup completes.
+  wabaId            String?  // WhatsApp Business Account id
+  phoneNumberId     String?  // Cloud API phone number id
+  displayPhone      String?  // human-readable number
+  verifiedName      String?
+  // Long-lived / system-user access token (encrypt at rest before production).
+  accessToken       String?
+  status            String   @default("pending") // pending | connected | disconnected | error
+  connectedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+// Raw inbound webhook events (messages, statuses) — persisted first, then
+// routed to the owning tenant by phoneNumberId. Keeps delivery reliable and
+// replayable.
+model WebhookEvent {
+  id            String   @id @default(cuid())
+  phoneNumberId String?
+  wabaId        String?
+  field         String?
+  payload       Json
+  receivedAt    DateTime @default(now())
+
+  @@index([phoneNumberId])
+}
+
+// ---- Conversations & messages (Phase E) ----------------------------------
+
+model Conversation {
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // Our WhatsApp number (Cloud API phone_number_id) this thread runs through.
+  phoneNumberId String
+  // The customer's WhatsApp id (E.164 without '+').
+  contactPhone  String
+  contactName   String?
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  messages Message[]
+
+  @@unique([tenantId, phoneNumberId, contactPhone])
+  @@index([tenantId])
+}
+
+// ---- Contacts (customer records; the Customer-360 source) ----------------
+
+model Contact {
+  id            String    @id @default(cuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // Customer's WhatsApp id / E.164 without '+', unique within a tenant.
+  phone         String
+  name          String?
+  email         String?
+  company       String?
+  city          String?
+  notes         String?
+  tags          String[]  @default([])
+
+  // --- Type & identity ---
+  type          String    @default("b2c")      // b2b | b2c
+  businessName  String?                          // B2B business
+  contactPerson String?                          // B2B primary person
+  legalName     String?
+  gstin         String?
+
+  // --- Lifecycle & pipeline (three separate concepts) ---
+  leadStatus       String  @default("new")       // new|assigned|attempted|connected|engaged|enquiry_generated|not_interested|dormant
+  lifecycleStage   String  @default("prospect")  // prospect | customer
+  relationshipState String?                       // active | dormant | reactivated (existing customers)
+  stageEnteredAt   DateTime @default(now())
+
+  // --- Attribution & ownership ---
+  source          String?                         // exhibition | referral | ads | website | walk-in | whatsapp | ...
+  importSource    String?                         // manual | excel | google | vcf | card | register | tally | whatsapp
+  marketingOwnerId String?
+  salesOwnerId     String?
+
+  // --- Segmentation & value ---
+  customerType    String?                         // wholesale | retail | vip | ...
+  businessValue   String?                         // high | medium | low
+  productInterests String[] @default([])
+
+  // --- Location ---
+  country   String?
+  state     String?
+  zone      String?
+  area      String?
+  pincode   String?
+  branch    String?                               // business unit / branch name
+
+  // --- Addresses & KYC ---
+  billingAddress  String?
+  shippingAddress String?
+  customFields    Json?
+
+  // --- Consent ---
+  consentOptIn  Boolean  @default(false)
+  consentSource String?
+  consentAt     DateTime?
+  optedOut      Boolean  @default(false)
+  blocked       Boolean  @default(false)
+
+  // --- Timestamps ---
+  activatedAt        DateTime?                     // became a customer
+  firstInteractionAt DateTime?
+  lastActivityAt     DateTime?
+  createdAt          DateTime  @default(now())
+  lastMessageAt      DateTime?
+
+  activities  ContactActivity[]
+  transitions StageTransition[]
+
+  @@unique([tenantId, phone])
+  @@index([tenantId])
+  @@index([tenantId, leadStatus])
+  @@index([tenantId, lifecycleStage])
+  @@index([tenantId, type])
+  @@index([tenantId, salesOwnerId])
+}
+
+// Customer 360 timeline — every meaningful interaction against a contact.
+model ContactActivity {
+  id        String   @id @default(cuid())
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tenantId  String
+  kind      String   // note | message | call | enquiry | order | campaign | stage | ownership | field-visit | system
+  title     String
+  detail    String?
+  meta      Json?
+  byUserId  String?
+  at        DateTime @default(now())
+
+  @@index([contactId])
+  @@index([tenantId])
+}
+
+// Auditable log of lead-status / lifecycle transitions.
+model StageTransition {
+  id        String   @id @default(cuid())
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tenantId  String
+  field     String   // lead | lifecycle
+  fromStage String?
+  toStage   String
+  reason    String?
+  byUserId  String?
+  automated Boolean  @default(false)
+  at        DateTime @default(now())
+
+  @@index([contactId])
+  @@index([tenantId])
+}
+
+// Saved & dynamic contact segments.
+model Segment {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String
+  kind      String   @default("dynamic") // saved | dynamic
+  rules     Json?
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  // WhatsApp message id (dedupes webhook retries / links status updates).
+  waMessageId    String?  @unique
+  direction      String   // inbound | outbound
+  type           String   @default("text")
+  text           String?
+  status         String?  // outbound: sent | delivered | read | failed
+  at             DateTime @default(now())
+
+  @@index([conversationId])
+}

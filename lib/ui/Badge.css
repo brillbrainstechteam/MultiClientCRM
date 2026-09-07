@@ -1,0 +1,20 @@
+.tt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--crm-radius-pill);
+  border: 1px solid transparent;
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-semibold);
+  line-height: 1.4;
+}
+.tt-badge__icon { display: inline-flex; }
+.tt-badge__icon svg { width: 13px; height: 13px; }
+
+.tt-badge--success { background: var(--crm-green-tint); color: var(--crm-green-dark); border-color: var(--crm-green-border); }
+.tt-badge--warning { background: var(--crm-warn-tint); color: var(--crm-warn); border-color: var(--crm-warn-border); }
+.tt-badge--danger { background: var(--crm-danger-tint); color: var(--crm-danger); border-color: var(--crm-danger-border); }
+.tt-badge--info { background: var(--crm-info-50); color: var(--crm-info-600); border-color: var(--crm-info-200); }
+.tt-badge--neutral { background: var(--crm-surface-band); color: var(--crm-text-secondary); border-color: var(--crm-border-strong); }
+.tt-badge--gold { background: var(--crm-gold-tint); color: var(--crm-gold-dark); border-color: var(--crm-gold-border); }

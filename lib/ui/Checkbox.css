@@ -1,0 +1,19 @@
+.crm-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+}
+
+.crm-check__input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--crm-green);
+  cursor: pointer;
+  flex: none;
+}
+
+.crm-check__label {
+  font-size: var(--crm-font-size-md);
+  color: var(--crm-text-secondary);
+  cursor: pointer;
+}
