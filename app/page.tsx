@@ -1,5 +1,5 @@
 import {
-  ArrowRight, BadgeCheck, Bot, Boxes, Building2, CalendarHeart, CheckCheck,
+  ArrowRight, BadgeCheck, Bot, Boxes, Building2, CalendarHeart, Check, CheckCheck,
   Contact, Filter, IndianRupee, Layers, Lock,
   MessagesSquare, Megaphone, PhoneCall, Repeat, Route, ShieldCheck, ShoppingBag, Sparkles,
   Users, Workflow, Zap,
@@ -44,6 +44,99 @@ const secure: { icon: LucideIcon; t: string; d: string }[] = [
   { icon: Bot, t: 'Human-in-the-loop AI', d: 'AI drafts, suggests and extracts — a person approves before anything is sent, saved or committed.' },
 ];
 
+/**
+ * Plans are priced on annual billing (the market norm — Interakt, AiSensy and
+ * DoubleTick all quote annual). Monthly is ~20% higher. GST is extra, and Meta
+ * conversation charges are passed through at actual with no markup, which is
+ * the main commercial differentiator against the incumbents.
+ */
+const plans: {
+  name: string; price: string; monthly: string; tagline: string;
+  numbers: string; users: string; features: string[]; cta: string;
+  href: string; tag?: string;
+}[] = [
+  {
+    name: 'Starter',
+    price: '₹1,299',
+    monthly: '₹1,599 billed monthly',
+    tagline: 'For a single shop, clinic or office moving off the WhatsApp Business app.',
+    numbers: '1 WhatsApp number',
+    users: '5 users',
+    features: [
+      'Shared inbox with ownership & collision prevention',
+      'Contacts & Customer 360, import from Excel, cards, registers',
+      'Guided template builder + Meta approval tracking',
+      'Broadcast campaigns with recipient-level results',
+      'Lead status & follow-up reminders',
+      'Coexistence onboarding — keep your Business app',
+    ],
+    cta: 'Start free trial',
+    href: '/signup',
+  },
+  {
+    name: 'Growth',
+    price: '₹2,999',
+    monthly: '₹3,699 billed monthly',
+    tagline: 'For teams running acquisition and repeat business at the same time.',
+    numbers: '3 WhatsApp numbers',
+    users: '15 users',
+    features: [
+      'Everything in Starter',
+      'Flow & automation builder — included, not an add-on',
+      'Calling desk: queues, outcomes, follow-ups, call history',
+      'Two-journey lifecycle tracking (new vs existing customers)',
+      'Campaign calendar, festival planning & performance analytics',
+      'Role-based dashboards, routing & workload balancing',
+    ],
+    cta: 'Start free trial',
+    href: '/signup',
+    tag: 'Most popular',
+  },
+  {
+    name: 'Business',
+    price: '₹5,999',
+    monthly: '₹7,399 billed monthly',
+    tagline: 'For multi-branch businesses selling and collecting payment on WhatsApp.',
+    numbers: '10 WhatsApp numbers',
+    users: '40 users',
+    features: [
+      'Everything in Growth',
+      'Catalogue, carts, orders & payment collection in chat',
+      'AI assistance — summaries, reply drafts, intent & data extraction',
+      'Tally / ERP / inventory sync and sales-history import',
+      'Call recording, transcription & QA scoring',
+      'Source attribution, ROI reporting, API & webhooks',
+    ],
+    cta: 'Start free trial',
+    href: '/signup',
+  },
+  {
+    name: 'Enterprise',
+    price: 'Custom',
+    monthly: 'Annual contract',
+    tagline: 'For groups running many brands, branches and numbers under one roof.',
+    numbers: 'Up to 25 numbers',
+    users: 'Unlimited users',
+    features: [
+      'Everything in Business',
+      'Business units for brands, branches & departments',
+      'AI receptionist, bulk calling & field-visit planning',
+      'SSO, granular audit trail & data-export controls',
+      'Dedicated success manager and onboarding assistance',
+      'Uptime SLA and priority support',
+    ],
+    cta: 'Talk to us',
+    href: '/signup',
+  },
+];
+
+const pricingNotes: string[] = [
+  'WhatsApp conversation charges are billed by Meta at actual — we add zero markup.',
+  'Service replies inside the 24-hour window stay free and unlimited.',
+  'Extra users ₹149/user/month · extra numbers ₹499/month · AI credits from ₹999.',
+  'All prices exclude 18% GST. 7-day free trial, no credit card.',
+];
+
 const steps: { n: string; icon: LucideIcon; t: string; d: string }[] = [
   { n: '01', icon: Zap, t: 'Connect your number', d: 'Log in with Embedded Signup and choose coexistence, migration or a new number — no technical setup.' },
   { n: '02', icon: Contact, t: 'Bring in your customers', d: 'Import from anywhere, auto-deduplicate, and build one clean Customer 360 database.' },
@@ -62,9 +155,10 @@ export default function LandingPage() {
             <span className="land__word">TalkTrack</span>
           </Link>
           <nav className="land__nav-links">
-            <a href="#modules">Modules</a>
-            <a href="#lifecycle">Lifecycle</a>
-            <a href="#india">Localization</a>
+            <a href="#modules">Platform</a>
+            <a href="#lifecycle">Customer journey</a>
+            <a href="#india">Built for India</a>
+            <a href="#pricing">Pricing</a>
             <a href="#how">How it works</a>
             <Link href="/login" className="land__nav-login">Log in</Link>
             <Link href="/signup" className="land__btn land__btn--gold land__btn--sm">Get started</Link>
@@ -154,7 +248,7 @@ export default function LandingPage() {
       <section id="modules" className="land__band">
         <div className="land__band-in">
           <span className="land__kicker"><Layers size={14} /> The complete platform</span>
-          <h2 className="land__h2">Nine modules that work as one</h2>
+          <h2 className="land__h2">Nine modules. One customer record.</h2>
           <div className="land__grid land__grid--modules">
             {modules.map((m) => {
               const Icon = m.icon;
@@ -241,8 +335,8 @@ export default function LandingPage() {
       {/* ===== For India ===== */}
       <section id="india" className="land__band land__band--tint">
         <div className="land__band-in">
-          <span className="land__kicker"><IndianRupee size={14} /> Localization &amp; compliance</span>
-          <h2 className="land__h2">Built for Indian businesses</h2>
+          <span className="land__kicker"><IndianRupee size={14} /> Made for Indian business</span>
+          <h2 className="land__h2">Built for how India actually sells</h2>
           <div className="land__grid land__grid--2x2">
             {india.map((f) => {
               const Icon = f.icon;
@@ -316,6 +410,54 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ===== Pricing ===== */}
+      <section id="pricing" className="land__band land__band--tint">
+        <div className="land__band-in">
+          <span className="land__kicker"><IndianRupee size={14} /> Simple, honest pricing</span>
+          <h2 className="land__h2">Pay for the platform, not for surprises</h2>
+          <p className="land__lead land__lead--dark">
+            Automation, analytics and calling are included in the plan — not sold back to you as
+            add-ons. Meta&rsquo;s conversation charges are passed through at cost.
+          </p>
+
+          <div className="land__plans">
+            {plans.map((p) => (
+              <article key={p.name} className={`land__plan${p.tag ? ' land__plan--hl' : ''}`}>
+                {p.tag && <span className="land__plan-tag">{p.tag}</span>}
+                <h3 className="land__plan-name">{p.name}</h3>
+                <p className="land__plan-tagline">{p.tagline}</p>
+                <div className="land__plan-price">
+                  <strong>{p.price}</strong>
+                  {p.price !== 'Custom' && <span>/month</span>}
+                </div>
+                <p className="land__plan-billing">{p.monthly}</p>
+                <div className="land__plan-limits">
+                  <span><Building2 size={14} /> {p.numbers}</span>
+                  <span><Users size={14} /> {p.users}</span>
+                </div>
+                <ul className="land__plan-feats">
+                  {p.features.map((f) => (
+                    <li key={f}><Check size={15} /><span>{f}</span></li>
+                  ))}
+                </ul>
+                <Link
+                  href={p.href}
+                  className={`land__btn land__btn--sm land__plan-cta${p.tag ? ' land__btn--gold' : ' land__btn--outline'}`}
+                >
+                  {p.cta}
+                </Link>
+              </article>
+            ))}
+          </div>
+
+          <ul className="land__plan-notes">
+            {pricingNotes.map((n) => (
+              <li key={n}><CheckCheck size={14} />{n}</li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
       {/* ===== Final CTA ===== */}
       <section className="land__final">
         <img src="/gen/mesh.jpg" alt="" className="land__final-bg" aria-hidden="true" />
@@ -341,8 +483,8 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="land__foot-cols">
-            <div><h4>Platform</h4><a href="#modules">Modules</a><a href="#lifecycle">Lifecycle</a><a href="#how">How it works</a></div>
-            <div><h4>Get started</h4><Link href="/signup">Create account</Link><Link href="/login">Log in</Link><a href="#india">For India</a></div>
+            <div><h4>Platform</h4><a href="#modules">Modules</a><a href="#lifecycle">Customer journey</a><a href="#pricing">Pricing</a><a href="#how">How it works</a></div>
+            <div><h4>Get started</h4><Link href="/signup">Create account</Link><Link href="/login">Log in</Link><a href="#india">Built for India</a></div>
             <div><h4>Legal</h4><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></div>
           </div>
         </div>
