@@ -24,30 +24,14 @@ export default async function OnboardingPage() {
       </div>
 
       <div className="crm-authform__header">
-        <h1 className="crm-authform__title">Connect WhatsApp</h1>
+        <h1 className="crm-authform__title">{connected ? 'Connect another number' : 'Connect WhatsApp'}</h1>
         <p className="crm-authform__sub">
-          Welcome, {user.tenant.businessName}. Link your WhatsApp Business number to start messaging.
+          Welcome, {user.tenant.businessName}. Link a WhatsApp Business number to start messaging — keep
+          your WhatsApp Business app (coexistence), connect an existing account, or set up a new number.
         </p>
       </div>
 
-      {connected ? (
-        <div className="tt-onb">
-          <div className="tt-onb__notice" style={{ borderColor: 'var(--crm-green-border)', background: 'var(--crm-green-tint)', color: 'var(--crm-green-dark)' }}>
-            <strong>Connected.</strong> {connected.displayPhone ?? 'Your WhatsApp number'} is linked
-            {connected.verifiedName ? ` as “${connected.verifiedName}”` : ''}.
-          </div>
-          <Link href="/dashboard" className="crm-authform__link" style={{ textAlign: 'center' }}>
-            Go to dashboard →
-          </Link>
-        </div>
-      ) : isMetaConfigured() ? (
-        <EmbeddedSignup
-          appId={metaConfig.appId}
-          configId={metaConfig.configId}
-          graphVersion={metaConfig.graphVersion}
-          coexistenceFeature={metaConfig.coexistenceFeature}
-        />
-      ) : (
+      {!isMetaConfigured() ? (
         <div className="tt-onb">
           <div className="tt-onb__notice">
             <strong>Meta app not configured yet.</strong> Set <code>NEXT_PUBLIC_META_APP_ID</code> and{' '}
@@ -58,6 +42,32 @@ export default async function OnboardingPage() {
             Skip for now →
           </Link>
         </div>
+      ) : (
+        <>
+          {connected ? (
+            <div
+              className="tt-onb__notice"
+              style={{ borderColor: 'var(--crm-green-border)', background: 'var(--crm-green-tint)', color: 'var(--crm-green-dark)', marginBottom: 18 }}
+            >
+              <strong>Connected.</strong> {connected.displayPhone ?? 'Your WhatsApp number'} is linked
+              {connected.verifiedName ? ` as “${connected.verifiedName}”` : ''}.{' '}
+              <Link href="/dashboard" className="crm-authform__link">Go to dashboard →</Link>
+              {' · '}Connect another number below.
+            </div>
+          ) : null}
+
+          {/*
+            Embedded Signup is always available here (not hidden once a number is
+            connected), so additional numbers can be added and the Facebook Login
+            for Business flow stays reachable for demos and Meta App Review.
+          */}
+          <EmbeddedSignup
+            appId={metaConfig.appId}
+            configId={metaConfig.configId}
+            graphVersion={metaConfig.graphVersion}
+            coexistenceFeature={metaConfig.coexistenceFeature}
+          />
+        </>
       )}
     </AuthShell>
   );
