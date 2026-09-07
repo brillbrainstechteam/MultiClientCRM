@@ -1,0 +1,118 @@
+.crm-setup-home {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-6);
+}
+
+.crm-setup-home__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-5);
+  padding: var(--crm-space-8);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-xl);
+  background: var(--crm-surface-raised);
+  box-shadow: var(--crm-shadow-sm);
+  text-align: center;
+  align-items: center;
+}
+
+.crm-setup-home__card h2 {
+  font-size: var(--crm-font-size-xl);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.crm-setup-home__card p {
+  max-width: 56ch;
+  color: var(--crm-text-secondary);
+}
+
+.crm-setup-home__status-icon {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--crm-radius-pill);
+}
+
+.crm-setup-home__status-icon--done {
+  background: var(--crm-green-tint);
+  color: var(--crm-green-dark);
+}
+
+.crm-setup-home__status-icon--done svg {
+  width: 26px;
+  height: 26px;
+}
+
+.crm-setup-home__intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--crm-space-4);
+  text-align: left;
+}
+
+.crm-setup-home__eyebrow {
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-brand);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.crm-setup-home__intro h2 {
+  margin-top: var(--crm-space-1);
+}
+
+.crm-setup-home__intro p {
+  max-width: none;
+}
+
+.crm-setup-home__card > .crm-banner {
+  width: 100%;
+}
+
+.crm-setup-home__progress {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  width: 100%;
+}
+
+.crm-setup-home__progress-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-1);
+  justify-content: center;
+  padding: var(--crm-space-2) var(--crm-space-1);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-band);
+  color: var(--crm-text-muted);
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-setup-home__progress-item--complete {
+  background: var(--crm-green-tint);
+  color: var(--crm-green-dark);
+}
+
+.crm-setup-home__progress-item--current {
+  background: var(--crm-gold-tint);
+  color: var(--crm-gold-dark);
+}
+
+.crm-setup-home__progress-marker svg {
+  width: 14px;
+  height: 14px;
+}
+
+.crm-setup-home__actions {
+  display: flex;
+  gap: var(--crm-space-3);
+}

@@ -1,0 +1,119 @@
+.crm-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-10) var(--crm-space-6);
+  border: 1px dashed var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-raised);
+  text-align: center;
+}
+
+.crm-state__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: var(--crm-space-1);
+  border-radius: 50%;
+}
+
+.crm-state__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.crm-state__title {
+  font-size: var(--crm-font-size-lg);
+  font-weight: var(--crm-weight-semibold);
+}
+
+.crm-state__description {
+  max-width: 46ch;
+  color: var(--crm-text-secondary);
+}
+
+.crm-state__actions {
+  display: flex;
+  gap: var(--crm-space-2);
+  margin-top: var(--crm-space-2);
+}
+
+.crm-state--neutral .crm-state__icon {
+  background: var(--crm-neutral-100);
+  color: var(--crm-neutral-600);
+}
+
+.crm-state--danger .crm-state__icon {
+  background: var(--crm-danger-50);
+  color: var(--crm-danger-600);
+}
+
+.crm-state--warning .crm-state__icon {
+  background: var(--crm-warning-50);
+  color: var(--crm-warning-600);
+}
+
+.crm-state--info .crm-state__icon {
+  background: var(--crm-info-50);
+  color: var(--crm-info-600);
+}
+
+/* ---- Skeletons ---------------------------------------------------------- */
+.crm-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  width: 100%;
+}
+
+.crm-skeleton__line,
+.crm-skeleton__block {
+  display: block;
+  border-radius: var(--crm-radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--crm-neutral-100) 25%,
+    var(--crm-neutral-200) 37%,
+    var(--crm-neutral-100) 63%
+  );
+  background-size: 400% 100%;
+  animation: crm-skeleton-shimmer 1.4s ease infinite;
+}
+
+.crm-skeleton__line {
+  height: 12px;
+}
+
+.crm-skeleton__line:last-child {
+  width: 62%;
+}
+
+.crm-skeleton__block {
+  width: 100%;
+  border-radius: var(--crm-radius-lg);
+}
+
+@keyframes crm-skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crm-skeleton__line,
+  .crm-skeleton__block {
+    animation: none;
+  }
+}
+
+.crm-state-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}

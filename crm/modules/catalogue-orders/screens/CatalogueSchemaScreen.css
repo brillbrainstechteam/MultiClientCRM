@@ -1,0 +1,53 @@
+.crm-eco-schema {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-eco-schema__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-eco-schema__hint {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-eco-schema__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--crm-font-size-md);
+}
+
+.crm-eco-schema__table th,
+.crm-eco-schema__table td {
+  text-align: left;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border-bottom: 1px solid var(--crm-border-subtle);
+}
+
+.crm-eco-schema__order-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-1);
+}
+
+.crm-eco-schema__key {
+  color: var(--crm-muted);
+  font-size: var(--crm-font-size-xs);
+}
+
+.crm-eco-schema__add-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--crm-space-2);
+  padding-top: var(--crm-space-2);
+}
+
+.crm-eco-schema__units {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--crm-space-2);
+}

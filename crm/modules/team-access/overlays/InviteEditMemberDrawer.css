@@ -1,0 +1,61 @@
+.crm-invite-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-invite-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--crm-space-4);
+}
+
+.crm-invite-numbers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-3);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+}
+
+.crm-invite-panel {
+  padding: var(--crm-space-3) var(--crm-space-4);
+  border-radius: var(--crm-radius-md);
+  border: 1px solid var(--crm-border-strong);
+  background: var(--crm-surface-sunken);
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.crm-invite-panel--warning {
+  background: var(--crm-warning-50);
+  border-color: var(--crm-warning-200);
+}
+
+.crm-invite-panel__actions {
+  display: flex;
+  gap: var(--crm-space-2);
+}
+
+.crm-invite-review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-invite-review__row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-2) 0;
+  border-bottom: 1px solid var(--crm-border-subtle);
+}
+
+.crm-invite-success {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+  align-items: flex-start;
+}

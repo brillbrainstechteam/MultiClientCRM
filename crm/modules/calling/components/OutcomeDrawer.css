@@ -1,0 +1,95 @@
+.crm-outcome {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-5);
+}
+
+.crm-outcome__duration {
+  font-size: var(--crm-font-size-md);
+  color: var(--crm-text-secondary);
+  background: var(--crm-surface-sunken);
+  border-radius: var(--crm-radius-md);
+  padding: var(--crm-space-2) var(--crm-space-3);
+}
+
+.crm-outcome__step legend {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-secondary);
+  margin-bottom: var(--crm-space-2);
+}
+
+.crm-outcome__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--crm-space-2);
+}
+
+.crm-outcome__chip {
+  padding: var(--crm-space-2) var(--crm-space-4);
+  border-radius: var(--crm-radius-pill);
+  border: 1px solid var(--crm-border-strong);
+  background: var(--crm-surface-raised);
+  font: inherit;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-primary);
+  cursor: pointer;
+}
+
+.crm-outcome__chip--active {
+  background: var(--crm-brand-600);
+  border-color: var(--crm-brand-600);
+  color: var(--crm-text-inverse);
+}
+
+.crm-outcome__toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--crm-text-brand);
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  cursor: pointer;
+}
+
+.crm-outcome__collapsed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  margin-top: var(--crm-space-3);
+  padding-top: var(--crm-space-3);
+  border-top: 1px solid var(--crm-border-subtle);
+}
+
+.crm-outcome__hint {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+/* ---- Resolution banner (closed / follow-up / no-response) --------------- */
+.crm-outcome__resolution {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--crm-space-3) var(--crm-space-4);
+  border-radius: var(--crm-radius-md);
+  border: 1px solid var(--crm-border-subtle);
+  font-size: var(--crm-font-size-sm);
+}
+.crm-outcome__resolution strong {
+  font-size: var(--crm-font-size-md);
+}
+.crm-outcome__resolution--success {
+  background: var(--crm-green-tint);
+  border-color: var(--crm-green-border);
+  color: var(--crm-green-dark);
+}
+.crm-outcome__resolution--info {
+  background: var(--crm-info-50, var(--crm-surface-band));
+  color: var(--crm-text-secondary);
+}
+.crm-outcome__resolution--warn {
+  background: var(--crm-warn-tint);
+  border-color: var(--crm-gold-border);
+  color: var(--crm-gold-dark);
+}

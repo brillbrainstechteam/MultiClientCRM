@@ -1,0 +1,39 @@
+.crm-review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--crm-space-4);
+  margin-top: var(--crm-space-5);
+}
+
+.crm-review-grid dt {
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.crm-review-grid dd {
+  margin-top: 2px;
+  color: var(--crm-text-primary);
+  font-size: var(--crm-font-size-row);
+}
+
+.crm-review-grid--mono dd {
+  font-family: var(--crm-font-mono);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-review-advanced {
+  margin-top: var(--crm-space-5);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-sunken);
+}
+
+.crm-review-advanced summary {
+  cursor: pointer;
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-brand);
+}

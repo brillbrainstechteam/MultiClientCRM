@@ -1,0 +1,81 @@
+.crm-timeline-item {
+  display: flex;
+  gap: var(--crm-space-3);
+}
+
+.crm-timeline-item__rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: none;
+}
+
+.crm-timeline-item__marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--crm-neutral-100);
+  color: var(--crm-neutral-600);
+}
+
+.crm-timeline-item__marker svg {
+  width: 14px;
+  height: 14px;
+}
+
+.crm-timeline-item__marker--whatsapp {
+  background: var(--crm-brand-50);
+  color: var(--crm-brand-700);
+}
+
+.crm-timeline-item__marker--call {
+  background: var(--crm-info-50);
+  color: var(--crm-info-600);
+}
+
+.crm-timeline-item__marker--stage-change,
+.crm-timeline-item__marker--consent {
+  background: var(--crm-warning-50);
+  color: var(--crm-warning-600);
+}
+
+.crm-timeline-item__line {
+  flex: 1;
+  width: 2px;
+  margin: var(--crm-space-1) 0;
+  background: var(--crm-border-subtle);
+}
+
+.crm-timeline-item__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: var(--crm-space-4);
+}
+
+.crm-timeline-item__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--crm-space-3);
+}
+
+.crm-timeline-item__summary {
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-timeline-item__time {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}
+
+.crm-timeline-item__detail {
+  color: var(--crm-text-secondary);
+}
+
+.crm-timeline-item__actor {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}

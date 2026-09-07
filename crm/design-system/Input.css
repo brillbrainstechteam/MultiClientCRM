@@ -1,0 +1,94 @@
+.crm-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+  min-width: 0;
+}
+
+.crm-field__label {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-secondary);
+}
+
+.crm-field__required {
+  color: var(--crm-danger);
+}
+
+.crm-field__control {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-card);
+  transition: border-color var(--crm-motion-fast), box-shadow var(--crm-motion-fast);
+}
+
+.crm-field__control:focus-within {
+  border-color: var(--crm-border-focus);
+  box-shadow: var(--crm-focus-ring);
+}
+
+.crm-field__control--error {
+  border-color: var(--crm-danger);
+}
+
+.crm-field__control--error:focus-within {
+  box-shadow: 0 0 0 3px var(--crm-danger-tint);
+}
+
+.crm-field__control input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  padding: 0 var(--crm-space-3);
+  border: none;
+  background: transparent;
+  font-size: var(--crm-font-size-md);
+  outline: none;
+}
+
+.crm-field__control input::placeholder {
+  color: var(--crm-text-muted);
+}
+
+.crm-field__prefix {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 var(--crm-space-2) 0 var(--crm-space-3);
+  border-right: 1px solid var(--crm-border-subtle);
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-md);
+  white-space: nowrap;
+}
+
+.crm-field__hint {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}
+
+.crm-field__error {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-danger);
+  font-weight: var(--crm-weight-medium);
+}
+
+/* Shared by Textarea. */
+.crm-field__textarea {
+  min-height: 78px;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-card);
+  font-family: inherit;
+  font-size: var(--crm-font-size-md);
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--crm-motion-fast), box-shadow var(--crm-motion-fast);
+}
+
+.crm-field__textarea:focus {
+  border-color: var(--crm-border-focus);
+  box-shadow: var(--crm-focus-ring);
+}

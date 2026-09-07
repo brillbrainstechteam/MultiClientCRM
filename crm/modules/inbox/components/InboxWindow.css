@@ -1,0 +1,44 @@
+/* ---- Standalone pop-out Inbox window ------------------------------------ */
+
+.crm-inbox-window {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--crm-surface-page);
+}
+
+.crm-inbox-window__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-2) var(--crm-space-4);
+  border-bottom: 1px solid var(--crm-border-strong);
+  background: var(--crm-navy, #0e2438);
+  color: var(--crm-on-dark, #fff);
+  flex-shrink: 0;
+}
+
+.crm-inbox-window__brand {
+  font-weight: var(--crm-weight-semibold);
+  letter-spacing: 0.01em;
+}
+
+.crm-inbox-window__sep {
+  opacity: 0.5;
+}
+
+.crm-inbox-window__title {
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-inbox-window__role {
+  margin-left: auto;
+  font-size: var(--crm-font-size-xs);
+  text-transform: capitalize;
+  opacity: 0.75;
+}
+
+.crm-inbox-window__body {
+  flex: 1;
+  min-height: 0;
+}

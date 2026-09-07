@@ -1,0 +1,173 @@
+/* ---- Message composer at the bottom of the conversation detail pane ----- */
+
+.crm-composer {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--crm-border-strong);
+  background: var(--crm-surface-raised);
+  flex-shrink: 0;
+}
+
+/* Mode toggle: Reply ↔ Internal Note */
+.crm-composer__mode-bar {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--crm-border-subtle);
+}
+
+.crm-composer__mode-btn {
+  flex: 1;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-medium);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--crm-text-muted);
+  transition: all var(--crm-motion-fast);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.crm-composer__mode-btn--active-reply {
+  color: var(--crm-text-brand);
+  border-bottom-color: var(--crm-green);
+  background: var(--crm-green-tint);
+}
+
+.crm-composer__mode-btn--active-note {
+  color: var(--crm-gold-dark);
+  border-bottom-color: var(--crm-gold);
+  background: var(--crm-gold-tint);
+}
+
+/* Note mode indicator strip */
+.crm-composer--note-mode {
+  background: var(--crm-gold-tint);
+}
+
+.crm-composer--note-mode .crm-composer__mode-bar {
+  border-bottom-color: var(--crm-gold-border);
+}
+
+.crm-composer__note-label {
+  padding: 3px var(--crm-space-4);
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-gold-dark);
+  background: var(--crm-gold-tint);
+  border-bottom: 1px solid var(--crm-gold-border);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Window banner sits above the textarea */
+.crm-composer__window-banner {
+  padding: 0 var(--crm-space-4);
+  padding-top: var(--crm-space-2);
+}
+
+/* Textarea area */
+.crm-composer__input-area {
+  padding: var(--crm-space-2) var(--crm-space-4);
+}
+
+.crm-composer__textarea {
+  width: 100%;
+  min-height: 72px;
+  max-height: 180px;
+  resize: none;
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-md);
+  padding: var(--crm-space-2) var(--crm-space-3);
+  font-size: var(--crm-font-size-md);
+  font-family: var(--crm-font-sans);
+  color: var(--crm-text-primary);
+  background: var(--crm-surface-raised);
+  line-height: var(--crm-line-normal);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color var(--crm-motion-fast);
+}
+
+.crm-composer__textarea:focus {
+  border-color: var(--crm-border-focus);
+}
+
+.crm-composer__textarea:disabled {
+  background: var(--crm-surface-band);
+  color: var(--crm-text-muted);
+  cursor: not-allowed;
+}
+
+.crm-composer--note-mode .crm-composer__textarea {
+  background: var(--crm-gold-tint);
+  border-color: var(--crm-gold-border);
+}
+
+.crm-composer--note-mode .crm-composer__textarea:focus {
+  border-color: var(--crm-gold);
+}
+
+/* Toolbar row */
+.crm-composer__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-1);
+  padding: var(--crm-space-2) var(--crm-space-4);
+  border-top: 1px solid var(--crm-border-subtle);
+}
+
+.crm-composer__toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-1);
+  flex: 1;
+}
+
+.crm-composer__toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+}
+
+/* Disabled composer message (expired window) */
+.crm-composer__disabled-msg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-4);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+  text-align: center;
+}
+
+.crm-composer__choose-template-btn {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-brand);
+  border: 1px solid var(--crm-green-border);
+  background: var(--crm-green-tint);
+  border-radius: var(--crm-radius-md);
+  padding: var(--crm-space-2) var(--crm-space-4);
+  cursor: pointer;
+  transition: all var(--crm-motion-fast);
+}
+
+.crm-composer__choose-template-btn:hover {
+  background: var(--crm-green);
+  color: var(--crm-on-dark);
+}
+
+/* Reply-to context bar */
+.crm-composer__reply-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px var(--crm-space-4);
+  background: var(--crm-bg-secondary);
+  border-bottom: 1px solid var(--crm-border-subtle);
+  border-left: 3px solid var(--crm-text-brand);
+}

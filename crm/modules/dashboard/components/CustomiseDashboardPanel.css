@@ -1,0 +1,56 @@
+.crm-customise-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-brand-200);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-brand-50);
+}
+
+.crm-customise-panel__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--crm-space-3);
+}
+
+.crm-customise-panel__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--crm-card);
+  color: var(--crm-text-brand);
+}
+
+.crm-customise-panel__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.crm-customise-panel__meta {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-customise-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--crm-space-2) var(--crm-space-4);
+  padding: var(--crm-space-3);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-card);
+}
+
+.crm-customise-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+}
+
+.crm-customise-panel__spacer {
+  flex: 1;
+}

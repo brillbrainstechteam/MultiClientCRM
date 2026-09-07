@@ -1,0 +1,10 @@
+.crm-reassign-modal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-reassign-modal__count {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-primary);
+}

@@ -1,0 +1,35 @@
+.crm-camp-retry-modal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-camp-retry-modal__stats {
+  display: flex;
+  gap: var(--crm-space-5);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.crm-camp-retry-modal__stats li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+}
+
+.crm-camp-retry-modal__stats li span:first-child {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+.crm-camp-retry-modal__stats li span:last-child {
+  font-size: var(--crm-font-size-lg);
+  font-weight: 600;
+}
+
+.crm-camp-retry-modal__note {
+  margin: 0;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}

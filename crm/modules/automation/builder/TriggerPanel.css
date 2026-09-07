@@ -1,0 +1,11 @@
+.crm-aut-trigger__title {
+  margin: 0;
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary);
+}
+
+.crm-aut-trigger__advanced {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--crm-space-1);
+}

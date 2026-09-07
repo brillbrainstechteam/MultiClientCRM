@@ -1,0 +1,47 @@
+.crm-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+  height: var(--crm-topbar-height);
+  flex: none;
+  padding: 0 var(--crm-content-gutter);
+  border-bottom: 1px solid var(--crm-border-subtle);
+  background: var(--crm-surface-raised);
+}
+
+.crm-topbar__right {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+}
+
+.crm-topbar__review-control {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  padding-right: var(--crm-space-3);
+  border-right: 1px solid var(--crm-border-subtle);
+}
+
+.crm-topbar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  padding-left: var(--crm-space-1);
+}
+
+.crm-topbar__user-text {
+  display: flex;
+  flex-direction: column;
+  line-height: var(--crm-line-tight);
+}
+
+.crm-topbar__user-name {
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-topbar__user-role {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}

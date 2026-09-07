@@ -1,0 +1,12 @@
+.crm-eco-selections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-eco-selections__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+  flex-wrap: wrap;
+}

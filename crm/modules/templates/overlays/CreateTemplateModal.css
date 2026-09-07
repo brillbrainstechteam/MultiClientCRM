@@ -1,0 +1,112 @@
+.crm-tpl-create__options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  min-width: 420px;
+}
+
+.crm-tpl-create__option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-3);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-page);
+  text-align: left;
+  cursor: pointer;
+}
+
+.crm-tpl-create__option:hover {
+  border-color: var(--crm-brand-200);
+  background: var(--crm-brand-50);
+}
+
+.crm-tpl-create__option svg {
+  width: 20px;
+  height: 20px;
+  color: var(--crm-text-brand);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.crm-tpl-create__option--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.crm-tpl-create__option--disabled:hover {
+  border-color: var(--crm-border-subtle);
+  background: var(--crm-surface-page);
+}
+
+.crm-tpl-create__option-title {
+  margin: 0;
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+}
+
+.crm-tpl-create__option-desc {
+  margin: 2px 0 0;
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-tpl-create__clone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+  min-width: 420px;
+}
+
+.crm-tpl-create__clone-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.crm-tpl-create__clone-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-3);
+  width: 100%;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--crm-radius-md);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.crm-tpl-create__clone-row:hover {
+  background: var(--crm-surface-band);
+}
+
+.crm-tpl-create__clone-name {
+  margin: 0;
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+}
+
+.crm-tpl-create__clone-snippet {
+  margin: 2px 0 0;
+  color: var(--crm-text-muted);
+  font-size: var(--crm-font-size-sm);
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-tpl-create__clone-empty {
+  color: var(--crm-text-muted);
+  font-size: var(--crm-font-size-sm);
+  padding: var(--crm-space-4) 0;
+  text-align: center;
+}

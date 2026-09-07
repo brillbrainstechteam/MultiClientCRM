@@ -1,0 +1,138 @@
+.crm-dq {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-dq__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-dq__missing {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--crm-space-1);
+}
+
+.crm-dq__muted {
+  color: var(--crm-text-muted);
+}
+
+.crm-dq__unassigned {
+  color: var(--crm-warn);
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-dq__note {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+/* ---- Phone standardization --------------------------------------------- */
+.crm-dq__phone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-dq__phone-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+}
+
+.crm-dq__phone-table {
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  overflow: hidden;
+  background: var(--crm-card);
+}
+
+.crm-dq__phone-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr auto;
+  gap: var(--crm-space-3);
+  align-items: center;
+  padding: var(--crm-space-2) var(--crm-space-4);
+  border-top: 1px solid var(--crm-rule-soft);
+}
+
+.crm-dq__phone-row--head {
+  background: var(--crm-table-header-band);
+  border-top: none;
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--crm-navy);
+}
+
+.crm-dq__strong {
+  font-weight: var(--crm-weight-semibold);
+}
+
+.crm-dq__raw {
+  color: var(--crm-text-muted);
+  text-decoration: line-through;
+}
+
+.crm-dq__norm {
+  font-family: var(--crm-font-mono);
+  color: var(--crm-text-primary);
+}
+
+/* ---- Duplicates --------------------------------------------------------- */
+.crm-dq__dupes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-dq__dupe {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-card);
+}
+
+.crm-dq__dupe-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.crm-dq__dupe-top {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+}
+
+.crm-dq__dupe-reason {
+  color: var(--crm-text-secondary);
+}
+
+.crm-dq__dupe-names {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+/* ---- Ownership bulk ----------------------------------------------------- */
+.crm-dq__bulk {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+  padding: var(--crm-space-2) var(--crm-space-4);
+  border: 1px solid var(--crm-warn-border);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-warn-tint);
+  color: var(--crm-warn);
+  font-weight: var(--crm-weight-medium);
+}

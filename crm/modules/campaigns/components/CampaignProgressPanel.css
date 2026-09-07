@@ -1,0 +1,37 @@
+.crm-camp-progress-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-camp-progress-panel__bar {
+  width: 100%;
+  height: 8px;
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-surface-band);
+  overflow: hidden;
+}
+
+.crm-camp-progress-panel__bar-fill {
+  height: 100%;
+  background: var(--crm-brand-600);
+  transition: width var(--crm-motion-fast);
+}
+
+.crm-camp-progress-panel__percent {
+  margin: 0;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+.crm-camp-progress-panel__kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--crm-space-3);
+}
+
+.crm-camp-progress-panel__updated {
+  margin: 0;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}

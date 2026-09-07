@@ -1,0 +1,58 @@
+.crm-payment-state {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-5);
+  margin-top: var(--crm-space-5);
+  border-radius: var(--crm-radius-lg);
+}
+
+.crm-payment-state svg {
+  flex: none;
+  width: 26px;
+  height: 26px;
+}
+
+.crm-payment-state__spin {
+  animation: crm-spin 1.1s linear infinite;
+  color: var(--crm-info-600);
+}
+
+@keyframes crm-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.crm-payment-state__title {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.crm-payment-state__description {
+  margin-top: var(--crm-space-1);
+  color: var(--crm-text-secondary);
+}
+
+.crm-payment-state--pending {
+  background: var(--crm-info-50);
+}
+
+.crm-payment-state--success {
+  background: var(--crm-success-50);
+}
+.crm-payment-state--success svg {
+  color: var(--crm-success-600);
+}
+
+.crm-payment-state--failed {
+  background: var(--crm-danger-50);
+}
+.crm-payment-state--failed svg {
+  color: var(--crm-danger-600);
+}
+
+.crm-payment-simulate {
+  display: flex;
+  gap: var(--crm-space-3);
+  margin-top: var(--crm-space-5);
+}

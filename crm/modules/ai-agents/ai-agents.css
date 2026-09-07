@@ -1,0 +1,445 @@
+/* Shared layout primitives for the AI Agents module — one stylesheet instead
+   of per-screen forks, since every surface reuses the same card/section/
+   checklist patterns. */
+
+.crm-aia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-aia__page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-aia__toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+  flex-wrap: wrap;
+}
+
+.crm-aia__filters {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  flex-wrap: wrap;
+}
+
+.crm-aia__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.crm-aia__name {
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+  margin: 0;
+}
+
+.crm-aia__use-case {
+  color: var(--crm-text-muted);
+  font-size: var(--crm-font-size-sm);
+  margin: 0;
+}
+
+.crm-aia__badge-row {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-1);
+  flex-wrap: wrap;
+}
+
+.crm-aia__row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--crm-space-1);
+}
+
+.crm-aia__muted {
+  color: var(--crm-text-muted);
+  white-space: nowrap;
+}
+
+.crm-aia__count {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+/* Two-column detail layout: main content + right rail. */
+.crm-aia__detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--crm-space-6);
+  align-items: start;
+}
+
+.crm-aia__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  min-width: 0;
+}
+
+.crm-aia__rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  position: sticky;
+  top: var(--crm-space-4);
+}
+
+.crm-aia__card {
+  background: var(--crm-surface-raised);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  padding: var(--crm-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-aia__card-title {
+  font-size: var(--crm-font-size-lg);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+  margin: 0;
+}
+
+.crm-aia__card-subtitle {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+  margin: 0;
+}
+
+.crm-aia__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+  padding-top: var(--crm-space-4);
+  border-top: 1px solid var(--crm-border-subtle);
+}
+
+.crm-aia__section:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.crm-aia__section-title {
+  font-size: var(--crm-font-size-md);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary);
+  margin: 0;
+}
+
+.crm-aia__section-hint {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+  margin: 0;
+}
+
+.crm-aia__form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--crm-space-4);
+}
+
+.crm-aia__form-grid--full {
+  grid-column: 1 / -1;
+}
+
+.crm-aia__form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--crm-space-2);
+}
+
+/* Template picker cards (Purpose step 1). */
+.crm-aia__template-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--crm-space-3);
+}
+
+.crm-aia__template-card {
+  text-align: left;
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-raised);
+  padding: var(--crm-space-3);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.crm-aia__template-card:hover {
+  border-color: var(--crm-border-strong);
+  box-shadow: var(--crm-shadow-sm);
+}
+
+.crm-aia__template-card--active {
+  border-color: var(--crm-green);
+  background: var(--crm-green-tint);
+}
+
+.crm-aia__template-card-title {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary);
+}
+
+.crm-aia__template-card-desc {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+/* Readiness checklist. */
+.crm-aia__checklist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.crm-aia__checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--crm-space-2);
+  font-size: var(--crm-font-size-md);
+}
+
+.crm-aia__checklist-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.crm-aia__checklist-icon--done {
+  color: var(--crm-green-dark);
+}
+
+.crm-aia__checklist-icon--pending {
+  color: var(--crm-warn);
+}
+
+.crm-aia__checklist-label {
+  color: var(--crm-text-secondary);
+}
+
+.crm-aia__checklist-link {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-brand);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Knowledge source list. */
+.crm-aia__source-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-3);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+}
+
+.crm-aia__source-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.crm-aia__source-name {
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+}
+
+.crm-aia__source-meta {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+.crm-aia__source-actions {
+  display: flex;
+  gap: var(--crm-space-1);
+  flex-shrink: 0;
+}
+
+/* Sensitive action / restricted topic rows. */
+.crm-aia__toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--crm-space-2) 0;
+  border-bottom: 1px solid var(--crm-border-subtle);
+}
+
+.crm-aia__toggle-row:last-child {
+  border-bottom: none;
+}
+
+.crm-aia__tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--crm-space-1);
+}
+
+/* Autonomy preset picker. */
+.crm-aia__preset-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--crm-space-3);
+}
+
+.crm-aia__preset-card {
+  text-align: left;
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-raised);
+  padding: var(--crm-space-3);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.crm-aia__preset-card--active {
+  border-color: var(--crm-green);
+  background: var(--crm-green-tint);
+}
+
+.crm-aia__preset-title {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary);
+}
+
+.crm-aia__preset-desc {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+/* Test Lab */
+.crm-aia__test-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--crm-space-6);
+  align-items: start;
+}
+
+.crm-aia__conversation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-aia__bubble {
+  max-width: 85%;
+  padding: var(--crm-space-3);
+  border-radius: var(--crm-radius-lg);
+  font-size: var(--crm-font-size-md);
+  line-height: var(--crm-line-normal);
+}
+
+.crm-aia__bubble--customer {
+  align-self: flex-start;
+  background: var(--crm-surface-band);
+  color: var(--crm-text-primary);
+}
+
+.crm-aia__bubble--agent {
+  align-self: flex-end;
+  background: var(--crm-green-tint);
+  color: var(--crm-text-primary);
+  border: 1px solid var(--crm-green-border);
+}
+
+.crm-aia__action-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.crm-aia__action-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+  padding: 6px var(--crm-space-2);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-band);
+  width: fit-content;
+}
+
+.crm-aia__feedback-row {
+  display: flex;
+  gap: var(--crm-space-2);
+}
+
+/* Usage & Cost */
+.crm-aia__kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--crm-space-4);
+}
+
+.crm-aia__usage-table-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+/* Picker */
+.crm-aia__picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-aia__picker-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  padding: var(--crm-space-4);
+  background: var(--crm-surface-raised);
+}
+
+.crm-aia__picker-card--selected {
+  border-color: var(--crm-green);
+  box-shadow: var(--crm-focus-ring);
+}
+
+/* Phase-2 capability previews */
+.crm-aia__preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--crm-space-3);
+}
+
+.crm-aia__preview-card {
+  border: 1px dashed var(--crm-border-strong);
+  border-radius: var(--crm-radius-md);
+  padding: var(--crm-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--crm-text-muted);
+}
+
+.crm-aia__preview-title {
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-secondary);
+}

@@ -1,0 +1,50 @@
+.crm-ai-summary__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+}
+
+.crm-ai-summary__row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--crm-space-2);
+  border-radius: var(--crm-radius-md);
+  transition: background var(--crm-motion-fast);
+}
+
+.crm-ai-summary__row:hover {
+  background: var(--crm-surface-hover);
+}
+
+.crm-ai-summary__row {
+  width: 100%;
+  text-align: left;
+}
+
+.crm-ai-summary__row-icon {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  margin-right: var(--crm-space-1);
+  vertical-align: -2px;
+  color: var(--crm-text-brand);
+}
+
+.crm-ai-summary__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-2);
+}
+
+.crm-ai-summary__title {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-title);
+}
+
+.crm-ai-summary__statement {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-secondary);
+}

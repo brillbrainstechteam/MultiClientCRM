@@ -1,0 +1,11 @@
+.crm-camp-analytics-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-camp-analytics-tab__kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--crm-space-3);
+}

@@ -1,0 +1,67 @@
+.crm-con-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-6);
+}
+
+.crm-con-settings__body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: var(--crm-space-6);
+  align-items: start;
+}
+
+.crm-con-settings__nav ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.crm-con-settings__link {
+  display: block;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border-radius: var(--crm-radius-md);
+  color: var(--crm-text-secondary);
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-con-settings__link:hover {
+  background: var(--crm-surface-hover);
+  color: var(--crm-text-primary);
+}
+
+.crm-con-settings__link--active {
+  background: var(--crm-brand-50);
+  color: var(--crm-brand-700);
+}
+
+.crm-con-settings__panel {
+  padding: var(--crm-space-6);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-raised);
+  box-shadow: var(--crm-shadow-sm);
+}
+
+.crm-con-settings__panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+  margin-bottom: var(--crm-space-3);
+}
+
+.crm-con-settings__panel-head h2 {
+  font-size: var(--crm-font-size-xl);
+  font-weight: var(--crm-weight-semibold);
+}
+
+.crm-con-settings__ids {
+  display: flex;
+  gap: var(--crm-space-2);
+}
+
+.crm-con-settings__purpose {
+  color: var(--crm-text-secondary);
+  max-width: 72ch;
+}

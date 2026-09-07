@@ -1,0 +1,61 @@
+.crm-meta-external {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-5);
+  margin-bottom: var(--crm-space-5);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-info-50);
+  color: var(--crm-text-secondary);
+}
+
+.crm-meta-external svg {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  color: var(--crm-info-600);
+}
+
+.crm-meta-external__simulate {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--crm-space-3);
+  margin-top: var(--crm-space-5);
+}
+
+.crm-meta-external__option {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-raised);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  transition: border-color var(--crm-motion-fast);
+}
+
+.crm-meta-external__option:hover {
+  border-color: var(--crm-brand-400);
+}
+
+.crm-meta-external__option-title {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.crm-meta-external__option-title svg {
+  width: 15px;
+  height: 15px;
+  color: var(--crm-text-brand);
+}
+
+.crm-meta-external__option-description {
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-sm);
+}

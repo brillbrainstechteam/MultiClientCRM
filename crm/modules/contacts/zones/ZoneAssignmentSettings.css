@@ -1,0 +1,169 @@
+/* ---- Zone & Assignment settings (§6) ------------------------------------ */
+.crm-zones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-zones__shared {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-3) var(--crm-space-4);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-info-50, var(--crm-surface-band));
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-sm);
+}
+.crm-zones__shared svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--crm-text-brand);
+}
+
+.crm-zones__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-zone-card {
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-raised);
+}
+.crm-zone-card--inactive {
+  opacity: 0.6;
+}
+
+.crm-zone-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+  margin-bottom: var(--crm-space-3);
+}
+.crm-zone-card__icon {
+  width: 18px;
+  height: 18px;
+  color: var(--crm-text-brand);
+  flex-shrink: 0;
+}
+.crm-zone-card__head > :nth-child(2) {
+  flex: 1;
+  max-width: 280px;
+}
+
+.crm-zone-card__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--crm-space-3);
+  margin-bottom: var(--crm-space-3);
+}
+.crm-zone-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.crm-zone-field__label {
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.crm-zone-field__hint {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: var(--crm-weight-regular);
+  color: var(--crm-text-muted);
+}
+
+.crm-zone-card__members {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+.crm-zone-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--crm-space-2);
+}
+.crm-zone-members__empty {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+  font-style: italic;
+}
+.crm-zone-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px 3px 10px;
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-surface-band);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-primary);
+}
+.crm-zone-chip--primary {
+  border-color: var(--crm-green-border);
+  background: var(--crm-green-tint);
+}
+.crm-zone-chip button {
+  display: inline-flex;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--crm-text-muted);
+  padding: 0;
+}
+.crm-zone-chip button:hover {
+  color: var(--crm-danger);
+}
+
+.crm-zone-card__member-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--crm-space-2);
+  flex-wrap: wrap;
+}
+
+.crm-zones__fallback {
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-raised);
+}
+.crm-zones__fallback-title {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+  margin-bottom: var(--crm-space-2);
+}
+.crm-zones__fallback-text {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+  margin-bottom: var(--crm-space-3);
+}
+.crm-zones__fallback-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+.crm-zones__fallback-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+}
+
+@media (max-width: 1120px) {
+  .crm-zone-card__grid {
+    grid-template-columns: 1fr;
+  }
+}

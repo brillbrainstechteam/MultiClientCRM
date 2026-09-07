@@ -1,0 +1,77 @@
+.crm-camp-setup-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  max-width: 640px;
+}
+
+.crm-camp-setup-step__types {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.crm-camp-setup-step__types legend {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+  padding: 0 0 var(--crm-space-2);
+}
+
+.crm-camp-setup-step__type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--crm-space-2);
+}
+
+.crm-camp-setup-step__type-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: var(--crm-space-3);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-raised);
+  text-align: left;
+  cursor: pointer;
+}
+
+.crm-camp-setup-step__type-card:hover {
+  border-color: var(--crm-border-strong);
+}
+
+.crm-camp-setup-step__type-card.is-selected {
+  border-color: var(--crm-brand-600);
+  background: var(--crm-green-tint);
+}
+
+.crm-camp-setup-step__type-label {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+}
+
+.crm-camp-setup-step__type-badge {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-sm);
+  padding: 1px 6px;
+}
+
+.crm-camp-setup-step__type-description {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+.crm-camp-setup-step__sender-meta {
+  margin: 0;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}

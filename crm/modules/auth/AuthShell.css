@@ -1,0 +1,120 @@
+.crm-auth {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+  background: var(--crm-canvas);
+}
+
+/* ---- Brand panel -------------------------------------------------------- */
+.crm-auth__brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--crm-space-8);
+  padding: var(--crm-space-10);
+  background: var(--crm-navy);
+  color: var(--crm-on-dark);
+}
+
+.crm-auth__brand-top {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+}
+
+.crm-auth__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-gold);
+  color: var(--crm-navy);
+  font-family: var(--crm-font-brand);
+  font-weight: var(--crm-weight-bold);
+  font-size: var(--crm-font-size-lg);
+}
+
+.crm-auth__wordmark {
+  font-family: var(--crm-font-brand);
+  font-weight: var(--crm-weight-bold);
+  font-size: var(--crm-font-size-2xl);
+}
+
+.crm-auth__brand-headline {
+  font-size: 30px;
+  font-weight: var(--crm-weight-bold);
+  line-height: var(--crm-line-tight);
+  max-width: 18ch;
+  margin-bottom: var(--crm-space-6);
+}
+
+.crm-auth__highlights {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-auth__highlights li {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+  font-size: var(--crm-font-size-lg);
+  color: var(--crm-on-dark);
+}
+
+.crm-auth__highlight-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-navy-line);
+  color: var(--crm-green-tint, #e7f3f0);
+}
+.crm-auth__highlight-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.crm-auth__endorsement-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--crm-on-dark-muted);
+}
+.crm-auth__endorsement-name {
+  font-family: var(--crm-font-brand);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-on-dark);
+}
+
+/* ---- Form panel --------------------------------------------------------- */
+.crm-auth__panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--crm-space-8);
+  overflow-y: auto;
+}
+
+.crm-auth__card {
+  width: 100%;
+  max-width: 420px;
+}
+
+@media (max-width: 860px) {
+  .crm-auth {
+    grid-template-columns: 1fr;
+  }
+  .crm-auth__brand {
+    display: none;
+  }
+  .crm-auth__panel {
+    padding: var(--crm-space-5);
+  }
+}

@@ -1,0 +1,31 @@
+.crm-camp-template-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-camp-template-step__selected {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+  max-width: 420px;
+}
+
+.crm-camp-template-step__selected-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-3);
+}
+
+.crm-camp-template-step__selected-name {
+  margin: 0;
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary);
+}
+
+.crm-camp-template-step__selected-meta {
+  margin: 2px 0 0;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}

@@ -1,0 +1,84 @@
+.crm-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+}
+
+.crm-stepper__item {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.crm-stepper__item:last-child {
+  flex: none;
+}
+
+.crm-stepper__marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--crm-border-strong);
+  background: var(--crm-card);
+  color: var(--crm-text-muted);
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-semibold);
+}
+
+.crm-stepper__marker svg {
+  width: 14px;
+  height: 14px;
+}
+
+.crm-stepper__label {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-muted);
+  white-space: nowrap;
+}
+
+.crm-stepper__bar {
+  flex: 1;
+  height: 2px;
+  min-width: var(--crm-space-4);
+  margin: 0 var(--crm-space-3);
+  background: var(--crm-border-subtle);
+}
+
+.crm-stepper__item--done .crm-stepper__marker {
+  background: var(--crm-green);
+  border-color: var(--crm-green);
+  color: var(--crm-on-dark);
+}
+
+.crm-stepper__item--done .crm-stepper__label {
+  color: var(--crm-text-secondary);
+}
+
+.crm-stepper__item--done .crm-stepper__bar {
+  background: var(--crm-green);
+}
+
+.crm-stepper__item--current .crm-stepper__marker {
+  border-color: var(--crm-green);
+  color: var(--crm-green-dark);
+  box-shadow: var(--crm-focus-ring);
+}
+
+.crm-stepper__item--current .crm-stepper__label {
+  color: var(--crm-text-title);
+  font-weight: var(--crm-weight-semibold);
+}
+
+@media (max-width: 900px) {
+  .crm-stepper__label {
+    display: none;
+  }
+}

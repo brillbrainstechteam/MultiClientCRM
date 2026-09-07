@@ -1,0 +1,96 @@
+.crm-import-wizard__dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-8);
+  border: 2px dashed var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  text-align: center;
+  color: var(--crm-text-secondary);
+}
+
+.crm-import-wizard__dropzone svg {
+  width: 32px;
+  height: 32px;
+  color: var(--crm-text-muted);
+}
+
+.crm-import-wizard__summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-import-wizard__summary ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.crm-import-wizard__summary li {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  list-style: none;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-import-wizard__summary li svg {
+  width: 16px;
+  height: 16px;
+}
+
+.crm-import-wizard__table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  overflow: hidden;
+}
+
+.crm-import-wizard__table-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: var(--crm-space-3) var(--crm-space-4);
+  font-size: var(--crm-font-size-sm);
+  border-top: 1px solid var(--crm-border-subtle);
+}
+
+.crm-import-wizard__table-row:first-child {
+  border-top: none;
+}
+
+.crm-import-wizard__table-row--head {
+  background: var(--crm-surface-sunken);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.crm-import-wizard__result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-8);
+  text-align: center;
+}
+
+.crm-import-wizard__result svg {
+  width: 32px;
+  height: 32px;
+}
+
+.crm-import-wizard__result--success svg {
+  color: var(--crm-success-600);
+}
+
+.crm-import-wizard__result--partial svg {
+  color: var(--crm-warning-600);
+}
+
+.crm-import-wizard__result p {
+  color: var(--crm-text-secondary);
+  max-width: 48ch;
+}

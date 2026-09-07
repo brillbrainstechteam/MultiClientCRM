@@ -1,0 +1,25 @@
+.crm-close-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-close-list__option {
+  display: flex;
+  gap: var(--crm-space-2);
+  align-items: flex-start;
+  padding: var(--crm-space-3);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  cursor: pointer;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-close-list__option input {
+  margin-top: 3px;
+}
+
+.crm-close-list__option strong {
+  color: var(--crm-text-primary);
+}

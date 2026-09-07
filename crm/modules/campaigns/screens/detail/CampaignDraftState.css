@@ -1,0 +1,45 @@
+.crm-camp-draft-state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-camp-draft-state__card {
+  padding: var(--crm-space-5);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-raised);
+  max-width: 560px;
+}
+
+.crm-camp-draft-state__card dl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+  margin: 0;
+}
+
+.crm-camp-draft-state__card dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+  padding-bottom: var(--crm-space-2);
+  border-bottom: 1px solid var(--crm-border-subtle);
+}
+
+.crm-camp-draft-state__card dl > div:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.crm-camp-draft-state__card dt {
+  color: var(--crm-text-muted);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-camp-draft-state__card dd {
+  margin: 0;
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+  text-align: right;
+}

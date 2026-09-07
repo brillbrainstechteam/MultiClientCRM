@@ -1,0 +1,130 @@
+.crm-job {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-5);
+}
+
+.crm-job__status {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+}
+
+.crm-job__status-meta {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+.crm-job__counts {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--crm-space-4);
+}
+
+.crm-job__count {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-card);
+}
+
+.crm-job__count-value {
+  font-size: var(--crm-font-size-2xl);
+  font-weight: var(--crm-weight-bold);
+  color: var(--crm-text-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-job__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--crm-space-4);
+  align-items: start;
+}
+
+.crm-job__panel {
+  padding: var(--crm-space-5);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-card);
+  box-shadow: var(--crm-shadow-sm);
+}
+
+.crm-job__panel-title {
+  font-size: var(--crm-font-size-lg);
+  font-weight: var(--crm-weight-bold);
+  color: var(--crm-text-title);
+  margin-bottom: var(--crm-space-4);
+}
+
+.crm-job__meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-job__meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+}
+
+.crm-job__meta-row dt {
+  color: var(--crm-text-muted);
+}
+
+.crm-job__meta-row dd {
+  margin: 0;
+  font-weight: var(--crm-weight-medium);
+  text-align: right;
+}
+
+.crm-job__rejected {
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  overflow: hidden;
+}
+
+.crm-job__rejected-head,
+.crm-job__rejected-row {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-2) var(--crm-space-4);
+}
+
+.crm-job__rejected-head {
+  background: var(--crm-table-header-band);
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--crm-navy);
+}
+
+.crm-job__rejected-row {
+  border-top: 1px solid var(--crm-rule-soft);
+  color: var(--crm-text-secondary);
+}
+
+.crm-job__rejected-foot {
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border-top: 1px solid var(--crm-rule-soft);
+}
+
+.crm-job__ok {
+  color: var(--crm-green-dark);
+}
+
+@media (max-width: 1120px) {
+  .crm-job__counts {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .crm-job__grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,55 @@
+.crm-provider-shell {
+  min-height: 100vh;
+  background: var(--crm-surface-sunken);
+}
+
+.crm-provider-shell__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--crm-space-4) var(--crm-space-8);
+  background: var(--crm-surface-inverse, #101828);
+  color: #fff;
+}
+
+.crm-provider-shell__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+}
+
+.crm-provider-shell__tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-brand-600, #16a34a);
+  font-weight: var(--crm-weight-bold);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-provider-shell__wordmark {
+  font-weight: var(--crm-weight-semibold);
+}
+
+.crm-provider-shell__badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: var(--crm-font-size-xs, 12px);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.crm-provider-shell__note {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-provider-shell__content {
+  padding: var(--crm-space-8);
+  max-width: 1280px;
+  margin: 0 auto;
+}

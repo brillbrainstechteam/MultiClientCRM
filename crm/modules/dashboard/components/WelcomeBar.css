@@ -1,0 +1,21 @@
+.crm-welcome-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-3) var(--crm-space-4);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-band);
+}
+
+.crm-welcome-bar__greeting {
+  font-size: var(--crm-font-size-row);
+  color: var(--crm-text-primary);
+}
+
+.crm-welcome-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  flex: none;
+}

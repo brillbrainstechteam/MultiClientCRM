@@ -1,0 +1,115 @@
+.crm-composer-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-5);
+}
+
+.crm-composer-fields__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  scroll-margin-top: var(--crm-space-6);
+}
+
+.crm-composer-fields__section.is-focused {
+  outline: 2px solid var(--crm-warning-600);
+  outline-offset: var(--crm-space-2);
+  border-radius: var(--crm-radius-md);
+}
+
+.crm-composer-fields__section h3 {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+  margin: 0;
+}
+
+.crm-composer-fields__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.crm-composer-fields__meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}
+
+.crm-composer-fields__variable-row,
+.crm-composer-fields__button-row {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr auto;
+  gap: var(--crm-space-2);
+  align-items: center;
+}
+
+.crm-composer-fields__variable-tag {
+  font-family: var(--crm-font-mono);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-brand);
+  background: var(--crm-brand-50);
+  border-radius: var(--crm-radius-sm);
+  padding: 4px 8px;
+}
+
+.crm-composer-fields__card {
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  padding: var(--crm-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.crm-composer-fields__card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.crm-composer-fields__dependency {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-4);
+  border: 1px dashed var(--crm-border-strong);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-band);
+}
+
+.crm-composer-fields__dependency p {
+  margin: 0;
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-composer-fields__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--crm-space-3);
+}
+
+.crm-composer-fields__helper {
+  color: var(--crm-text-muted);
+  font-size: var(--crm-font-size-sm);
+  margin: 0;
+}
+
+.crm-composer-fields__catalogue-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crm-composer-fields__catalogue-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-2);
+}

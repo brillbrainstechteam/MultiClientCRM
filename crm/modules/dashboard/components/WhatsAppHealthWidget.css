@@ -1,0 +1,70 @@
+.crm-wa-health__compare {
+  color: var(--crm-text-brand);
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-wa-health__compare:hover {
+  text-decoration: underline;
+}
+
+.crm-wa-health__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+}
+
+.crm-wa-health__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-3);
+  width: 100%;
+  padding: var(--crm-space-2);
+  border-radius: var(--crm-radius-md);
+  text-align: left;
+  transition: background var(--crm-motion-fast);
+}
+
+.crm-wa-health__row:hover {
+  background: var(--crm-surface-hover);
+}
+
+.crm-wa-health__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.crm-wa-health__name {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-title);
+}
+
+.crm-wa-health__number {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}
+
+.crm-wa-health__status {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  flex: none;
+}
+
+.crm-wa-health__quality {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-secondary);
+}
+
+.crm-wa-health__alert-count {
+  padding: 2px var(--crm-space-2);
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-danger-50);
+  color: var(--crm-danger-600);
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-medium);
+}

@@ -1,0 +1,56 @@
+.crm-team-people {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-team-people__toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--crm-space-3);
+  flex-wrap: wrap;
+}
+
+.crm-team-people__toolbar-search {
+  flex: 1 1 220px;
+  min-width: 220px;
+}
+
+.crm-team-people__bulk {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-3) var(--crm-space-4);
+  background: var(--crm-brand-50);
+  border: 1px solid var(--crm-brand-200);
+  border-radius: var(--crm-radius-md);
+}
+
+.crm-team-people__member {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+}
+
+.crm-team-people__member-text {
+  display: flex;
+  flex-direction: column;
+  line-height: var(--crm-line-tight);
+}
+
+.crm-team-people__member-name {
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+}
+
+.crm-team-people__member-title {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}
+
+.crm-team-people__row-actions {
+  display: flex;
+  gap: var(--crm-space-1);
+  justify-content: flex-end;
+}

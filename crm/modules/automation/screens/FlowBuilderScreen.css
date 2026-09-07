@@ -1,0 +1,44 @@
+.crm-aut-builder {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--crm-surface-page);
+}
+
+.crm-aut-builder__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.crm-aut-builder__panel {
+  width: 360px;
+  flex: none;
+  border-left: 1px solid var(--crm-border-subtle);
+  background: var(--crm-surface-raised);
+  overflow-y: auto;
+}
+
+.crm-aut-builder__hint {
+  padding: var(--crm-space-8) var(--crm-space-4);
+  text-align: center;
+  color: var(--crm-text-muted);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-aut-builder__hint p {
+  margin: 0 0 var(--crm-space-1);
+}
+
+.crm-aut-builder__missing {
+  padding: var(--crm-space-8) var(--crm-content-gutter);
+}
+
+.crm-aut-builder__toast {
+  position: fixed;
+  right: var(--crm-space-6);
+  bottom: var(--crm-space-6);
+  z-index: var(--crm-z-toast, 1000);
+}

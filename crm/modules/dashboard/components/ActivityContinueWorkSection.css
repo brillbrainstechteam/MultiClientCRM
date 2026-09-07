@@ -1,0 +1,53 @@
+.crm-activity-feed__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+}
+
+.crm-activity-feed__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-2);
+  border-radius: var(--crm-radius-md);
+  transition: background var(--crm-motion-fast);
+}
+
+.crm-activity-feed__row:hover {
+  background: var(--crm-surface-hover);
+}
+
+.crm-activity-feed__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--crm-surface-band);
+  color: var(--crm-text-brand);
+}
+
+.crm-activity-feed__icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.crm-activity-feed__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.crm-activity-feed__summary {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-title);
+}
+
+.crm-activity-feed__meta {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}

@@ -1,0 +1,46 @@
+.crm-camp-activity-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 640px;
+}
+
+.crm-camp-activity-tab__item {
+  display: flex;
+  gap: var(--crm-space-3);
+}
+
+.crm-camp-activity-tab__dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--crm-brand-600);
+  flex-shrink: 0;
+}
+
+.crm-camp-activity-tab__action {
+  margin: 0;
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+}
+
+.crm-camp-activity-tab__actor {
+  font-weight: var(--crm-weight-regular);
+  color: var(--crm-text-muted);
+}
+
+.crm-camp-activity-tab__detail {
+  margin: 2px 0 0;
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-camp-activity-tab__time {
+  margin: 4px 0 0;
+  color: var(--crm-text-muted);
+  font-size: var(--crm-font-size-xs);
+}

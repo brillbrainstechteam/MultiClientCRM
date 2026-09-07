@@ -1,0 +1,5 @@
+.crm-camp-filter-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

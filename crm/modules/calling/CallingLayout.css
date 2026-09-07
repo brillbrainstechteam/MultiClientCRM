@@ -1,0 +1,10 @@
+.crm-calling-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-6);
+}
+
+.crm-calling-shell__body {
+  display: flex;
+  flex-direction: column;
+}

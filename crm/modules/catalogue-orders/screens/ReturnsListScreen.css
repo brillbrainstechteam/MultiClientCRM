@@ -1,0 +1,21 @@
+.crm-eco-returns {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-eco-returns__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+  flex-wrap: wrap;
+}
+
+.crm-eco-returns__id {
+  font-weight: var(--crm-weight-semibold);
+}
+
+.crm-eco-returns__sub {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-secondary);
+}

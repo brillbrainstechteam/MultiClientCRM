@@ -1,0 +1,62 @@
+.crm-eco-bulkmatch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-eco-bulkmatch__summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--crm-space-3);
+}
+
+.crm-eco-bulkmatch__tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+  padding: var(--crm-space-3);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-sunken);
+  text-align: center;
+}
+
+.crm-eco-bulkmatch__tile-value {
+  font-size: var(--crm-font-size-2xl);
+  font-weight: var(--crm-weight-semibold);
+}
+
+.crm-eco-bulkmatch__tile--success .crm-eco-bulkmatch__tile-value { color: var(--crm-green); }
+.crm-eco-bulkmatch__tile--warning .crm-eco-bulkmatch__tile-value { color: var(--crm-warn); }
+.crm-eco-bulkmatch__tile--danger .crm-eco-bulkmatch__tile-value { color: var(--crm-danger); }
+
+.crm-eco-bulkmatch__tile-label {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-secondary);
+}
+
+.crm-eco-bulkmatch__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--crm-font-size-md);
+}
+
+.crm-eco-bulkmatch__table th,
+.crm-eco-bulkmatch__table td {
+  text-align: left;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border-bottom: 1px solid var(--crm-border-subtle);
+  vertical-align: middle;
+}
+
+.crm-eco-bulkmatch__table tr.is-applied {
+  background: var(--crm-green-tint);
+}
+
+.crm-eco-bulkmatch__table tr.is-discarded {
+  opacity: 0.55;
+}
+
+.crm-eco-bulkmatch__row-actions {
+  display: flex;
+  gap: var(--crm-space-2);
+}

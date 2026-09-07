@@ -1,0 +1,164 @@
+.crm-ov-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  margin-bottom: var(--crm-space-4);
+}
+
+.crm-ov-field-static {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+  margin-bottom: var(--crm-space-4);
+}
+
+.crm-ov-field-static__label {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+.crm-ov-summary {
+  margin-top: var(--crm-space-2);
+  padding: var(--crm-space-3) var(--crm-space-4);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-sunken);
+}
+
+.crm-ov-summary__label {
+  display: block;
+  font-size: var(--crm-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--crm-text-muted);
+  margin-bottom: var(--crm-space-2);
+}
+
+.crm-ov-summary ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+  color: var(--crm-text-secondary);
+}
+
+.crm-ov-muted {
+  color: var(--crm-text-muted);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-ov-banner {
+  display: flex;
+  gap: var(--crm-space-2);
+  align-items: flex-start;
+  margin-top: var(--crm-space-4);
+  padding: var(--crm-space-3) var(--crm-space-4);
+  border-radius: var(--crm-radius-md);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-ov-banner svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-top: 1px;
+}
+
+.crm-ov-banner--info {
+  border: 1px solid var(--crm-info-200);
+  background: var(--crm-info-50);
+  color: var(--crm-navy-2);
+}
+
+.crm-ov-banner--warn {
+  border: 1px solid var(--crm-warn-border);
+  background: var(--crm-warn-tint);
+  color: var(--crm-warn);
+}
+
+.crm-ov-segment {
+  display: inline-flex;
+  margin-bottom: var(--crm-space-4);
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-md);
+  overflow: hidden;
+}
+
+.crm-ov-segment__btn {
+  padding: 6px 14px;
+  border: none;
+  background: var(--crm-card);
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  cursor: pointer;
+}
+
+.crm-ov-segment__btn + .crm-ov-segment__btn {
+  border-left: 1px solid var(--crm-border-strong);
+}
+
+.crm-ov-segment__btn--active {
+  background: var(--crm-green);
+  color: var(--crm-on-dark);
+}
+
+.crm-ov-taglist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+  margin-top: var(--crm-space-4);
+}
+
+.crm-ov-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+  margin-top: var(--crm-space-2);
+}
+
+.crm-ov-datarights {
+  margin-top: var(--crm-space-5);
+  padding-top: var(--crm-space-4);
+  border-top: 1px solid var(--crm-border-subtle);
+}
+
+.crm-ov-datarights__actions {
+  display: flex;
+  gap: var(--crm-space-2);
+  margin-top: var(--crm-space-2);
+}
+
+/* The one gold moment inside the advanced-filter overlay. */
+.crm-save-as-segment {
+  border-color: var(--crm-gold-border);
+  color: var(--crm-gold-dark);
+}
+
+.crm-save-as-segment:hover:not(:disabled) {
+  background: var(--crm-gold-tint);
+}
+
+/* ---- Bulk zone assignment preview -------------------------------------- */
+.crm-zone-split {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: var(--crm-space-3) 0;
+}
+.crm-zone-split__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-2) 0;
+  border-bottom: 1px solid var(--crm-rule-soft);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+.crm-zone-split__row strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--crm-text-title);
+  font-variant-numeric: tabular-nums;
+}

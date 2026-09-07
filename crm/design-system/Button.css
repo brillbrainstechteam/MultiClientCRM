@@ -1,0 +1,95 @@
+.crm-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--crm-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--crm-radius-md);
+  font-weight: var(--crm-weight-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--crm-motion-fast), border-color var(--crm-motion-fast),
+    color var(--crm-motion-fast);
+}
+
+.crm-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.crm-button--full {
+  width: 100%;
+}
+
+/* ---- Sizes -------------------------------------------------------------- */
+.crm-button--sm {
+  height: 28px;
+  padding: 0 var(--crm-space-3);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-button--md {
+  height: 34px;
+  padding: 0 var(--crm-space-4);
+  font-size: var(--crm-font-size-md);
+}
+
+.crm-button--lg {
+  height: 40px;
+  padding: 0 var(--crm-space-5);
+  font-size: var(--crm-font-size-lg);
+}
+
+/* ---- Variants ----------------------------------------------------------- */
+.crm-button--primary {
+  background: var(--crm-brand-600);
+  border-color: var(--crm-brand-600);
+  color: var(--crm-text-inverse);
+}
+
+.crm-button--primary:hover:not(:disabled) {
+  background: var(--crm-brand-700);
+  border-color: var(--crm-brand-700);
+}
+
+.crm-button--secondary {
+  background: var(--crm-surface-raised);
+  border-color: var(--crm-border-strong);
+  color: var(--crm-text-primary);
+}
+
+.crm-button--secondary:hover:not(:disabled) {
+  background: var(--crm-surface-hover);
+}
+
+.crm-button--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--crm-text-secondary);
+}
+
+.crm-button--ghost:hover:not(:disabled) {
+  background: var(--crm-surface-hover);
+  color: var(--crm-text-primary);
+}
+
+.crm-button--danger {
+  background: var(--crm-danger-600);
+  border-color: var(--crm-danger-600);
+  color: var(--crm-text-inverse);
+}
+
+.crm-button--danger:hover:not(:disabled) {
+  filter: brightness(0.94);
+}
+
+.crm-button__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.crm-button__icon svg {
+  width: 15px;
+  height: 15px;
+}

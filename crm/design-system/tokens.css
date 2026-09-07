@@ -1,0 +1,170 @@
+/*
+ * TalkTrack design tokens — colour system per the finalized brand spec.
+ *
+ * Role rules baked into the semantic tokens:
+ *   Green  = the product   → primary actions, active nav pill, avatars, links, positive status
+ *   Navy   = structure/brand → sidebar background, page titles, table-header text, endorsement
+ *   Gold   = rationed highlight → logo tile, tier badges, "Save as segment", one key figure
+ *   Cream/white = the ground → cream canvas, white cards
+ *
+ * Components read only the semantic tokens; the raw palette below feeds them.
+ */
+
+:root {
+  /* ---- Raw palette ----------------------------------------------------- */
+  --crm-navy: #0e2438;
+  --crm-navy-2: #12304c;
+  --crm-navy-line: #1e3a57;
+
+  --crm-green: #1b7a6b;
+  --crm-green-dark: #14655a;
+  --crm-green-tint: #e7f3f0;
+  --crm-green-border: #a9d5cb;
+
+  --crm-gold: #c9a227;
+  --crm-gold-dark: #9c7d19;
+  --crm-gold-tint: #fbf4de;
+  --crm-gold-border: #e7d59a;
+
+  --crm-canvas: #fcfbf9;
+  --crm-cream: #fbf8f2;
+  --crm-card: #ffffff;
+  --crm-table-header-band: #f6f3ec;
+  --crm-rule: #e7e2d6;
+  --crm-rule-soft: #efebe1;
+
+  --crm-ink: #12263a;
+  --crm-ink-2: #4a5d6e;
+  --crm-muted: #8c8578;
+  --crm-on-dark: #ffffff;
+  --crm-on-dark-muted: #93a9be;
+
+  --crm-danger: #b0453f;
+  --crm-danger-tint: #fceeed;
+  --crm-danger-border: #ebb7b4;
+  --crm-warn: #b8892b;
+  --crm-warn-tint: #fcf4e4;
+  --crm-warn-border: #ebd199;
+
+  /* ---- Brand scale (mapped to GREEN — the product accent) -------------- */
+  --crm-brand-50: var(--crm-green-tint);
+  --crm-brand-100: #d3e9e3;
+  --crm-brand-200: var(--crm-green-border);
+  --crm-brand-400: #2f9e8b;
+  --crm-brand-600: var(--crm-green);
+  --crm-brand-700: var(--crm-green-dark);
+  --crm-brand-900: #0e4c43;
+
+  /* ---- Status families ------------------------------------------------- */
+  --crm-success-50: var(--crm-green-tint);
+  --crm-success-200: var(--crm-green-border);
+  --crm-success-600: var(--crm-green-dark);
+
+  --crm-warning-50: var(--crm-warn-tint);
+  --crm-warning-200: var(--crm-warn-border);
+  --crm-warning-600: var(--crm-warn);
+
+  --crm-danger-50: var(--crm-danger-tint);
+  --crm-danger-200: var(--crm-danger-border);
+  --crm-danger-600: var(--crm-danger);
+
+  /* Info has no dedicated hue in the palette — use navy so it stays on-brand. */
+  --crm-info-50: #e9eef3;
+  --crm-info-200: #b9c8d6;
+  --crm-info-600: var(--crm-navy-2);
+
+  --crm-gold-50: var(--crm-gold-tint);
+  --crm-gold-200: var(--crm-gold-border);
+  --crm-gold-600: var(--crm-gold-dark);
+
+  /* ---- Semantic surfaces ---------------------------------------------- */
+  --crm-surface-page: var(--crm-canvas);
+  --crm-surface-raised: var(--crm-card);
+  --crm-surface-sunken: var(--crm-cream);
+  --crm-surface-band: var(--crm-table-header-band);
+  --crm-surface-inverse: var(--crm-navy);
+  --crm-surface-hover: var(--crm-table-header-band);
+
+  --crm-border-subtle: var(--crm-rule-soft);
+  --crm-border-strong: var(--crm-rule);
+  --crm-border-focus: var(--crm-green);
+
+  --crm-text-primary: var(--crm-ink);
+  --crm-text-secondary: var(--crm-ink-2);
+  --crm-text-muted: var(--crm-muted);
+  --crm-text-inverse: var(--crm-on-dark);
+  --crm-text-brand: var(--crm-green-dark);
+  --crm-text-title: var(--crm-navy);
+
+  /* ---- Typography ------------------------------------------------------ */
+  --crm-font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial,
+    sans-serif;
+  /* Brand marks only: the product wordmark and the BrillBrains endorsement. */
+  --crm-font-brand: 'Montserrat', 'Segoe UI', system-ui, sans-serif;
+  --crm-font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+
+  --crm-font-size-xs: 11px; /* caption / table header */
+  --crm-font-size-sm: 12px; /* label */
+  --crm-font-size-md: 13px; /* body */
+  --crm-font-size-row: 14px; /* row primary */
+  --crm-font-size-lg: 15px; /* section header */
+  --crm-font-size-xl: 18px;
+  --crm-font-size-2xl: 20px;
+  --crm-font-size-title: 24px; /* page title */
+  --crm-font-size-3xl: 28px;
+
+  --crm-line-tight: 1.2;
+  --crm-line-normal: 1.45;
+  --crm-line-relaxed: 1.6;
+
+  --crm-weight-regular: 400;
+  --crm-weight-medium: 500;
+  --crm-weight-semibold: 600;
+  --crm-weight-bold: 700;
+
+  /* ---- Spacing (4px base) ---------------------------------------------- */
+  --crm-space-1: 4px;
+  --crm-space-2: 8px;
+  --crm-space-3: 12px;
+  --crm-space-4: 16px;
+  --crm-space-5: 20px;
+  --crm-space-6: 24px;
+  --crm-space-8: 32px;
+  --crm-space-10: 40px;
+  --crm-space-12: 48px;
+  --crm-space-16: 64px;
+
+  /* ---- Radius ---------------------------------------------------------- */
+  --crm-radius-sm: 4px;
+  --crm-radius-md: 6px;
+  --crm-radius-lg: 10px;
+  --crm-radius-xl: 14px;
+  --crm-radius-pill: 999px;
+
+  /* ---- Elevation ------------------------------------------------------- */
+  --crm-shadow-sm: 0 1px 2px rgba(14, 36, 56, 0.06);
+  --crm-shadow-md: 0 2px 10px rgba(14, 36, 56, 0.08);
+  --crm-shadow-lg: 0 16px 40px rgba(14, 36, 56, 0.18);
+
+  /* ---- Layout ---------------------------------------------------------- */
+  --crm-sidebar-width: 240px;
+  --crm-sidebar-width-collapsed: 64px;
+  --crm-topbar-height: 56px;
+  --crm-scopebar-height: 48px;
+  --crm-page-max-width: 1440px;
+  --crm-content-gutter: var(--crm-space-6);
+
+  /* ---- Motion ---------------------------------------------------------- */
+  --crm-motion-fast: 120ms ease;
+  --crm-motion-base: 180ms ease;
+
+  /* ---- Focus ring ------------------------------------------------------ */
+  --crm-focus-ring: 0 0 0 3px rgba(27, 122, 107, 0.22);
+
+  /* ---- Z-index scale --------------------------------------------------- */
+  --crm-z-sticky: 100;
+  --crm-z-popover: 200;
+  --crm-z-drawer: 300;
+  --crm-z-modal: 400;
+  --crm-z-toast: 500;
+}

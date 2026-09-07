@@ -1,0 +1,202 @@
+.crm-eco-itemdetail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-eco-itemdetail__hero {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: var(--crm-space-4);
+}
+
+.crm-eco-itemdetail__media {
+  aspect-ratio: 1;
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-sunken);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.crm-eco-itemdetail__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.crm-eco-itemdetail__media-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--crm-space-1);
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-muted);
+}
+
+.crm-eco-itemdetail__summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.crm-eco-itemdetail__path {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-eco-itemdetail__caption {
+  color: var(--crm-text-primary);
+}
+
+.crm-eco-itemdetail__chips {
+  display: flex;
+  gap: var(--crm-space-1);
+  flex-wrap: wrap;
+}
+
+.crm-eco-itemdetail__branches {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-eco-itemdetail__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-eco-itemdetail__deferred {
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-eco-itemdetail__attrgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--crm-space-3);
+}
+
+.crm-eco-itemdetail__attrgrid-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+  padding: var(--crm-space-3);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+}
+
+.crm-eco-itemdetail__attrgrid-row dt {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-muted);
+  text-transform: uppercase;
+}
+
+.crm-eco-itemdetail__attrgrid-row dd {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  flex-wrap: wrap;
+  color: var(--crm-text-primary);
+}
+
+.crm-eco-itemdetail__media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--crm-space-3);
+}
+
+.crm-eco-itemdetail__media-tile {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--crm-radius-md);
+  overflow: hidden;
+  background: var(--crm-surface-sunken);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.crm-eco-itemdetail__media-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.crm-eco-itemdetail__media-tile .crm-badge {
+  position: absolute;
+  top: var(--crm-space-1);
+  left: var(--crm-space-1);
+}
+
+.crm-eco-itemdetail__variant-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--crm-font-size-md);
+}
+
+.crm-eco-itemdetail__variant-table caption {
+  text-align: left;
+  font-weight: var(--crm-weight-semibold);
+  padding-bottom: var(--crm-space-2);
+}
+
+.crm-eco-itemdetail__variant-table th,
+.crm-eco-itemdetail__variant-table td {
+  text-align: left;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border-bottom: 1px solid var(--crm-border-subtle);
+}
+
+.crm-eco-itemdetail__timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  list-style: none;
+}
+
+.crm-eco-itemdetail__timeline li {
+  display: grid;
+  grid-template-columns: 180px 200px 1fr auto;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-2) 0;
+  border-bottom: 1px solid var(--crm-border-subtle);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-eco-itemdetail__timeline-date {
+  color: var(--crm-muted);
+}
+
+.crm-eco-itemdetail__timeline-action {
+  font-weight: var(--crm-weight-semibold);
+}
+
+.crm-eco-itemdetail__timeline-actor {
+  color: var(--crm-text-secondary);
+  text-align: right;
+}
+
+.crm-eco-itemdetail__edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-eco-itemdetail__edit-hint {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-eco-itemdetail__edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--crm-space-2);
+}
+
+@media (max-width: 720px) {
+  .crm-eco-itemdetail__hero {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,68 @@
+.crm-plan-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  padding: var(--crm-space-5);
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-raised);
+}
+
+.crm-plan-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.crm-plan-card__name {
+  font-size: var(--crm-font-size-lg);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.crm-plan-card__cycle {
+  color: var(--crm-text-muted);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-plan-card__facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-4) 0;
+  border-top: 1px solid var(--crm-border-subtle);
+  border-bottom: 1px solid var(--crm-border-subtle);
+}
+
+.crm-plan-card__facts dt {
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-muted);
+  text-transform: uppercase;
+}
+
+.crm-plan-card__facts dd {
+  margin-top: 2px;
+  color: var(--crm-text-primary);
+}
+
+.crm-plan-card__amount-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--crm-space-1) 0;
+  color: var(--crm-text-secondary);
+}
+
+.crm-plan-card__amount-row--total {
+  padding-top: var(--crm-space-2);
+  margin-top: var(--crm-space-1);
+  border-top: 1px solid var(--crm-border-subtle);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+  font-size: var(--crm-font-size-lg);
+}
+
+.crm-plan-card__note {
+  color: var(--crm-text-muted);
+  font-size: var(--crm-font-size-sm);
+}

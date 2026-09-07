@@ -1,0 +1,95 @@
+.crm-segd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-6);
+}
+
+.crm-segd__summary {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--crm-space-4);
+  padding: var(--crm-space-5);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-card);
+  box-shadow: var(--crm-shadow-sm);
+}
+
+.crm-segd__summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+}
+
+.crm-segd__summary-label {
+  font-size: var(--crm-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--crm-text-muted);
+}
+
+.crm-segd__summary-value {
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+}
+
+.crm-segd__bignum {
+  font-size: var(--crm-font-size-2xl);
+  font-weight: var(--crm-weight-bold);
+  color: var(--crm-text-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-segd__conditions,
+.crm-segd__contacts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-segd__section-title {
+  font-size: var(--crm-font-size-lg);
+  font-weight: var(--crm-weight-bold);
+  color: var(--crm-text-title);
+}
+
+.crm-segd__groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-segd__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-3);
+  border: 1px dashed var(--crm-border-strong);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-sunken);
+}
+
+.crm-segd__group-joiner {
+  align-self: flex-start;
+  padding: 1px 8px;
+  border-radius: var(--crm-radius-sm);
+  background: var(--crm-navy);
+  color: var(--crm-on-dark);
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-bold);
+}
+
+.crm-segd__muted {
+  color: var(--crm-text-muted);
+}
+
+.crm-segd__note {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+@media (max-width: 1120px) {
+  .crm-segd__summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

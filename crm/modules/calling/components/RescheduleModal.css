@@ -1,0 +1,14 @@
+.crm-reschedule {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-reschedule__row {
+  display: flex;
+  gap: var(--crm-space-4);
+}
+
+.crm-reschedule__row > * {
+  flex: 1;
+}

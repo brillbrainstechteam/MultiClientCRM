@@ -1,0 +1,27 @@
+.crm-aut-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-2) var(--crm-space-4);
+  border-bottom: 1px solid var(--crm-border-subtle);
+  background: var(--crm-surface-raised);
+  flex-wrap: wrap;
+}
+
+.crm-aut-topbar__left {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  min-width: 0;
+}
+
+.crm-aut-topbar__right {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-1);
+}
+
+.crm-aut-topbar__name {
+  width: 220px;
+}

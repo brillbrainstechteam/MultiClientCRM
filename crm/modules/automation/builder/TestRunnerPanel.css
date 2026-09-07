@@ -1,0 +1,62 @@
+.crm-aut-test__trace {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.crm-aut-test__step {
+  border-left: 2px solid var(--crm-green-border);
+  padding-left: var(--crm-space-2);
+}
+
+.crm-aut-test__step-node {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-brand);
+  cursor: pointer;
+  text-align: left;
+}
+
+.crm-aut-test__step-detail {
+  margin: 2px 0 0;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-secondary);
+}
+
+.crm-aut-test__step-answer {
+  margin: 2px 0 0;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+  font-style: italic;
+}
+
+.crm-aut-test__result {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border-radius: var(--crm-radius-md);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-aut-test__result--complete {
+  background: var(--crm-green-tint);
+  color: var(--crm-text-brand);
+}
+
+.crm-aut-test__result--failed {
+  background: var(--crm-danger-50);
+  color: var(--crm-danger-600);
+}
+
+.crm-aut-test__update {
+  margin: 0;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}

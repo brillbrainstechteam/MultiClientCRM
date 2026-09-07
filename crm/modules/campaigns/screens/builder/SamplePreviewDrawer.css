@@ -1,0 +1,30 @@
+.crm-camp-sample-preview__picker {
+  margin-bottom: var(--crm-space-4);
+}
+
+.crm-camp-sample-preview__resolved {
+  list-style: none;
+  margin: var(--crm-space-4) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.crm-camp-sample-preview__resolved li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--crm-space-2);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-camp-sample-preview__value {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  color: var(--crm-text-primary);
+}
+
+.crm-camp-sample-preview__empty {
+  color: var(--crm-text-muted);
+}

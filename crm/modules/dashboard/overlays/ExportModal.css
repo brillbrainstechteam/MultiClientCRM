@@ -1,0 +1,31 @@
+.crm-export-modal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-export-modal__scope {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-export-modal__section-title {
+  margin-bottom: var(--crm-space-1);
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.crm-export-modal__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-primary);
+  padding-left: var(--crm-space-4);
+  list-style: disc;
+}
+
+.crm-export-modal__list--muted {
+  color: var(--crm-text-muted);
+}

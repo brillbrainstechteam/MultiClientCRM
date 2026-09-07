@@ -1,0 +1,59 @@
+.crm-todays-work {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+}
+
+.crm-todays-work__item {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+  width: 100%;
+  padding: var(--crm-space-3);
+  border: none;
+  border-radius: var(--crm-radius-md);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--crm-motion-fast);
+}
+
+.crm-todays-work__item:hover {
+  background: var(--crm-surface-band);
+}
+
+.crm-todays-work__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-green-tint);
+  color: var(--crm-green-dark);
+}
+.crm-todays-work__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.crm-todays-work__label {
+  flex: 1;
+  min-width: 0;
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+}
+
+.crm-todays-work__count {
+  font-size: var(--crm-font-size-lg);
+  font-weight: var(--crm-weight-bold);
+  color: var(--crm-text-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-todays-work__chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--crm-text-muted);
+}

@@ -1,0 +1,41 @@
+.crm-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--crm-space-1);
+  height: 26px;
+  padding: 0 var(--crm-space-1) 0 var(--crm-space-3);
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-green-tint);
+  color: var(--crm-green-dark);
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-filter-chip__field {
+  color: var(--crm-green-dark);
+  opacity: 0.75;
+}
+
+.crm-filter-chip__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 2px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--crm-green-dark);
+  cursor: pointer;
+  transition: background var(--crm-motion-fast);
+}
+
+.crm-filter-chip__remove:hover {
+  background: rgba(20, 101, 90, 0.15);
+}
+
+.crm-filter-chip__remove svg {
+  width: 12px;
+  height: 12px;
+}

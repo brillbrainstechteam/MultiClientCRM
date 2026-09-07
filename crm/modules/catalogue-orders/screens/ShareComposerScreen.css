@@ -1,0 +1,67 @@
+.crm-eco-share {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  max-width: 720px;
+}
+
+.crm-eco-share__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.crm-eco-share__item {
+  display: flex;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-2);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+}
+
+.crm-eco-share__thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--crm-radius-sm);
+  background: var(--crm-surface-sunken);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  color: var(--crm-muted);
+}
+
+.crm-eco-share__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.crm-eco-share__item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.crm-eco-share__item-title {
+  font-weight: var(--crm-weight-semibold);
+}
+
+.crm-eco-share__item-caption {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-eco-share__message {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  align-items: flex-start;
+}
+
+.crm-eco-share__actions {
+  display: flex;
+  gap: var(--crm-space-2);
+  flex-wrap: wrap;
+}

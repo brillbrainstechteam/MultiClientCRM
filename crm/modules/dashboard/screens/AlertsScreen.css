@@ -1,0 +1,24 @@
+.crm-alerts-screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  padding-bottom: var(--crm-space-10);
+}
+
+.crm-alerts-screen__filters {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--crm-space-3);
+  flex-wrap: wrap;
+}
+
+.crm-alerts-screen__meta {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}
+
+.crm-alerts-screen__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--crm-space-1);
+}

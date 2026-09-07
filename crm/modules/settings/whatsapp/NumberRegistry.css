@@ -1,0 +1,29 @@
+.crm-number-registry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-5);
+}
+
+.crm-number-registry__cell-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.crm-number-registry__name {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.crm-number-registry__phone,
+.crm-number-registry__muted {
+  color: var(--crm-text-muted);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-number-registry__row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--crm-space-2);
+}

@@ -1,0 +1,70 @@
+.crm-numhealth__scroll {
+  overflow-x: auto;
+}
+
+.crm-numhealth {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--crm-font-size-md);
+}
+
+.crm-numhealth thead th {
+  padding: var(--crm-space-2) var(--crm-space-3);
+  text-align: left;
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--crm-navy);
+  border-bottom: 1px solid var(--crm-border-strong);
+  white-space: nowrap;
+}
+
+.crm-numhealth td {
+  padding: var(--crm-space-3);
+  border-top: 1px solid var(--crm-rule-soft);
+  color: var(--crm-text-secondary);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.crm-numhealth .crm-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-numhealth__row {
+  cursor: pointer;
+  transition: background var(--crm-motion-fast);
+}
+.crm-numhealth__row:hover,
+.crm-numhealth__row:focus-visible {
+  background: var(--crm-surface-band);
+  outline: none;
+}
+
+.crm-numhealth__id {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.crm-numhealth__name {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary);
+}
+.crm-numhealth__digits {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}
+
+.crm-numhealth__compare {
+  border: none;
+  background: transparent;
+  color: var(--crm-text-brand);
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  cursor: pointer;
+}
+.crm-numhealth__compare:hover {
+  text-decoration: underline;
+}

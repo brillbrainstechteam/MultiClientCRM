@@ -1,0 +1,88 @@
+.crm-table__scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-card);
+}
+
+.crm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--crm-font-size-md);
+}
+
+.crm-table__cell {
+  padding: var(--crm-space-3) var(--crm-space-4);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.crm-table__cell--right {
+  text-align: right;
+}
+
+.crm-table__cell--center {
+  text-align: center;
+}
+
+.crm-table__cell--check {
+  width: 44px;
+  padding-right: 0;
+}
+
+/* Column-header row: navy text on the table-header band. */
+.crm-table thead tr {
+  background: var(--crm-table-header-band);
+}
+
+.crm-table__header-cell {
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--crm-navy);
+  white-space: nowrap;
+  border-bottom: 1px solid var(--crm-border-strong);
+}
+
+.crm-table__row {
+  border-top: 1px solid var(--crm-rule-soft);
+  transition: background var(--crm-motion-fast);
+}
+
+.crm-table tbody tr:first-child {
+  border-top: none;
+}
+
+.crm-table__row--clickable {
+  cursor: pointer;
+}
+
+.crm-table__row--clickable:hover {
+  background: var(--crm-surface-band);
+}
+
+.crm-table__row--selected {
+  background: var(--crm-green-tint);
+}
+
+.crm-table__row--selected:hover {
+  background: var(--crm-green-tint);
+}
+
+.crm-table__row .crm-table__cell {
+  color: var(--crm-text-secondary);
+}
+
+.crm-table--head-only {
+  border: 1px solid var(--crm-border-subtle);
+  border-bottom: none;
+  border-radius: var(--crm-radius-lg) var(--crm-radius-lg) 0 0;
+}
+
+.crm-table__empty-wrap > .crm-state {
+  border-top: none;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}

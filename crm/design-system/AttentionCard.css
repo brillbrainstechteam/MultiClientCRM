@@ -1,0 +1,102 @@
+.crm-attention {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-3);
+  border: 1px solid var(--crm-border-subtle);
+  border-left-width: 3px;
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-card);
+  box-shadow: var(--crm-shadow-sm);
+  transition: box-shadow var(--crm-motion-fast), border-color var(--crm-motion-fast);
+}
+
+.crm-attention:hover {
+  box-shadow: var(--crm-shadow-md);
+}
+
+.crm-attention--warn {
+  border-left-color: var(--crm-warn);
+}
+
+.crm-attention--danger {
+  border-left-color: var(--crm-danger);
+}
+
+.crm-attention--neutral {
+  border-left-color: var(--crm-border-strong);
+}
+
+.crm-attention__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--crm-radius-md);
+}
+
+.crm-attention__icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.crm-attention--warn .crm-attention__icon {
+  background: var(--crm-warn-tint);
+  color: var(--crm-warn);
+}
+
+.crm-attention--danger .crm-attention__icon {
+  background: var(--crm-danger-tint);
+  color: var(--crm-danger);
+}
+
+.crm-attention--neutral .crm-attention__icon {
+  background: var(--crm-surface-band);
+  color: var(--crm-text-secondary);
+}
+
+.crm-attention__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.crm-attention__title {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.crm-attention__count {
+  padding: 0 8px;
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-surface-band);
+  font-size: var(--crm-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-attention__description {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+.crm-attention__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  color: var(--crm-text-brand);
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-attention__action svg {
+  width: 15px;
+  height: 15px;
+}

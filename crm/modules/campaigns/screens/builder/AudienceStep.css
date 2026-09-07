@@ -1,0 +1,58 @@
+.crm-camp-audience-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-5);
+  max-width: 640px;
+}
+
+.crm-camp-audience-step__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.crm-camp-audience-step__section h3 {
+  margin: 0 0 var(--crm-space-1);
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary);
+}
+
+.crm-camp-audience-step__group-label {
+  margin: var(--crm-space-2) 0 0;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.crm-camp-audience-step__source-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-raised);
+}
+
+.crm-camp-audience-step__source-row--locked {
+  color: var(--crm-text-muted);
+}
+
+.crm-camp-audience-step__count {
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+}
+
+.crm-camp-audience-step__hint {
+  margin: 0;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+.crm-camp-audience-step__actions {
+  display: flex;
+  gap: var(--crm-space-2);
+  margin-top: var(--crm-space-2);
+}

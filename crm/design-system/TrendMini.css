@@ -1,0 +1,71 @@
+.crm-trend-mini {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+  min-width: 0;
+}
+
+.crm-trend-mini__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-2);
+}
+
+.crm-trend-mini__label {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-secondary);
+}
+
+.crm-trend-mini__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-trend-mini__delta svg {
+  width: 12px;
+  height: 12px;
+}
+
+.crm-trend-mini__delta--up {
+  color: var(--crm-success-600);
+}
+
+.crm-trend-mini__delta--down {
+  color: var(--crm-danger-600);
+}
+
+.crm-trend-mini__value {
+  font-size: var(--crm-font-size-xl);
+  font-weight: var(--crm-weight-bold);
+  color: var(--crm-text-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-trend-mini__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 32px;
+}
+
+.crm-trend-mini__bar {
+  flex: 1;
+  min-width: 4px;
+  border-radius: var(--crm-radius-sm) var(--crm-radius-sm) 0 0;
+  background: var(--crm-brand-200);
+}
+
+.crm-trend-mini__bar:last-child {
+  background: var(--crm-brand-600);
+}
+
+.crm-trend-mini__meta {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}

@@ -1,0 +1,53 @@
+.crm-branch-table__scroll {
+  overflow-x: auto;
+}
+
+.crm-branch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--crm-font-size-md);
+}
+
+.crm-branch-table thead th {
+  padding: var(--crm-space-2) var(--crm-space-3);
+  text-align: left;
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--crm-navy);
+  border-bottom: 1px solid var(--crm-border-strong);
+  white-space: nowrap;
+}
+
+.crm-branch-table td {
+  padding: var(--crm-space-3);
+  border-top: 1px solid var(--crm-rule-soft);
+  color: var(--crm-text-secondary);
+  white-space: nowrap;
+}
+
+.crm-branch-table .crm-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-branch-table__row {
+  cursor: pointer;
+  transition: background var(--crm-motion-fast);
+}
+.crm-branch-table__row:hover,
+.crm-branch-table__row:focus-visible {
+  background: var(--crm-surface-band);
+  outline: none;
+}
+
+.crm-branch-table__name {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary) !important;
+}
+
+.crm-branch-table__rate {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary) !important;
+}

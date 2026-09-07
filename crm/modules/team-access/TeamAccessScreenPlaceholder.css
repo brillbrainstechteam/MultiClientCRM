@@ -1,0 +1,11 @@
+.crm-team-screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-6);
+}
+
+.crm-team-screen__ids {
+  display: flex;
+  gap: var(--crm-space-2);
+  align-items: center;
+}

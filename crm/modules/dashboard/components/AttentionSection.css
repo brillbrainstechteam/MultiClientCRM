@@ -1,0 +1,46 @@
+.crm-attention-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--crm-space-2);
+}
+
+.crm-attention-positive {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-success-200);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-success-50);
+}
+
+.crm-attention-positive__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--crm-card);
+  color: var(--crm-success-600);
+}
+
+.crm-attention-positive__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.crm-attention-positive__title {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.crm-attention-positive__description {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-attention-positive > div {
+  flex: 1;
+}

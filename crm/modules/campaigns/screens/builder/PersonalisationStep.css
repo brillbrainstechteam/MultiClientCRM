@@ -1,0 +1,46 @@
+.crm-camp-personalisation-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  max-width: 720px;
+}
+
+.crm-camp-personalisation-step__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-3);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-raised);
+}
+
+.crm-camp-personalisation-step__card-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--crm-space-2);
+}
+
+.crm-camp-personalisation-step__placeholder {
+  font-family: var(--crm-font-mono, monospace);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary);
+}
+
+.crm-camp-personalisation-step__description {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+.crm-camp-personalisation-step__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--crm-space-3);
+  align-items: flex-end;
+}
+
+.crm-camp-personalisation-step__issue {
+  margin: 0;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}

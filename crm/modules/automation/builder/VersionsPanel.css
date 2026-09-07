@@ -1,0 +1,54 @@
+.crm-aut-versions__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-aut-versions__item {
+  padding: var(--crm-space-3);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+}
+
+.crm-aut-versions__item-head {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  color: var(--crm-text-brand);
+}
+
+.crm-aut-versions__label {
+  margin: 0;
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary);
+  flex: 1;
+}
+
+.crm-aut-versions__summary {
+  margin: var(--crm-space-1) 0 0;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-aut-versions__meta {
+  margin: var(--crm-space-1) 0 0;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}
+
+.crm-aut-versions__rollback {
+  margin-top: var(--crm-space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: var(--crm-text-brand);
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-medium);
+  cursor: pointer;
+  padding: 0;
+}

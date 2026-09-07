@@ -1,0 +1,105 @@
+.crm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: var(--crm-z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--crm-space-6);
+}
+
+.crm-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  background: rgba(14, 36, 56, 0.42);
+  cursor: pointer;
+  animation: crm-fade-in var(--crm-motion-base);
+}
+
+.crm-modal__panel {
+  position: relative;
+  width: 460px;
+  max-width: 100%;
+  background: var(--crm-card);
+  border-radius: var(--crm-radius-lg);
+  box-shadow: var(--crm-shadow-lg);
+  animation: crm-pop-in var(--crm-motion-base);
+}
+
+.crm-modal__panel--lg {
+  width: 760px;
+}
+
+.crm-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+  padding: var(--crm-space-4) var(--crm-space-5);
+  border-bottom: 1px solid var(--crm-border-subtle);
+}
+
+.crm-modal__title {
+  font-size: var(--crm-font-size-lg);
+  font-weight: var(--crm-weight-bold);
+  color: var(--crm-text-title);
+}
+
+.crm-modal__body {
+  padding: var(--crm-space-5);
+}
+
+.crm-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-4) var(--crm-space-5);
+  border-top: 1px solid var(--crm-border-subtle);
+}
+
+.crm-confirm {
+  display: flex;
+  gap: var(--crm-space-3);
+}
+
+.crm-confirm__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--crm-danger-tint);
+  color: var(--crm-danger);
+}
+
+.crm-confirm__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.crm-confirm__message {
+  color: var(--crm-text-secondary);
+}
+
+@keyframes crm-pop-in {
+  from {
+    transform: scale(0.97);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crm-modal__panel,
+  .crm-modal__backdrop {
+    animation: none;
+  }
+}

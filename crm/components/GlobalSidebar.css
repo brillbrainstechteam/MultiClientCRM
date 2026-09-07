@@ -1,0 +1,115 @@
+.crm-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: var(--crm-sidebar-width);
+  flex: none;
+  height: 100vh;
+  background: var(--crm-navy);
+  color: var(--crm-on-dark);
+}
+
+.crm-sidebar__scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--crm-space-4) var(--crm-space-3);
+}
+
+.crm-sidebar__group + .crm-sidebar__group {
+  margin-top: var(--crm-space-5);
+}
+
+.crm-sidebar__group-label {
+  padding: 0 var(--crm-space-3);
+  margin-bottom: var(--crm-space-2);
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-bold);
+  color: var(--crm-on-dark-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.crm-sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+  padding: 0 var(--crm-space-3);
+  height: 36px;
+  border-radius: var(--crm-radius-md);
+  color: var(--crm-on-dark-muted);
+  font-size: var(--crm-font-size-row);
+  font-weight: var(--crm-weight-medium);
+  transition: background var(--crm-motion-fast), color var(--crm-motion-fast);
+}
+
+.crm-sidebar__link:hover {
+  background: var(--crm-navy-line);
+  color: var(--crm-on-dark);
+}
+
+/* Active nav pill: green fill, white text — the product signal. */
+.crm-sidebar__link--active,
+.crm-sidebar__link--active:hover {
+  background: var(--crm-green);
+  color: var(--crm-on-dark);
+}
+
+.crm-sidebar__icon {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+
+.crm-sidebar__label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-sidebar__link--locked {
+  opacity: 0.55;
+}
+
+.crm-sidebar__lock {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  color: var(--crm-on-dark-muted);
+}
+
+.crm-sidebar__pending {
+  color: var(--crm-on-dark-muted);
+  font-size: var(--crm-font-size-lg);
+  line-height: 1;
+}
+
+.crm-sidebar__link--active .crm-sidebar__pending {
+  color: var(--crm-on-dark);
+}
+
+.crm-sidebar__footnote {
+  padding: var(--crm-space-3) var(--crm-space-5);
+  border-top: 1px solid var(--crm-navy-line);
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-on-dark-muted);
+}
+
+.crm-sidebar__endorsement {
+  padding: var(--crm-space-3) var(--crm-space-5) var(--crm-space-4);
+  border-top: 1px solid var(--crm-navy-line);
+}
+
+.crm-sidebar__endorsement-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--crm-on-dark-muted);
+}
+
+.crm-sidebar__endorsement-name {
+  font-family: var(--crm-font-brand);
+  font-weight: var(--crm-weight-semibold);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-on-dark);
+}

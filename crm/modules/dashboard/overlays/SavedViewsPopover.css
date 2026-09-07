@@ -1,0 +1,42 @@
+.crm-saved-views__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.crm-saved-views__row {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  width: 100%;
+  padding: var(--crm-space-2);
+  border-radius: var(--crm-radius-md);
+  text-align: left;
+  transition: background var(--crm-motion-fast);
+}
+
+.crm-saved-views__row:hover {
+  background: var(--crm-surface-hover);
+}
+
+.crm-saved-views__check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--crm-text-brand);
+}
+
+.crm-saved-views__check svg {
+  width: 14px;
+  height: 14px;
+}
+
+.crm-saved-views__label {
+  flex: 1;
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-title);
+}

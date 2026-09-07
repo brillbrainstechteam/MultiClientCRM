@@ -1,0 +1,17 @@
+.crm-eco-price {
+  font-weight: 600;
+  color: var(--crm-text-primary, #1a1a1a);
+}
+
+.crm-eco-price--muted {
+  font-weight: 500;
+  color: var(--crm-text-secondary, #6b7280);
+  font-style: italic;
+}
+
+.crm-eco-price__compare {
+  font-weight: 400;
+  color: var(--crm-text-secondary, #6b7280);
+  text-decoration: line-through;
+  margin-left: 4px;
+}

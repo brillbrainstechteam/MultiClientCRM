@@ -1,0 +1,274 @@
+.crm-land {
+  min-height: 100vh;
+  background: var(--crm-canvas);
+  color: var(--crm-text-primary);
+}
+
+/* ---- Nav ---------------------------------------------------------------- */
+.crm-land__nav {
+  position: sticky;
+  top: 0;
+  z-index: var(--crm-z-sticky, 100);
+  border-bottom: 1px solid var(--crm-border-subtle);
+  background: rgba(252, 251, 249, 0.9);
+  backdrop-filter: blur(8px);
+}
+
+.crm-land__nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--crm-space-3) var(--crm-space-6);
+}
+
+.crm-land__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+}
+
+.crm-land__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-gold);
+  color: var(--crm-navy);
+  font-family: var(--crm-font-brand);
+  font-weight: var(--crm-weight-bold);
+}
+
+.crm-land__wordmark {
+  font-family: var(--crm-font-brand);
+  font-weight: var(--crm-weight-bold);
+  font-size: var(--crm-font-size-xl);
+  color: var(--crm-navy);
+}
+
+.crm-land__nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+}
+
+.crm-land__nav-link {
+  color: var(--crm-text-secondary);
+  font-weight: var(--crm-weight-medium);
+  font-size: var(--crm-font-size-md);
+}
+.crm-land__nav-link:hover {
+  color: var(--crm-text-primary);
+}
+
+/* ---- Hero --------------------------------------------------------------- */
+.crm-land__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--crm-space-4);
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--crm-space-16) var(--crm-space-6) var(--crm-space-12);
+  text-align: center;
+}
+
+.crm-land__title {
+  font-size: 44px;
+  line-height: 1.1;
+  font-weight: var(--crm-weight-bold);
+  color: var(--crm-text-title);
+  max-width: 16ch;
+}
+
+.crm-land__subtitle {
+  font-size: var(--crm-font-size-lg);
+  color: var(--crm-text-secondary);
+  max-width: 60ch;
+}
+
+.crm-land__hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--crm-space-3);
+  justify-content: center;
+  margin-top: var(--crm-space-2);
+}
+
+.crm-land__hero-note {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+/* ---- Sections ----------------------------------------------------------- */
+.crm-land__section {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--crm-space-12) var(--crm-space-6);
+}
+
+.crm-land__section--muted {
+  max-width: none;
+  background: var(--crm-cream);
+  border-top: 1px solid var(--crm-border-subtle);
+  border-bottom: 1px solid var(--crm-border-subtle);
+}
+.crm-land__section--muted > * {
+  max-width: 1120px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.crm-land__section-title {
+  font-size: var(--crm-font-size-2xl);
+  font-weight: var(--crm-weight-bold);
+  color: var(--crm-text-title);
+  text-align: center;
+  margin-bottom: var(--crm-space-8);
+}
+
+.crm-land__feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--crm-space-4);
+}
+
+.crm-land__feature {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-5);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-card);
+}
+
+.crm-land__feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-green-tint);
+  color: var(--crm-green-dark);
+}
+.crm-land__feature-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.crm-land__feature-title {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+  font-size: var(--crm-font-size-lg);
+}
+.crm-land__feature-blurb {
+  color: var(--crm-text-secondary);
+}
+
+/* ---- Steps -------------------------------------------------------------- */
+.crm-land__steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--crm-space-6);
+}
+
+.crm-land__step {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--crm-space-2);
+}
+
+.crm-land__step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--crm-green);
+  color: var(--crm-on-dark);
+  font-weight: var(--crm-weight-bold);
+}
+.crm-land__step-icon {
+  color: var(--crm-green-dark);
+}
+.crm-land__step-icon svg {
+  width: 22px;
+  height: 22px;
+}
+.crm-land__step-title {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+  font-size: var(--crm-font-size-lg);
+}
+.crm-land__step-blurb {
+  color: var(--crm-text-secondary);
+}
+
+/* ---- CTA band ----------------------------------------------------------- */
+.crm-land__cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--crm-space-3);
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--crm-space-16) var(--crm-space-6);
+  text-align: center;
+}
+.crm-land__cta-title {
+  font-size: var(--crm-font-size-2xl);
+  font-weight: var(--crm-weight-bold);
+  color: var(--crm-text-title);
+}
+.crm-land__cta-sub {
+  color: var(--crm-text-secondary);
+}
+
+/* ---- Footer ------------------------------------------------------------- */
+.crm-land__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--crm-space-6);
+  border-top: 1px solid var(--crm-border-subtle);
+}
+.crm-land__footer-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+}
+.crm-land__footer-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--crm-text-muted);
+}
+.crm-land__footer-name {
+  font-family: var(--crm-font-brand);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+@media (max-width: 860px) {
+  .crm-land__feature-grid,
+  .crm-land__steps {
+    grid-template-columns: 1fr;
+  }
+  .crm-land__title {
+    font-size: 34px;
+  }
+  .crm-land__nav-link {
+    display: none;
+  }
+}

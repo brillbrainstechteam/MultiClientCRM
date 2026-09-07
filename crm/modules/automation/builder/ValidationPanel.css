@@ -1,0 +1,97 @@
+.crm-aut-validation__clean {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--crm-space-2);
+  text-align: center;
+  padding: var(--crm-space-8) var(--crm-space-4);
+  color: var(--crm-text-secondary);
+}
+
+.crm-aut-validation__clean svg {
+  color: var(--crm-success-600);
+}
+
+.crm-aut-validation__group {
+  margin-bottom: var(--crm-space-4);
+}
+
+.crm-aut-validation__group-title {
+  margin: 0 0 var(--crm-space-2);
+  font-size: var(--crm-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.crm-aut-validation__group-title--error {
+  color: var(--crm-danger-600);
+}
+
+.crm-aut-validation__group-title--warning {
+  color: var(--crm-warning-600);
+}
+
+.crm-aut-validation__issue {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+  width: 100%;
+  padding: var(--crm-space-2);
+  border-radius: var(--crm-radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+  margin-bottom: var(--crm-space-1);
+}
+
+.crm-aut-validation__issue:hover {
+  background: var(--crm-surface-hover);
+}
+
+.crm-aut-validation__issue.is-active {
+  border-color: var(--crm-green-border);
+  background: var(--crm-green-tint);
+}
+
+.crm-aut-validation__issue-trigger {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--crm-space-2);
+  width: 100%;
+  text-align: left;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.crm-aut-validation__issue-icon {
+  flex: none;
+  margin-top: 2px;
+}
+
+.crm-aut-validation__issue-icon--error {
+  color: var(--crm-danger-600);
+}
+
+.crm-aut-validation__issue-icon--warning {
+  color: var(--crm-warning-600);
+}
+
+.crm-aut-validation__issue-title {
+  margin: 0;
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+}
+
+.crm-aut-validation__issue-reason {
+  margin: 2px 0 0;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-secondary);
+}
+
+.crm-aut-validation__issue-fix {
+  margin: 2px 0 0;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-brand);
+}

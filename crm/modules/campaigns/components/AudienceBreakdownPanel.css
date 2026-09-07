@@ -1,0 +1,45 @@
+.crm-camp-audience-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.crm-camp-audience-panel__snapshot {
+  color: var(--crm-text-muted);
+  font-size: var(--crm-font-size-sm);
+  margin: 0;
+}
+
+.crm-camp-audience-panel__rows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  overflow: hidden;
+}
+
+.crm-camp-audience-panel__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border-bottom: 1px solid var(--crm-border-subtle);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-camp-audience-panel__row:last-child {
+  border-bottom: none;
+}
+
+.crm-camp-audience-panel__row--positive {
+  background: var(--crm-green-tint);
+  font-weight: var(--crm-weight-semibold);
+}
+
+.crm-camp-audience-panel__row--negative .crm-camp-audience-panel__value {
+  color: var(--crm-danger);
+}
+
+.crm-camp-audience-panel__value {
+  font-variant-numeric: tabular-nums;
+}

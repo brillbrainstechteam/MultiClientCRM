@@ -1,0 +1,63 @@
+.crm-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  margin: var(--crm-space-5) 0;
+}
+
+.crm-progress-list__item {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-3);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-sunken);
+  list-style: none;
+}
+
+.crm-progress-list__item svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--crm-text-muted);
+}
+
+.crm-progress-list__item--complete svg {
+  color: var(--crm-success-600);
+}
+
+.crm-progress-list__item--warning svg {
+  color: var(--crm-warning-600);
+}
+
+.crm-progress-list__item--failed {
+  background: var(--crm-danger-50);
+}
+
+.crm-progress-list__item--failed svg {
+  color: var(--crm-danger-600);
+}
+
+.crm-progress-list__label {
+  flex: 1;
+  color: var(--crm-text-primary);
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-progress-technical {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  margin-top: var(--crm-space-2);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-progress-technical li {
+  list-style: none;
+}
+
+.crm-progress-technical code {
+  font-family: var(--crm-font-mono);
+  color: var(--crm-text-primary);
+}

@@ -1,0 +1,200 @@
+.crm-c360 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-5);
+}
+
+.crm-c360__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-4);
+  padding: var(--crm-space-5);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-card);
+  box-shadow: var(--crm-shadow-sm);
+}
+
+.crm-c360__identity-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.crm-c360__identity-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--crm-space-3);
+}
+
+.crm-c360__name {
+  font-size: var(--crm-font-size-xl);
+  font-weight: var(--crm-weight-bold);
+  color: var(--crm-text-title);
+}
+
+.crm-c360__company {
+  color: var(--crm-text-secondary);
+}
+
+.crm-c360__identity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--crm-space-1);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+.crm-c360__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--crm-space-2);
+}
+
+.crm-c360__owner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+  align-items: flex-end;
+  flex: none;
+}
+
+.crm-c360__owner-label {
+  font-size: var(--crm-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--crm-text-muted);
+}
+
+.crm-c360__owner-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-c360__panel {
+  padding: var(--crm-space-5);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-card);
+  box-shadow: var(--crm-shadow-sm);
+}
+
+.crm-fieldgrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--crm-space-5) var(--crm-space-8);
+}
+
+.crm-fieldgrid__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.crm-fieldgrid__item dt {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+.crm-fieldgrid__item dd {
+  margin: 0;
+  font-size: var(--crm-font-size-row);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+}
+
+.crm-fieldgrid__empty {
+  color: var(--crm-text-muted);
+  font-weight: var(--crm-weight-regular);
+  font-style: italic;
+}
+
+.crm-c360__masked {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--crm-space-1);
+  padding: 2px 8px;
+  border-radius: var(--crm-radius-sm);
+  background: var(--crm-surface-band);
+  color: var(--crm-text-muted);
+  font-weight: var(--crm-weight-regular);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-c360__masked svg {
+  width: 13px;
+  height: 13px;
+}
+
+.crm-c360__scope-note {
+  margin-top: var(--crm-space-4);
+  padding: var(--crm-space-3) var(--crm-space-4);
+  border: 1px solid var(--crm-info-200);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-info-50);
+  color: var(--crm-navy-2);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-c360__state {
+  margin-top: var(--crm-space-2);
+}
+
+.crm-c360__timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.crm-c360__empty {
+  color: var(--crm-text-muted);
+}
+
+.crm-c360__related {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--crm-space-4);
+}
+
+.crm-c360__related-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-sunken);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--crm-motion-fast);
+}
+
+.crm-c360__related-card:disabled {
+  cursor: default;
+}
+
+.crm-c360__related-card:not(:disabled):hover {
+  border-color: var(--crm-green-border);
+}
+
+.crm-c360__related-label {
+  font-size: var(--crm-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--crm-text-muted);
+}
+
+.crm-c360__related-value {
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+}
+
+@media (max-width: 1120px) {
+  .crm-fieldgrid,
+  .crm-c360__related {
+    grid-template-columns: 1fr;
+  }
+}

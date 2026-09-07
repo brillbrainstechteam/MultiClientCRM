@@ -1,0 +1,43 @@
+.crm-seg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-seg__toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--crm-space-3);
+}
+
+.crm-seg__name {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.crm-seg__name-text {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary);
+}
+
+.crm-seg__desc {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+.crm-seg__count {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-seg__muted {
+  color: var(--crm-text-muted);
+}
+
+.crm-seg__actions {
+  display: inline-flex;
+  gap: var(--crm-space-1);
+  justify-content: flex-end;
+}

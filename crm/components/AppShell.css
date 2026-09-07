@@ -1,0 +1,37 @@
+.crm-app-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--crm-surface-page);
+}
+
+.crm-app-shell__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.crm-app-shell__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--crm-space-6) var(--crm-content-gutter) var(--crm-space-12);
+}
+
+.crm-app-shell__container {
+  width: 100%;
+  max-width: var(--crm-page-max-width);
+  margin: 0 auto;
+}
+
+/* Workspace modules (e.g. Inbox) fill the full content area with no padding. */
+.crm-app-shell__content--workspace {
+  padding: 0;
+  overflow: hidden;
+}
+
+.crm-app-shell__container--workspace {
+  max-width: none;
+  height: 100%;
+  overflow: hidden;
+}

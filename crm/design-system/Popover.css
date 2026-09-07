@@ -1,0 +1,58 @@
+.crm-popover-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--crm-z-popover);
+}
+
+.crm-popover__backdrop {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  border: none;
+  cursor: default;
+}
+
+.crm-popover {
+  position: absolute;
+  top: calc(var(--crm-topbar-height) + var(--crm-scopebar-height) + var(--crm-space-3));
+  right: var(--crm-content-gutter);
+  width: min(360px, calc(100vw - 2 * var(--crm-content-gutter)));
+  max-height: calc(100vh - var(--crm-topbar-height) - var(--crm-scopebar-height) - var(--crm-space-6));
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-card);
+  box-shadow: var(--crm-shadow-lg);
+  border: 1px solid var(--crm-border-subtle);
+}
+
+.crm-popover__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-3) var(--crm-space-4);
+  border-bottom: 1px solid var(--crm-border-subtle);
+}
+
+.crm-popover__title {
+  font-size: var(--crm-font-size-row);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.crm-popover__body {
+  padding: var(--crm-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-popover__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-3) var(--crm-space-4);
+  border-top: 1px solid var(--crm-border-subtle);
+}

@@ -1,0 +1,104 @@
+.crm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--crm-space-1);
+  height: 20px;
+  padding: 0 var(--crm-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--crm-radius-pill);
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-medium);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.crm-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.crm-badge__icon {
+  display: inline-flex;
+}
+
+.crm-badge__icon svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ---- Tones -------------------------------------------------------------- */
+.crm-badge--neutral.crm-badge--soft {
+  background: var(--crm-neutral-100);
+  color: var(--crm-neutral-700);
+}
+
+.crm-badge--brand.crm-badge--soft {
+  background: var(--crm-brand-50);
+  color: var(--crm-brand-700);
+}
+
+.crm-badge--success.crm-badge--soft {
+  background: var(--crm-success-50);
+  color: var(--crm-success-600);
+}
+
+.crm-badge--warning.crm-badge--soft {
+  background: var(--crm-warning-50);
+  color: var(--crm-warning-600);
+}
+
+.crm-badge--danger.crm-badge--soft {
+  background: var(--crm-danger-50);
+  color: var(--crm-danger-600);
+}
+
+.crm-badge--info.crm-badge--soft {
+  background: var(--crm-info-50);
+  color: var(--crm-info-600);
+}
+
+.crm-badge--gold.crm-badge--soft {
+  background: var(--crm-gold-tint);
+  color: var(--crm-gold-dark);
+}
+
+.crm-badge--outline {
+  background: var(--crm-surface-raised);
+}
+
+.crm-badge--neutral.crm-badge--outline {
+  border-color: var(--crm-neutral-300);
+  color: var(--crm-neutral-700);
+}
+
+.crm-badge--brand.crm-badge--outline {
+  border-color: var(--crm-brand-200);
+  color: var(--crm-brand-700);
+}
+
+.crm-badge--success.crm-badge--outline {
+  border-color: var(--crm-success-200);
+  color: var(--crm-success-600);
+}
+
+.crm-badge--warning.crm-badge--outline {
+  border-color: var(--crm-warning-200);
+  color: var(--crm-warning-600);
+}
+
+.crm-badge--danger.crm-badge--outline {
+  border-color: var(--crm-danger-200);
+  color: var(--crm-danger-600);
+}
+
+.crm-badge--info.crm-badge--outline {
+  border-color: var(--crm-info-200);
+  color: var(--crm-info-600);
+}
+
+.crm-badge--gold.crm-badge--outline {
+  border-color: var(--crm-gold-border);
+  color: var(--crm-gold-dark);
+}

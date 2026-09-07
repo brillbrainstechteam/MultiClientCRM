@@ -1,0 +1,82 @@
+/* ---- Response window badge / banner ------------------------------------- */
+
+.crm-rwb {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-medium);
+  padding: 3px var(--crm-space-2);
+  border-radius: var(--crm-radius-pill);
+  white-space: nowrap;
+}
+
+.crm-rwb--active {
+  background: var(--crm-green-tint);
+  color: var(--crm-green-dark);
+}
+
+.crm-rwb--expiring {
+  background: var(--crm-warn-tint);
+  color: var(--crm-warn);
+  animation: crm-rwb-pulse 2s ease-in-out infinite;
+}
+
+.crm-rwb--expired {
+  background: var(--crm-danger-tint);
+  color: var(--crm-danger);
+}
+
+@keyframes crm-rwb-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Banner variant — shown at top of composer when window is expiring/expired */
+.crm-rwb-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-3) var(--crm-space-4);
+  border-radius: var(--crm-radius-md);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-rwb-banner--expiring {
+  background: var(--crm-warn-tint);
+  border: 1px solid var(--crm-warn-border);
+  color: var(--crm-ink);
+}
+
+.crm-rwb-banner--expired {
+  background: var(--crm-danger-tint);
+  border: 1px solid var(--crm-danger-border);
+  color: var(--crm-ink);
+}
+
+.crm-rwb-banner__icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.crm-rwb-banner__icon--expiring {
+  color: var(--crm-warn);
+}
+
+.crm-rwb-banner__icon--expired {
+  color: var(--crm-danger);
+}
+
+.crm-rwb-banner__body {
+  flex: 1;
+}
+
+.crm-rwb-banner__title {
+  font-weight: var(--crm-weight-semibold);
+  margin-bottom: 2px;
+}
+
+.crm-rwb-banner__desc {
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-xs);
+}

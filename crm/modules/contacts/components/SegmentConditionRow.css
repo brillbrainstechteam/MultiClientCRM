@@ -1,0 +1,49 @@
+.crm-condition-row {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-raised);
+  font-size: var(--crm-font-size-md);
+}
+
+.crm-condition-row__joiner {
+  min-width: 34px;
+  padding: 1px 6px;
+  border-radius: var(--crm-radius-sm);
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-bold);
+  text-align: center;
+}
+
+.crm-condition-row__joiner--and {
+  background: var(--crm-info-50);
+  color: var(--crm-info-600);
+}
+
+.crm-condition-row__joiner--or {
+  background: var(--crm-warning-50);
+  color: var(--crm-warning-600);
+}
+
+.crm-condition-row__joiner-spacer {
+  min-width: 34px;
+}
+
+.crm-condition-row__field {
+  font-weight: var(--crm-weight-semibold);
+}
+
+.crm-condition-row__operator {
+  color: var(--crm-text-muted);
+}
+
+.crm-condition-row__value {
+  padding: 1px 6px;
+  border-radius: var(--crm-radius-sm);
+  background: var(--crm-surface-sunken);
+  font-family: var(--crm-font-mono);
+  font-size: var(--crm-font-size-sm);
+}

@@ -1,0 +1,109 @@
+.crm-authform__header {
+  margin-bottom: var(--crm-space-5);
+}
+
+.crm-authform__title {
+  font-size: var(--crm-font-size-title);
+  font-weight: var(--crm-weight-bold);
+  color: var(--crm-text-title);
+}
+
+.crm-authform__sub {
+  margin-top: var(--crm-space-1);
+  color: var(--crm-text-secondary);
+}
+
+.crm-authform__brand-mobile {
+  display: none;
+  align-items: center;
+  gap: var(--crm-space-2);
+  margin-bottom: var(--crm-space-5);
+}
+.crm-authform__brand-mobile .crm-auth__logo {
+  width: 32px;
+  height: 32px;
+  font-size: var(--crm-font-size-md);
+}
+.crm-authform__brand-mobile .crm-auth__wordmark {
+  font-size: var(--crm-font-size-xl);
+  color: var(--crm-text-title);
+}
+
+.crm-authform__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-authform__row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--crm-space-4);
+}
+
+.crm-authform__label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.crm-authform__link {
+  color: var(--crm-text-brand);
+  font-weight: var(--crm-weight-medium);
+  font-size: var(--crm-font-size-sm);
+}
+.crm-authform__link:hover {
+  text-decoration: underline;
+}
+
+.crm-authform__submit {
+  margin-top: var(--crm-space-5);
+}
+
+.crm-authform__agree {
+  margin-top: var(--crm-space-4);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-authform__cin-na {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+  justify-content: flex-start;
+}
+.crm-authform__cin-na .crm-field__hint {
+  margin-top: 2px;
+}
+
+.crm-authform__footer {
+  margin-top: var(--crm-space-6);
+  padding-top: var(--crm-space-4);
+  border-top: 1px solid var(--crm-border-subtle);
+  text-align: center;
+  font-size: var(--crm-font-size-md);
+  color: var(--crm-text-secondary);
+}
+
+.crm-authform__trial {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  margin-bottom: var(--crm-space-4);
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border: 1px solid var(--crm-green-border);
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-green-tint);
+  color: var(--crm-green-dark);
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+}
+
+@media (max-width: 860px) {
+  .crm-authform__brand-mobile {
+    display: flex;
+  }
+  .crm-authform__row2 {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,227 @@
+/* ---- Single conversation row in the sidebar list ------------------------- */
+
+.crm-conv-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-3) var(--crm-space-4);
+  cursor: pointer;
+  border-bottom: 1px solid var(--crm-border-subtle);
+  background: var(--crm-surface-raised);
+  transition: background var(--crm-motion-fast);
+  position: relative;
+}
+
+.crm-conv-row:hover {
+  background: var(--crm-surface-hover);
+}
+
+.crm-conv-row--active {
+  background: var(--crm-green-tint);
+}
+
+.crm-conv-row--active:hover {
+  background: var(--crm-green-tint);
+}
+
+.crm-conv-row--unread .crm-conv-row__name {
+  font-weight: var(--crm-weight-semibold);
+}
+
+.crm-conv-row--unread .crm-conv-row__preview {
+  color: var(--crm-text-primary);
+}
+
+/* Left column: avatar */
+.crm-conv-row__avatar {
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* Right column: text content */
+.crm-conv-row__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.crm-conv-row__top {
+  display: flex;
+  align-items: baseline;
+  gap: var(--crm-space-2);
+  margin-bottom: 2px;
+}
+
+.crm-conv-row__name {
+  flex: 1;
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crm-conv-row__time {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.crm-conv-row__middle {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  margin-bottom: 4px;
+}
+
+.crm-conv-row__preview {
+  flex: 1;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.crm-conv-row__preview--note {
+  font-style: italic;
+}
+
+.crm-conv-row__badges {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-1);
+  flex-wrap: wrap;
+}
+
+/* SLA indicator inside row */
+.crm-conv-row__sla {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-conv-row__sla--warning {
+  color: var(--crm-warn);
+}
+
+.crm-conv-row__sla--breached {
+  color: var(--crm-danger);
+}
+
+/* Unread count badge — pinned to the right edge, vertically centred */
+.crm-conv-row__unread-count {
+  position: absolute;
+  right: var(--crm-space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-green);
+  color: var(--crm-on-dark, #fff);
+  font-size: 11px;
+  font-weight: var(--crm-weight-semibold);
+  line-height: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Reserve room so wrapping chips never run under the count badge */
+.crm-conv-row--unread .crm-conv-row__body {
+  padding-right: 22px;
+}
+
+/* Bot badge on avatar */
+.crm-conv-row__bot-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--crm-navy-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--crm-surface-raised);
+}
+
+.crm-conv-row__bot-badge svg {
+  width: 8px;
+  height: 8px;
+  color: var(--crm-on-dark);
+}
+
+/* Spam / expired overlay tint */
+.crm-conv-row--spam {
+  opacity: 0.7;
+}
+
+.crm-conv-row--expired .crm-conv-row__preview {
+  font-style: italic;
+}
+
+/* Status chip inside row */
+.crm-conv-row__status {
+  font-size: var(--crm-font-size-xs);
+  padding: 1px 6px;
+  border-radius: var(--crm-radius-pill);
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-conv-row__status--pending {
+  background: var(--crm-warn-tint);
+  color: var(--crm-warn);
+}
+
+.crm-conv-row__status--resolved {
+  background: var(--crm-green-tint);
+  color: var(--crm-green-dark);
+}
+
+/* Assignee initials */
+.crm-conv-row__assignee {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+  white-space: nowrap;
+}
+
+/* Window expiring badge */
+.crm-conv-row__window {
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-medium);
+  padding: 1px 5px;
+  border-radius: var(--crm-radius-pill);
+}
+
+.crm-conv-row__window--expiring {
+  background: var(--crm-warn-tint);
+  color: var(--crm-warn);
+}
+
+.crm-conv-row__window--expired {
+  background: var(--crm-danger-tint);
+  color: var(--crm-danger);
+}
+
+/* Bulk selection checkbox */
+.crm-conv-row__checkbox {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* AI task indicator */
+.crm-conv-row__ai-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--crm-brand-400);
+  flex-shrink: 0;
+}

@@ -1,0 +1,31 @@
+.crm-aut-activity__list {
+  list-style: none;
+  margin: var(--crm-space-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+
+.crm-aut-activity__item {
+  border-left: 2px solid var(--crm-border-strong);
+  padding-left: var(--crm-space-2);
+}
+
+.crm-aut-activity__headline {
+  margin: 0;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-primary);
+}
+
+.crm-aut-activity__detail {
+  margin: 2px 0 0;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-secondary);
+}
+
+.crm-aut-activity__meta {
+  margin: 2px 0 0;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}

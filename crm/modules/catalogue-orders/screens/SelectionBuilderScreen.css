@@ -1,0 +1,95 @@
+.crm-eco-selbuilder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-eco-selbuilder__grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: var(--crm-space-4);
+  align-items: start;
+}
+
+.crm-eco-selbuilder__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+}
+
+.crm-eco-selbuilder__section-title {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary);
+  margin-top: var(--crm-space-2);
+}
+
+.crm-eco-selbuilder__contact {
+  font-weight: var(--crm-weight-semibold);
+}
+
+.crm-eco-selbuilder__event-source {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-muted);
+}
+
+.crm-eco-selbuilder__items-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.crm-eco-selbuilder__empty {
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-eco-selbuilder__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--crm-font-size-md);
+}
+
+.crm-eco-selbuilder__table th,
+.crm-eco-selbuilder__table td {
+  text-align: left;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border-bottom: 1px solid var(--crm-border-subtle);
+}
+
+.crm-eco-selbuilder__table input {
+  width: 80px;
+}
+
+.crm-eco-selbuilder__totals {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-semibold);
+}
+
+.crm-eco-selbuilder__actions {
+  display: flex;
+  gap: var(--crm-space-2);
+}
+
+.crm-eco-selbuilder__approval {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+  padding: var(--crm-space-2) 0;
+  border-bottom: 1px solid var(--crm-border-subtle);
+}
+
+.crm-eco-selbuilder__approval-actions,
+.crm-eco-selbuilder__approval-request {
+  display: flex;
+  gap: var(--crm-space-2);
+  align-items: center;
+}
+
+.crm-eco-selbuilder__approval-request {
+  flex-direction: column;
+  align-items: stretch;
+}

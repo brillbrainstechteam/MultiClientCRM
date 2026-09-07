@@ -1,0 +1,60 @@
+.crm-team-workload__unassigned {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-2) var(--crm-space-3);
+  margin-bottom: var(--crm-space-2);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-warning-50);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-team-workload__reassign {
+  color: var(--crm-text-brand);
+  font-weight: var(--crm-weight-medium);
+  flex: none;
+}
+
+.crm-team-workload__reassign:hover {
+  text-decoration: underline;
+}
+
+.crm-team-workload__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+}
+
+.crm-team-workload__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-1) 0;
+}
+
+.crm-team-workload__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  min-width: 0;
+}
+
+.crm-team-workload__name {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-title);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crm-team-workload__counts {
+  display: flex;
+  gap: var(--crm-space-2);
+  flex: none;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-secondary);
+  font-variant-numeric: tabular-nums;
+}

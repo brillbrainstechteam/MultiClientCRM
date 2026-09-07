@@ -1,0 +1,35 @@
+.crm-call-contact {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+  min-width: 0;
+}
+
+.crm-call-contact__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.crm-call-contact__name {
+  font-size: var(--crm-font-size-row);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.crm-call-contact__name:hover {
+  color: var(--crm-text-brand);
+  text-decoration: underline;
+}
+
+.crm-call-contact__secondary {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

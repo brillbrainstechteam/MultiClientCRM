@@ -1,0 +1,101 @@
+.crm-reports {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-6);
+}
+
+.crm-reports__kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--crm-space-4);
+}
+
+.crm-reports__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--crm-space-4);
+}
+
+.crm-reports__quality {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-card);
+  box-shadow: var(--crm-shadow-sm);
+}
+
+.crm-reports__quality-title {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-secondary);
+}
+
+.crm-reports__q-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 32px;
+  align-items: center;
+  gap: var(--crm-space-2);
+}
+
+.crm-reports__q-row--link {
+  border-radius: var(--crm-radius-sm);
+  padding: 2px 4px;
+  margin: -2px -4px;
+  transition: background var(--crm-motion-fast);
+}
+
+.crm-reports__q-row--link:hover {
+  background: var(--crm-surface-band);
+}
+
+.crm-reports__q-row--link:hover .crm-reports__q-label {
+  color: var(--crm-text-brand);
+}
+
+.crm-reports__q-label {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-reports__q-bar {
+  height: 8px;
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-surface-band);
+  overflow: hidden;
+}
+
+.crm-reports__q-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-green);
+}
+
+.crm-reports__q-fill--warn {
+  background: var(--crm-warn);
+}
+
+.crm-reports__q-value {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-semibold);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1200px) {
+  .crm-reports__kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .crm-reports__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 820px) {
+  .crm-reports__grid {
+    grid-template-columns: 1fr;
+  }
+}

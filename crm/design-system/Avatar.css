@@ -1,0 +1,57 @@
+.crm-avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: 50%;
+  background: var(--crm-brand-50);
+  color: var(--crm-brand-700);
+  font-weight: var(--crm-weight-semibold);
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.crm-avatar--sm {
+  width: 24px;
+  height: 24px;
+  font-size: var(--crm-font-size-xs);
+}
+
+.crm-avatar--md {
+  width: 32px;
+  height: 32px;
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-avatar--lg {
+  width: 40px;
+  height: 40px;
+  font-size: var(--crm-font-size-md);
+}
+
+.crm-avatar__availability {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--crm-surface-raised);
+  border-radius: 50%;
+}
+
+.crm-avatar__availability--available {
+  background: var(--crm-success-600);
+}
+
+.crm-avatar__availability--busy {
+  background: var(--crm-danger-600);
+}
+
+.crm-avatar__availability--away {
+  background: var(--crm-warning-600);
+}
+
+.crm-avatar__availability--offline {
+  background: var(--crm-neutral-400);
+}

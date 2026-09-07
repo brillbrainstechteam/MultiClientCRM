@@ -1,0 +1,40 @@
+.crm-rule-condition {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr 1fr auto;
+  align-items: center;
+  gap: var(--crm-space-2);
+}
+
+.crm-rule-condition__index {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-secondary);
+}
+
+.crm-rule-simulation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-band);
+}
+
+.crm-rule-simulation__row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--crm-space-3);
+}
+
+.crm-rule-simulation__reason {
+  margin: 0;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+@media (max-width: 900px) {
+  .crm-rule-condition {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto auto;
+  }
+}

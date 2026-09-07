@@ -1,0 +1,104 @@
+.crm-aut-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-5);
+}
+
+.crm-aut-gallery__filters {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  flex-wrap: wrap;
+}
+
+.crm-aut-gallery__filter-pill {
+  padding: var(--crm-space-1) var(--crm-space-3);
+  border-radius: var(--crm-radius-pill);
+  border: 1px solid var(--crm-border-strong);
+  background: var(--crm-surface-raised);
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  cursor: pointer;
+}
+
+.crm-aut-gallery__filter-pill.is-active {
+  background: var(--crm-green-tint);
+  border-color: var(--crm-green-border);
+  color: var(--crm-text-brand);
+}
+
+.crm-aut-gallery__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--crm-space-4);
+}
+
+.crm-aut-gallery__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-5);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-raised);
+  box-shadow: var(--crm-shadow-sm);
+}
+
+.crm-aut-gallery__card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--crm-space-2);
+}
+
+.crm-aut-gallery__card-title {
+  margin: 0;
+  font-size: var(--crm-font-size-lg);
+  color: var(--crm-text-title);
+}
+
+.crm-aut-gallery__card-goal {
+  margin: 0;
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+  font-size: var(--crm-font-size-md);
+}
+
+.crm-aut-gallery__card-desc {
+  margin: 0;
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-sm);
+  line-height: var(--crm-line-relaxed);
+}
+
+.crm-aut-gallery__preview {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  background: var(--crm-surface-sunken);
+  border-radius: var(--crm-radius-md);
+}
+
+.crm-aut-gallery__preview-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-secondary);
+  white-space: nowrap;
+}
+
+.crm-aut-gallery__preview-arrow {
+  width: 11px;
+  height: 11px;
+  color: var(--crm-text-muted);
+}
+
+.crm-aut-gallery__capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--crm-space-1);
+}

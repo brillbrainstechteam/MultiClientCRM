@@ -1,0 +1,11 @@
+.crm-templates-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-5);
+}
+
+.crm-templates-layout__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-5);
+}

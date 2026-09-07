@@ -1,0 +1,49 @@
+.crm-aut-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  min-width: 260px;
+}
+
+.crm-aut-picker__heading {
+  margin: 0 0 var(--crm-space-2);
+  font-size: var(--crm-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--crm-text-muted);
+}
+
+.crm-aut-picker__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.crm-aut-picker__option {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  width: 100%;
+  text-align: left;
+  padding: var(--crm-space-2);
+  border: none;
+  background: transparent;
+  border-radius: var(--crm-radius-md);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-primary);
+  cursor: pointer;
+}
+
+.crm-aut-picker__option:hover {
+  background: var(--crm-surface-hover);
+}
+
+.crm-aut-picker__option svg {
+  color: var(--crm-text-brand);
+  flex: none;
+}

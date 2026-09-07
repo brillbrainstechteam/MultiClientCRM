@@ -1,0 +1,111 @@
+.crm-all {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-all__toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+  flex-wrap: wrap;
+}
+
+.crm-all__filters {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  flex-wrap: wrap;
+}
+
+.crm-all__chips {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  flex-wrap: wrap;
+}
+
+.crm-all__clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  cursor: pointer;
+}
+
+.crm-all__clear:hover {
+  color: var(--crm-text-primary);
+}
+
+.crm-all__clear svg {
+  width: 13px;
+  height: 13px;
+}
+
+.crm-all__bulkbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+  padding: var(--crm-space-2) var(--crm-space-4);
+  border: 1px solid var(--crm-green-border);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-green-tint);
+}
+
+.crm-all__bulkcount {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-green-dark);
+}
+
+.crm-all__bulkscope {
+  font-weight: var(--crm-weight-regular);
+  color: var(--crm-text-secondary);
+}
+
+.crm-all__bulkactions {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-1);
+}
+
+.crm-all__owner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  color: var(--crm-text-primary);
+}
+
+.crm-all__unassigned {
+  color: var(--crm-warn);
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-all__muted {
+  color: var(--crm-text-muted);
+  white-space: nowrap;
+}
+
+.crm-all__count {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+/* ---- Zone column + prominent bulk zone action -------------------------- */
+.crm-all__zone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--crm-text-primary);
+}
+.crm-all__zone-hint {
+  color: var(--crm-text-muted);
+}
+.crm-all__bulk-zone {
+  font-weight: var(--crm-weight-semibold);
+}

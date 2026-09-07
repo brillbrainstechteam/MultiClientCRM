@@ -1,0 +1,97 @@
+.crm-setup-widget {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-gold-border);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-gold-tint);
+}
+
+.crm-setup-widget__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-3);
+}
+
+.crm-setup-widget__meta {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-setup-widget__bar {
+  height: 6px;
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-card);
+  overflow: hidden;
+}
+
+.crm-setup-widget__bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-gold-dark);
+  transition: width var(--crm-motion-base);
+}
+
+.crm-setup-widget__steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--crm-space-2) var(--crm-space-4);
+}
+
+.crm-setup-widget__step {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-setup-widget__step-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--crm-border-strong);
+  color: var(--crm-text-muted);
+}
+
+.crm-setup-widget__step--complete .crm-setup-widget__step-marker {
+  border-color: var(--crm-success-600);
+  background: var(--crm-success-600);
+  color: var(--crm-on-dark);
+}
+
+.crm-setup-widget__step--blocked .crm-setup-widget__step-marker {
+  color: var(--crm-warn);
+  border-color: var(--crm-warn-border);
+}
+
+.crm-setup-widget__step-marker svg {
+  width: 11px;
+  height: 11px;
+}
+
+.crm-setup-widget__step--complete .crm-setup-widget__step-label {
+  color: var(--crm-text-muted);
+  text-decoration: line-through;
+}
+
+.crm-setup-widget__step-link {
+  color: var(--crm-text-brand);
+  font-weight: var(--crm-weight-medium);
+  text-align: left;
+}
+
+.crm-setup-widget__step-link:hover {
+  text-decoration: underline;
+}
+
+.crm-setup-widget__step-reason {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}

@@ -1,0 +1,5 @@
+.crm-eco-picker-host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}

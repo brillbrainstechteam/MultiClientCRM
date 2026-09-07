@@ -1,0 +1,10 @@
+.crm-camp-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-camp-detail__status {
+  display: inline-flex;
+  align-items: center;
+}

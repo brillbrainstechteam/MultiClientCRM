@@ -1,0 +1,41 @@
+.crm-quick-actions__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--crm-space-2);
+}
+
+.crm-quick-actions__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-3);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  text-align: center;
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-title);
+  transition: background var(--crm-motion-fast), border-color var(--crm-motion-fast);
+}
+
+.crm-quick-actions__item:hover {
+  background: var(--crm-surface-hover);
+  border-color: var(--crm-border-strong);
+}
+
+.crm-quick-actions__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--crm-brand-50);
+  color: var(--crm-text-brand);
+}
+
+.crm-quick-actions__icon svg {
+  width: 16px;
+  height: 16px;
+}

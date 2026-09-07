@@ -1,0 +1,143 @@
+/* Shared layout primitives for the Dashboard overview hierarchy. Individual
+   widgets keep their own CSS for anything visually distinct; this file only
+   holds the section/grid scaffolding reused across every widget. */
+
+.crm-dashboard-overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-5);
+  padding-bottom: var(--crm-space-10);
+}
+
+.crm-dash-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.crm-dash-section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--crm-space-2);
+}
+
+.crm-dash-section-title {
+  font-size: var(--crm-font-size-lg);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.crm-dash-section__meta {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}
+
+.crm-dash-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--crm-space-3);
+}
+
+.crm-dash-two-col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--crm-space-4);
+  align-items: start;
+}
+
+.crm-dash-trend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--crm-space-4);
+}
+
+.crm-dash-metric-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--crm-space-4);
+}
+
+.crm-dash-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 88px;
+  padding: var(--crm-space-1) 0;
+}
+
+.crm-dash-metric__value {
+  font-size: var(--crm-font-size-xl);
+  font-weight: var(--crm-weight-bold);
+  color: var(--crm-text-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-dash-metric__label {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}
+
+.crm-dash-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+}
+
+.crm-dash-breakdown__row {
+  display: block;
+}
+
+.crm-dash-breakdown__link {
+  display: grid;
+  grid-template-columns: 88px 1fr 32px;
+  align-items: center;
+  gap: var(--crm-space-2);
+  padding: 2px 0;
+}
+
+.crm-dash-breakdown__label {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crm-dash-breakdown__bar {
+  display: block;
+  height: 6px;
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-surface-band);
+  overflow: hidden;
+}
+
+.crm-dash-breakdown__fill {
+  display: block;
+  height: 100%;
+  background: var(--crm-brand-600);
+}
+
+.crm-dash-breakdown__value {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Branch performance (wider) + Today's work (narrower) share one row. */
+.crm-dash-split {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--crm-space-4);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .crm-dash-two-col {
+    grid-template-columns: 1fr;
+  }
+  .crm-dash-split {
+    grid-template-columns: 1fr;
+  }
+}

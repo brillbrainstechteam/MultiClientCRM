@@ -1,0 +1,56 @@
+.crm-guided-tour {
+  position: fixed;
+  inset: 0;
+  z-index: var(--crm-z-modal);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: var(--crm-space-10);
+}
+
+.crm-guided-tour__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(14, 36, 56, 0.35);
+}
+
+.crm-guided-tour__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  width: min(420px, calc(100vw - var(--crm-space-8)));
+  padding: var(--crm-space-5);
+  border-radius: var(--crm-radius-xl);
+  background: var(--crm-card);
+  box-shadow: var(--crm-shadow-lg);
+}
+
+.crm-guided-tour__step {
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--crm-text-brand);
+}
+
+.crm-guided-tour__title {
+  font-size: var(--crm-font-size-xl);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.crm-guided-tour__body {
+  color: var(--crm-text-secondary);
+}
+
+.crm-guided-tour__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  margin-top: var(--crm-space-2);
+}
+
+.crm-guided-tour__spacer {
+  flex: 1;
+}

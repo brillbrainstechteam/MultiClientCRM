@@ -1,0 +1,18 @@
+.crm-compose-step {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: var(--crm-space-6);
+  align-items: start;
+}
+
+.crm-compose-step__editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  min-width: 0;
+}
+
+.crm-compose-step__preview {
+  position: sticky;
+  top: var(--crm-space-4);
+}

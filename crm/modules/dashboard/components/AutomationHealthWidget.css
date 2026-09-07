@@ -1,0 +1,61 @@
+.crm-automation-health__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-1);
+}
+
+.crm-automation-health__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-2);
+  border-radius: var(--crm-radius-md);
+  transition: background var(--crm-motion-fast);
+}
+
+.crm-automation-health__row:hover {
+  background: var(--crm-surface-hover);
+}
+
+.crm-automation-health__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  min-width: 0;
+}
+
+.crm-automation-health__name {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-title);
+}
+
+.crm-automation-health__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  flex: none;
+  font-size: var(--crm-font-size-xs);
+}
+
+.crm-automation-health__stuck {
+  color: var(--crm-danger-600);
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-automation-health__ok {
+  color: var(--crm-text-muted);
+}
+
+.crm-automation-health__integration {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--crm-warn);
+}
+
+.crm-automation-health__integration svg {
+  width: 12px;
+  height: 12px;
+}

@@ -1,0 +1,70 @@
+.crm-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-3) var(--crm-space-4);
+  border-radius: var(--crm-radius-lg);
+  border: 1px solid var(--crm-border-subtle);
+}
+
+.crm-banner--info {
+  border-color: var(--crm-info-200);
+  background: var(--crm-info-50);
+}
+
+.crm-banner--warning {
+  border-color: var(--crm-warning-200);
+  background: var(--crm-warning-50);
+}
+
+.crm-banner--danger {
+  border-color: var(--crm-danger-200);
+  background: var(--crm-danger-50);
+}
+
+.crm-banner__icon {
+  display: inline-flex;
+  flex: none;
+  margin-top: 2px;
+}
+
+.crm-banner--info .crm-banner__icon {
+  color: var(--crm-info-600);
+}
+
+.crm-banner--warning .crm-banner__icon {
+  color: var(--crm-warning-600);
+}
+
+.crm-banner--danger .crm-banner__icon {
+  color: var(--crm-danger-600);
+}
+
+.crm-banner__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.crm-banner__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.crm-banner__title {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.crm-banner__description {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  flex: none;
+}

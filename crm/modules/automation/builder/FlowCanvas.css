@@ -1,0 +1,96 @@
+.crm-aut-canvas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  background: var(--crm-surface-sunken);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.crm-aut-canvas__zoom {
+  position: absolute;
+  top: var(--crm-space-3);
+  right: var(--crm-space-3);
+  z-index: var(--crm-z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-1);
+  padding: var(--crm-space-1) var(--crm-space-2);
+  background: var(--crm-surface-raised);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-pill);
+  box-shadow: var(--crm-shadow-sm);
+}
+
+.crm-aut-canvas__zoom-value {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+  min-width: 34px;
+  text-align: center;
+}
+
+.crm-aut-canvas__scroll {
+  flex: 1;
+  overflow: auto;
+  padding: var(--crm-space-8) var(--crm-space-6);
+}
+
+.crm-aut-canvas__stage {
+  transform-origin: top center;
+  display: inline-flex;
+  min-width: 100%;
+  justify-content: center;
+}
+
+.crm-aut-canvas__node-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.crm-aut-canvas__connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--crm-space-1) 0;
+}
+
+.crm-aut-canvas__connector-line {
+  width: 2px;
+  height: 18px;
+  background: var(--crm-border-strong);
+}
+
+.crm-aut-canvas__lane-label {
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-brand);
+  background: var(--crm-green-tint);
+  border-radius: var(--crm-radius-pill);
+  padding: 2px var(--crm-space-2);
+}
+
+.crm-aut-canvas__lanes {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--crm-space-6);
+  padding-top: var(--crm-space-2);
+}
+
+.crm-aut-canvas__lane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.crm-aut-canvas__rejoin {
+  border: 1px dashed var(--crm-border-strong);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-raised);
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-xs);
+  padding: var(--crm-space-2);
+  cursor: pointer;
+}

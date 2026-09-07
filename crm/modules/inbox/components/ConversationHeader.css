@@ -1,0 +1,179 @@
+/* ---- Conversation detail pane header ------------------------------------- */
+
+.crm-conv-header {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--crm-border-strong);
+  background: var(--crm-surface-raised);
+  flex-shrink: 0;
+}
+
+.crm-conv-header__top {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-3) var(--crm-space-4);
+}
+
+.crm-conv-header__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+  flex: 1;
+  min-width: 0;
+}
+
+.crm-conv-header__avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.crm-conv-header__bot-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--crm-navy-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--crm-surface-raised);
+}
+
+.crm-conv-header__bot-badge svg {
+  width: 9px;
+  height: 9px;
+  color: var(--crm-on-dark);
+}
+
+.crm-conv-header__name-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.crm-conv-header__name {
+  font-size: var(--crm-font-size-row);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  flex-wrap: wrap;
+}
+
+.crm-conv-header__number-name {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+  margin-top: 1px;
+}
+
+.crm-conv-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-1);
+  flex-shrink: 0;
+}
+
+/* Meta row: assignee / status / window / SLA */
+.crm-conv-header__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-2) var(--crm-space-4);
+  border-top: 1px solid var(--crm-border-subtle);
+  flex-wrap: wrap;
+  background: var(--crm-surface-band);
+}
+
+.crm-conv-header__meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-secondary);
+}
+
+.crm-conv-header__meta-item button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-secondary);
+  padding: 2px 4px;
+  border-radius: var(--crm-radius-sm);
+  transition: background var(--crm-motion-fast);
+}
+
+.crm-conv-header__meta-item button:hover {
+  background: var(--crm-surface-hover);
+}
+
+/* Labels strip */
+.crm-conv-header__labels {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-1);
+  flex-wrap: wrap;
+}
+
+.crm-conv-header__label-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: var(--crm-radius-pill);
+  font-weight: var(--crm-weight-medium);
+  border: 1px solid transparent;
+}
+
+/* Status badge */
+.crm-conv-header__status-badge {
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-medium);
+  padding: 2px 8px;
+  border-radius: var(--crm-radius-pill);
+  cursor: pointer;
+  border: none;
+  transition: filter var(--crm-motion-fast);
+}
+
+.crm-conv-header__status-badge:hover {
+  filter: brightness(0.95);
+}
+
+.crm-conv-header__status-badge--open {
+  background: var(--crm-info-50);
+  color: var(--crm-info-600);
+}
+
+.crm-conv-header__status-badge--pending {
+  background: var(--crm-warn-tint);
+  color: var(--crm-warn);
+}
+
+.crm-conv-header__status-badge--resolved {
+  background: var(--crm-green-tint);
+  color: var(--crm-green-dark);
+}
+
+/* Bot-owned banner */
+.crm-conv-header__bot-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-2) var(--crm-space-4);
+  background: var(--crm-navy-2);
+  color: var(--crm-on-dark);
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-conv-header__bot-banner svg {
+  flex-shrink: 0;
+}

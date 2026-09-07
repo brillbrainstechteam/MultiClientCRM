@@ -1,0 +1,100 @@
+.crm-camp-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+}
+
+.crm-camp-list__toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+  flex-wrap: wrap;
+}
+
+.crm-camp-list__filters {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  flex-wrap: wrap;
+}
+
+.crm-camp-list__chips {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  flex-wrap: wrap;
+}
+
+.crm-camp-list__clear {
+  border: none;
+  background: transparent;
+  color: var(--crm-text-secondary);
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  cursor: pointer;
+}
+
+.crm-camp-list__clear:hover {
+  color: var(--crm-text-primary);
+}
+
+.crm-camp-list__bulkbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-4);
+  padding: var(--crm-space-2) var(--crm-space-4);
+  border: 1px solid var(--crm-green-border);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-green-tint);
+}
+
+.crm-camp-list__bulkcount {
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-green-dark);
+}
+
+.crm-camp-list__bulkactions {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-1);
+}
+
+.crm-camp-list__identity {
+  display: flex;
+  flex-direction: column;
+}
+
+.crm-camp-list__name {
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+  margin: 0;
+}
+
+.crm-camp-list__meta {
+  color: var(--crm-text-muted);
+  font-size: var(--crm-font-size-sm);
+  margin: 2px 0 0;
+}
+
+.crm-camp-list__muted {
+  color: var(--crm-text-muted);
+  white-space: nowrap;
+}
+
+.crm-camp-list__row-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.crm-camp-list__count {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+.crm-camp-list__loading {
+  padding: var(--crm-space-6);
+  background: var(--crm-surface-raised);
+  border-radius: var(--crm-radius-md);
+}

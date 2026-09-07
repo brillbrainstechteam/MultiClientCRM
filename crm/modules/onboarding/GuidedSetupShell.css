@@ -1,0 +1,77 @@
+.crm-setup-shell {
+  min-height: 100vh;
+  background: var(--crm-surface-page);
+}
+
+.crm-setup-shell__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--crm-topbar-height);
+  padding: 0 var(--crm-space-6);
+  background: var(--crm-surface-inverse);
+  border-bottom: 1px solid var(--crm-navy-line);
+}
+
+.crm-setup-shell__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+}
+
+.crm-setup-shell__tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-gold);
+  color: var(--crm-navy);
+  font-family: var(--crm-font-brand);
+  font-weight: var(--crm-weight-bold);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-setup-shell__wordmark {
+  font-family: var(--crm-font-brand);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-inverse);
+  font-size: var(--crm-font-size-lg);
+}
+
+.crm-setup-shell__workspace {
+  padding-left: var(--crm-space-3);
+  margin-left: var(--crm-space-1);
+  border-left: 1px solid var(--crm-navy-line);
+  color: var(--crm-on-dark-muted);
+  font-size: var(--crm-font-size-sm);
+}
+
+.crm-setup-shell__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-4);
+}
+
+.crm-setup-shell__review-control {
+  color: var(--crm-on-dark-muted);
+}
+
+.crm-setup-shell__review-control label {
+  color: var(--crm-on-dark-muted);
+}
+
+.crm-setup-shell__content {
+  display: flex;
+  justify-content: center;
+  padding: var(--crm-space-8) var(--crm-space-6) var(--crm-space-16);
+}
+
+.crm-setup-shell__container {
+  width: 100%;
+  max-width: 880px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-6);
+}

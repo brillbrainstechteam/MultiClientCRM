@@ -1,0 +1,54 @@
+.crm-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  cursor: pointer;
+}
+
+.crm-checkbox__box {
+  position: relative;
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.crm-checkbox__box input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.crm-checkbox__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-sm);
+  background: var(--crm-card);
+  color: transparent;
+  transition: background var(--crm-motion-fast), border-color var(--crm-motion-fast);
+}
+
+.crm-checkbox__mark svg {
+  width: 13px;
+  height: 13px;
+}
+
+.crm-checkbox__box input:checked + .crm-checkbox__mark {
+  background: var(--crm-green);
+  border-color: var(--crm-green);
+  color: var(--crm-on-dark);
+}
+
+.crm-checkbox__box input:focus-visible + .crm-checkbox__mark {
+  box-shadow: var(--crm-focus-ring);
+}
+
+.crm-checkbox__label {
+  font-size: var(--crm-font-size-md);
+}

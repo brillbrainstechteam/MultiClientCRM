@@ -1,0 +1,88 @@
+.crm-toast {
+  position: fixed;
+  bottom: var(--crm-space-6);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--crm-z-toast);
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+  min-width: 280px;
+  max-width: 480px;
+  padding: var(--crm-space-3) var(--crm-space-4);
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-card);
+  box-shadow: var(--crm-shadow-lg);
+  animation: crm-toast-in var(--crm-motion-base);
+}
+
+.crm-toast__icon {
+  display: inline-flex;
+  flex: none;
+}
+
+.crm-toast__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.crm-toast--success {
+  border-left: 3px solid var(--crm-green);
+}
+
+.crm-toast--success .crm-toast__icon {
+  color: var(--crm-green);
+}
+
+.crm-toast--error {
+  border-left: 3px solid var(--crm-danger);
+}
+
+.crm-toast--error .crm-toast__icon {
+  color: var(--crm-danger);
+}
+
+.crm-toast--info {
+  border-left: 3px solid var(--crm-navy-2);
+}
+
+.crm-toast--info .crm-toast__icon {
+  color: var(--crm-navy-2);
+}
+
+.crm-toast__message {
+  flex: 1;
+  font-size: var(--crm-font-size-md);
+  font-weight: var(--crm-weight-medium);
+}
+
+.crm-toast__dismiss {
+  display: inline-flex;
+  border: none;
+  background: transparent;
+  color: var(--crm-text-muted);
+  cursor: pointer;
+}
+
+.crm-toast__dismiss svg {
+  width: 15px;
+  height: 15px;
+}
+
+@keyframes crm-toast-in {
+  from {
+    transform: translate(-50%, 12px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crm-toast {
+    animation: none;
+  }
+}

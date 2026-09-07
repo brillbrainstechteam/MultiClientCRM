@@ -1,0 +1,19 @@
+.crm-tpl-composer {
+  display: flex;
+  flex-direction: column;
+}
+
+.crm-tpl-composer__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--crm-space-3);
+}
+
+.crm-tpl-composer__footer-left,
+.crm-tpl-composer__footer-right {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+}
