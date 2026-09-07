@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { HeroShader } from './HeroShader';
 import { LandingNav } from './LandingNav';
 import { JourneyLoop } from './JourneyLoop';
-import { HeroScene } from './HeroScene';
+import { HeroChat } from './HeroChat';
 import './landing.css';
 
 const modules: { icon: LucideIcon; title: string; blurb: string }[] = [
@@ -178,23 +178,8 @@ export default function LandingPage() {
             </ul>
           </div>
 
-          <div className="land__hero-art land__rise land__rise--2" aria-hidden="true">
-            <div className="land__hero-stage"><HeroScene /></div>
-            <div className="land__mock">
-              <div className="land__mock-bar">
-                <span className="land__mock-dot" /><span className="land__mock-dot" /><span className="land__mock-dot" />
-                <span className="land__mock-title">Shah Textiles · Delhi</span>
-              </div>
-              <div className="land__mock-body">
-                <div className="land__bubble land__bubble--in">Do you have the festive cotton sets in bulk?</div>
-                <div className="land__bubble land__bubble--out">Yes! 200 in stock — sharing the catalogue now 📎<span className="land__ticks"><CheckCheck size={13} /></span></div>
-                <div className="land__order">
-                  <span className="land__order-label">Order confirmed</span>
-                  <span className="land__order-amt">₹2,40,000</span>
-                  <span className="land__ticks land__ticks--gold"><CheckCheck size={14} /></span>
-                </div>
-              </div>
-            </div>
+          <div className="land__hero-art land__rise land__rise--2">
+            <div className="land__hero-stage"><HeroChat /></div>
           </div>
         </div>
 

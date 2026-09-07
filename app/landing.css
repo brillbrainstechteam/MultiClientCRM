@@ -91,8 +91,45 @@
 
 /* hero art */
 .land__hero-art { position: relative; }
-.land__hero-stage { position: relative; width: 100%; aspect-ratio: 3 / 2; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); box-shadow: 0 40px 80px -30px rgba(0,0,0,.7); background: radial-gradient(120% 120% at 30% 25%, #10263c, #081321 70%); }
-.land__hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.land__hero-stage { position: relative; width: 100%; min-height: 340px; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); box-shadow: 0 40px 80px -30px rgba(0,0,0,.7); background: radial-gradient(120% 120% at 30% 25%, #10263c, #081321 70%); display: grid; place-items: center; padding: 22px; }
+.land__hero-stage::before, .land__hero-stage::after { content: ''; position: absolute; border-radius: 50%; filter: blur(48px); z-index: 0; pointer-events: none; }
+.land__hero-stage::before { width: 58%; height: 62%; left: 6%; top: 10%; background: rgba(27,122,107,.5); animation: hglowA 9s ease-in-out infinite; }
+.land__hero-stage::after { width: 52%; height: 56%; right: 4%; bottom: 4%; background: rgba(201,162,39,.34); animation: hglowB 11s ease-in-out infinite; }
+@keyframes hglowA { 0%,100% { transform: translate(0,0); } 50% { transform: translate(7%,-6%); } }
+@keyframes hglowB { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-6%,7%); } }
+/* ---------- hero animated chat ---------- */
+.hchat { position: relative; z-index: 2; width: min(100%, 330px); display: flex; flex-direction: column; background: rgba(11,24,42,.86); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,.14); border-radius: 18px; box-shadow: 0 30px 60px -22px rgba(0,0,0,.7); overflow: hidden; }
+.hchat__bar { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: rgba(255,255,255,.05); border-bottom: 1px solid rgba(255,255,255,.08); }
+.hchat__av { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; font-size: 12px; font-weight: 800; color: #fff; background: linear-gradient(150deg, var(--emerald-lt), var(--emerald)); flex: none; }
+.hchat__id { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.hchat__id strong { color: #fff; font-size: 13.5px; }
+.hchat__id small { color: #7fd8c4; font-size: 11.5px; font-weight: 600; }
+.hchat__wa { margin-left: auto; }
+.hchat__dot { display: block; width: 9px; height: 9px; border-radius: 50%; background: #3ad29a; box-shadow: 0 0 0 3px rgba(58,210,154,.18); }
+.hchat__body { display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; padding: 14px; min-height: 214px; max-height: 260px; overflow: hidden; transition: opacity .4s ease; }
+.hchat__body--fade { opacity: 0; }
+.hchat__msg { font-size: 12.5px; line-height: 1.42; padding: 8px 11px; border-radius: 13px; max-width: 86%; }
+.hchat__msg--in { align-self: flex-start; background: rgba(255,255,255,.09); color: #eaf0f5; border-bottom-left-radius: 4px; }
+.hchat__msg--out { align-self: flex-end; background: linear-gradient(180deg, #1f8a78, var(--emerald)); color: #fff; border-bottom-right-radius: 4px; }
+.hchat__meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 2px; }
+.hchat__clip { color: rgba(255,255,255,.7); }
+.hchat__tick { color: rgba(255,255,255,.55); display: inline-flex; transition: color .35s ease; }
+.hchat__tick--read { color: #6fb9ff; }
+.hchat__order { align-self: stretch; display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 13px; background: rgba(201,162,39,.15); border: 1px solid rgba(201,162,39,.36); }
+.hchat__order-ic { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; color: #2a2205; background: linear-gradient(150deg, var(--gold-lt), var(--gold)); flex: none; }
+.hchat__order-label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--gold-lt); font-weight: 700; }
+.hchat__order-amt { margin-left: auto; font-weight: 800; color: #fff; font-size: 14.5px; }
+.hchat__order-tick { color: var(--gold-lt); flex: none; }
+.hchat__typing { display: inline-flex; gap: 4px; align-items: center; padding: 11px 13px; }
+.hchat__typing i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.7); animation: hchatDot 1.2s ease-in-out infinite; }
+.hchat__typing i:nth-child(2) { animation-delay: .16s; }
+.hchat__typing i:nth-child(3) { animation-delay: .32s; }
+@keyframes hchatDot { 0%,60%,100% { opacity: .25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+.hchat__pop { animation: hchatPop .34s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes hchatPop { from { opacity: 0; transform: translateY(9px) scale(.96); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .hchat__pop, .hchat__typing i, .land__hero-stage::before, .land__hero-stage::after { animation: none; }
+}
 .land__mock { position: absolute; right: -10px; bottom: -26px; width: min(78%, 340px); background: rgba(12,26,44,.82); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,.14); border-radius: 16px; box-shadow: 0 30px 60px -20px rgba(0,0,0,.7); overflow: hidden; }
 .land__mock-bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: rgba(255,255,255,.05); border-bottom: 1px solid rgba(255,255,255,.08); }
 .land__mock-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.3); }
