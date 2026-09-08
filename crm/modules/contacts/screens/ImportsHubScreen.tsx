@@ -13,7 +13,7 @@ import { useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@crm/components';
 import { useScopedHref } from '@crm/app/use-scoped-href';
-import { Badge, Button, StatusBadge, Toast } from '@crm/design-system';
+import { Badge, Button, ConfirmDialog, StatusBadge, Toast } from '@crm/design-system';
 import { importJobs, type ImportMethod } from '@crm/mock-data';
 import { ImportRow } from '../components';
 import { methodLabels } from '../imports/import-flow';
@@ -31,8 +31,12 @@ export default function ImportsHubScreen() {
   const googleConnected = searchParams.get('googleAuth') === 'connected';
 
   const fileRef = useRef<HTMLInputElement>(null);
+  const scanRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  // OCR candidates awaiting the user's review before import (req 15).
+  const [scanned, setScanned] = useState<Array<Record<string, string>> | null>(null);
 
   /** Real CSV upload: parse client-side and import via the API. */
   const onCsvChosen = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -47,6 +51,53 @@ export default function ImportsHubScreen() {
       setResult(`Imported ${r.created} new · ${r.updated} updated · ${r.skipped} skipped.`);
     } catch {
       setResult('Import failed. Check the file and try again.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  /** OCR scan: card / register photo / PDF → extract → review → import. */
+  const onScanChosen = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setScanning(true);
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result));
+        fr.onerror = () => reject(new Error('read failed'));
+        fr.readAsDataURL(file);
+      });
+      const fileBase64 = dataUrl.split(',')[1] ?? '';
+      const res = await fetch('/api/crm/contacts/ocr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ fileBase64, mimeType: file.type }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setResult(data.error ?? 'Scan failed.'); return; }
+      const contacts: Array<Record<string, string>> = data.contacts ?? [];
+      if (contacts.length === 0) { setResult('No contacts could be read from that file.'); return; }
+      setScanned(contacts);
+    } catch {
+      setResult('Scan failed. Try a clearer image.');
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const confirmScanImport = async () => {
+    if (!scanned) return;
+    const rows = scanned;
+    setScanned(null);
+    setImporting(true);
+    try {
+      const r = await importContacts(rows.map((c) => ({ ...c, source: 'OCR scan' })), 'skip');
+      setResult(`Imported ${r.created} new · ${r.updated} updated · ${r.skipped} skipped from the scan.`);
+    } catch {
+      setResult('Import failed after scan.');
     } finally {
       setImporting(false);
     }
@@ -67,6 +118,17 @@ export default function ImportsHubScreen() {
   return (
     <div className="crm-hub">
       {result ? <Toast tone="success" message={result} onDismiss={() => setResult(null)} /> : null}
+      {scanned ? (
+        <ConfirmDialog
+          open
+          title={`Import ${scanned.length} scanned contact${scanned.length !== 1 ? 's' : ''}?`}
+          message={`We read ${scanned.length} contact(s): ${scanned.slice(0, 5).map((c) => c.name || c.company || c.mobile || '—').join(', ')}${scanned.length > 5 ? ', …' : ''}. Duplicates (by mobile) are skipped. Import them into Contacts?`}
+          confirmLabel="Import"
+          tone="default"
+          onConfirm={confirmScanImport}
+          onCancel={() => setScanned(null)}
+        />
+      ) : null}
       <PageHeader
         title="Imports & Sync"
         description="Bring contacts in from files, images or connected sources — and track every import."
@@ -83,6 +145,10 @@ export default function ImportsHubScreen() {
             <input ref={fileRef} type="file" accept=".csv,text/csv" hidden onChange={onCsvChosen} />
             <Button variant="primary" iconLeft={<Upload />} disabled={importing} onClick={() => fileRef.current?.click()}>
               {importing ? 'Importing…' : 'Upload CSV'}
+            </Button>
+            <input ref={scanRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" hidden onChange={onScanChosen} />
+            <Button variant="secondary" iconLeft={<ScanLine />} disabled={scanning} onClick={() => scanRef.current?.click()}>
+              {scanning ? 'Scanning…' : 'Scan card / photo / PDF'}
             </Button>
             <Button variant="secondary" iconLeft={<Plus />} onClick={() => setSearchParams((p) => { const n = new URLSearchParams(p); n.set('drawer', 'contact'); n.set('mode', 'add'); return n; })}>
               Add manually

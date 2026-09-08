@@ -146,7 +146,7 @@ export function parseCsv(text: string): Array<Record<string, string>> {
 
 /** Import many contacts at once; returns how many were created vs skipped. */
 export async function importContacts(
-  rows: Array<Partial<Contact>>,
+  rows: Array<Record<string, unknown>>,
   onDuplicate: 'skip' | 'update',
 ): Promise<{ created: number; updated: number; skipped: number }> {
   const res = await jsonOrThrow(await fetch('/api/crm/contacts/import', {
