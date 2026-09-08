@@ -29,10 +29,13 @@ export async function hydrateCrmData(): Promise<void> {
   if (!res.ok) throw new Error(`bootstrap ${res.status}`);
   const data = await res.json();
   setWorkspaceData({
+    name: data.name,
     branches: data.branches,
     whatsappNumbers: data.whatsappNumbers,
     teams: data.teams,
     users: data.users,
+    branchIds: data.branchIds,
+    whatsappNumberIds: data.whatsappNumberIds,
   });
   setContacts(data.contacts);
 }

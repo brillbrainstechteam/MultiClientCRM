@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       stage: str(r.stage) || 'new',
       consent: str(r.consent) || 'pending',
       salesTier: str(r.salesTier || r.tier) || 'standard',
-      ownerId: str(r.ownerId), branchId: str(r.branchId), primaryWhatsAppNumberId: str(r.primaryWhatsAppNumberId),
+      ownerId: str(r.ownerId), branchId: str(r.branchId) || 'branch_main', primaryWhatsAppNumberId: str(r.primaryWhatsAppNumberId),
       tags: str(r.tags) ? String(r.tags).split(/[;|]/).map((t) => t.trim()).filter(Boolean) : [],
     };
 

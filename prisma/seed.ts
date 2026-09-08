@@ -31,7 +31,7 @@ async function main() {
     },
   });
   const passwordHash = await bcrypt.hash(LOGIN_PASSWORD, 10);
-  await prisma.user.upsert({
+  const authUser = await prisma.user.upsert({
     where: { email: LOGIN_EMAIL },
     update: { passwordHash, tenantId: TENANT_ID },
     create: { email: LOGIN_EMAIL, name: 'BrillBrains Tech', passwordHash, role: 'owner', tenantId: TENANT_ID },
@@ -66,11 +66,13 @@ async function main() {
     };
     await prisma.crmUser.upsert({ where: { id: u.id }, update: data, create: { id: u.id, ...data } });
   }
+  // Demo contacts, owned by the real seeded user and placed in the default
+  // branch — matching how the bootstrap now derives the workspace from real data.
   for (const c of contacts) {
     const data = {
       tenantId: TENANT_ID, name: c.name, company: c.company, mobile: c.mobile, email: c.email, city: c.city,
-      ownerId: c.ownerId, stage: c.stage, tags: c.tags, source: c.source, consent: c.consent,
-      salesTier: c.salesTier, branchId: c.branchId, primaryWhatsAppNumberId: c.primaryWhatsAppNumberId,
+      ownerId: authUser.id, stage: c.stage, tags: c.tags, source: c.source, consent: c.consent,
+      salesTier: c.salesTier, branchId: 'branch_main', primaryWhatsAppNumberId: '',
       createdAt: new Date(c.createdAt), lastActivityAt: new Date(c.lastActivityAt),
     };
     await prisma.crmContact.upsert({ where: { id: c.id }, update: data, create: { id: c.id, ...data } });

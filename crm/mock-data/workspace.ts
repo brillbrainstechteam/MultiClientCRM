@@ -152,7 +152,7 @@ export let users: User[] = [
   },
 ];
 
-export const workspace: Workspace = {
+export let workspace: Workspace = {
   id: 'workspace_northline',
   name: 'Northline Retail',
   legalName: 'Northline Retail Pvt. Ltd.',
@@ -202,9 +202,13 @@ export function findTeam(teamId: string): Team | undefined {
 /** Replace workspace reference data with real DB rows (hydration). */
 export function setWorkspaceData(next: {
   branches?: Branch[]; whatsappNumbers?: WhatsAppNumber[]; teams?: Team[]; users?: User[];
+  name?: string; branchIds?: string[]; whatsappNumberIds?: string[];
 }): void {
   if (next.branches) branches = next.branches;
   if (next.whatsappNumbers) whatsappNumbers = next.whatsappNumbers;
   if (next.teams) teams = next.teams;
   if (next.users) users = next.users;
+  if (next.name) workspace = { ...workspace, name: next.name, legalName: next.name };
+  if (next.branchIds) workspace = { ...workspace, branchIds: next.branchIds };
+  if (next.whatsappNumberIds) workspace = { ...workspace, whatsappNumberIds: next.whatsappNumberIds };
 }

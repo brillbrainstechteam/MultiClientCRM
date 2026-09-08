@@ -47,7 +47,7 @@ export async function POST(req: Request) {
         source: str(b?.source, 'Manual entry'),
         consent: str(b?.consent, 'pending'),
         salesTier: str(b?.salesTier, 'standard'),
-        branchId: str(b?.branchId),
+        branchId: str(b?.branchId, 'branch_main'),
         primaryWhatsAppNumberId: str(b?.primaryWhatsAppNumberId),
       },
     });
