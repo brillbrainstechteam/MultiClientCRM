@@ -23,7 +23,7 @@ const PROMPT =
   'register page has many rows). Keep phone numbers as digits (you may keep a leading +). ' +
   'Omit any field you cannot read. Do not invent data. No commentary.';
 
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODEL = 'gemini-flash-latest'; // always maps to the current Flash
 const OPENAI_MODEL = 'gpt-4o-mini';
 
 function parseContacts(text: string): OcrContact[] {
@@ -84,11 +84,21 @@ async function viaOpenAI(base64: string, mimeType: string, key: string): Promise
   return parseContacts(json?.choices?.[0]?.message?.content ?? '');
 }
 
-/** Extract contacts from a base64 image/PDF using the best available provider. */
+/**
+ * Extract contacts from a base64 image/PDF. Prefers Gemini when GEMINI_API_KEY
+ * is set (any key format — we don't gate on prefix), and falls back to OpenAI
+ * if Gemini errors and an OpenAI key is available.
+ */
 export async function extractContacts(base64: string, mimeType: string): Promise<{ contacts: OcrContact[]; provider: string }> {
   const gem = process.env.GEMINI_API_KEY;
-  if (gem && gem.startsWith('AIza')) return { contacts: await viaGemini(base64, mimeType, gem), provider: 'gemini' };
   const oai = process.env.OPENAI_API_KEY;
+  if (gem) {
+    try {
+      return { contacts: await viaGemini(base64, mimeType, gem), provider: 'gemini' };
+    } catch (e) {
+      if (!oai) throw e; // no fallback available — surface the Gemini error
+    }
+  }
   if (oai) return { contacts: await viaOpenAI(base64, mimeType, oai), provider: 'openai' };
-  throw new Error('No vision provider configured. Set GEMINI_API_KEY (AIza…) or OPENAI_API_KEY.');
+  throw new Error('No vision provider configured. Set GEMINI_API_KEY or OPENAI_API_KEY.');
 }
