@@ -40,7 +40,7 @@ import {
 import { useWorkspace, ALL_SCOPE } from '@crm/app/workspace-context';
 import { useScopedHref } from '@crm/app/use-scoped-href';
 import { contacts } from '@crm/mock-data';
-import type { QuickViewKey, ConversationSortKey, SearchMode, InboxFilterState, InboxMessage, InboxTemplate, AiSuggestedTask } from './inbox-types';
+import type { QuickViewKey, ConversationSortKey, SearchMode, InboxFilterState, InboxMessage, MessageStatus, InboxTemplate, AiSuggestedTask } from './inbox-types';
 import { emptyFilterState, isFilterActive } from './inbox-types';
 import {
   allConversations,
@@ -476,32 +476,39 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
       return next;
     });
 
-    // Simulate sending → sent → delivered progression
-    setTimeout(() => {
+    // Persist / send. Internal notes stay local; real messages go out via the
+    // Cloud API through /api/wa/send, and the bubble reflects the true result.
+    const patchStatus = (status: MessageStatus, detail: Partial<InboxMessage['statusDetail']>) =>
       setLocalMessages((prev) => {
         const next = new Map(prev);
         const msgs = next.get(activeConvId) ?? [];
         next.set(activeConvId, msgs.map((m) =>
-          m.id === newMsg.id
-            ? { ...m, status: 'sent' as const, statusDetail: { ...m.statusDetail, sentAt: new Date().toISOString() } }
-            : m,
+          m.id === newMsg.id ? { ...m, status, statusDetail: { ...m.statusDetail, ...detail } } : m,
         ));
         return next;
       });
-    }, 800);
 
-    setTimeout(() => {
-      setLocalMessages((prev) => {
-        const next = new Map(prev);
-        const msgs = next.get(activeConvId) ?? [];
-        next.set(activeConvId, msgs.map((m) =>
-          m.id === newMsg.id
-            ? { ...m, status: 'delivered' as const, statusDetail: { ...m.statusDetail, deliveredAt: new Date().toISOString() } }
-            : m,
-        ));
-        return next;
-      });
-    }, 2200);
+    if (newMsg.isNote) { patchStatus('sent', { sentAt: new Date().toISOString() }); return; }
+
+    const conv = findConversation(activeConvId);
+    const to = (conv?.rawMobile ?? '').replace(/\D/g, '');
+    if (!to) {
+      patchStatus('failed', { failedAt: new Date().toISOString(), failureReason: 'No recipient number on this conversation.' });
+      return;
+    }
+
+    fetch('/api/wa/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ to, text }),
+    })
+      .then(async (r) => {
+        if (r.ok) { patchStatus('sent', { sentAt: new Date().toISOString() }); return; }
+        const d = (await r.json().catch(() => ({}))) as { error?: string };
+        patchStatus('failed', { failedAt: new Date().toISOString(), failureReason: d.error ?? 'Message failed to send.' });
+      })
+      .catch(() => patchStatus('failed', { failedAt: new Date().toISOString(), failureReason: 'Network error while sending.' }));
   }, [activeConvId, currentUser.id]);
 
   const handleTemplateSend = useCallback((template: InboxTemplate, variables: Record<string, string>) => {
