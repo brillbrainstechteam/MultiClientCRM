@@ -7,6 +7,9 @@
 import type {
   InboxConversation,
   InboxMessage,
+  ResponseWindow,
+  MessagePreview,
+  MessageStatus,
   InboxTemplate,
   ConversationLabel,
   QuickReply,
@@ -207,348 +210,11 @@ export function findTemplate(id: string): InboxTemplate | undefined {
 // ---- Conversations ---------------------------------------------------------
 // Scenario 1: Normal active conversation — Rahul Shah / Meera / Delhi Sales
 
-export const conv_rahul_active: InboxConversation = {
-  id: 'conv_rahul_active',
-  contactId: 'contact_rahul_shah',
-  rawMobile: null,
-  whatsappNumberId: 'wa_delhi_sales',
-  assigneeId: 'user_meera',
-  teamId: 'team_delhi_sales',
-  botOwned: false,
-  status: 'open',
-  unreadCount: 2,
-  labelIds: ['lbl_bulk_enquiry', 'lbl_hot_lead'],
-  replyStatus: 'awaiting-agent',
-  responseWindow: {
-    status: 'active',
-    expiresAt: '2026-08-10T22:42:00+05:30',
-    remainingMinutes: 762,
-    canSendFreeform: true,
-  },
-  sla: { status: 'warning', deadline: '2026-08-10T11:00:00+05:30', minutesRemaining: 58 },
-  preview: {
-    text: 'Can you confirm if the summer collection is still in stock?',
-    isIncoming: true,
-    isNote: false,
-    at: '2026-08-10T09:42:00+05:30',
-  },
-  isSpam: false,
-  aiTaskCount: 0,
-  firstMessageAt: '2026-08-10T09:20:00+05:30',
-  lastMessageAt: '2026-08-10T09:42:00+05:30',
-};
-
-// Scenario 2: Unknown customer — no Contact record
-
-export const conv_unknown_number: InboxConversation = {
-  id: 'conv_unknown_9911',
-  contactId: null,
-  rawMobile: '+91 99112 99001',
-  whatsappNumberId: 'wa_delhi_sales',
-  assigneeId: null,
-  teamId: null,
-  botOwned: false,
-  status: 'open',
-  unreadCount: 1,
-  labelIds: [],
-  replyStatus: 'awaiting-agent',
-  responseWindow: {
-    status: 'active',
-    expiresAt: '2026-08-10T20:10:00+05:30',
-    remainingMinutes: 610,
-    canSendFreeform: true,
-  },
-  sla: { status: 'ok', deadline: '2026-08-10T12:10:00+05:30', minutesRemaining: 130 },
-  preview: {
-    text: 'Hello, I want to place a bulk order for Diwali gifting.',
-    isIncoming: true,
-    isNote: false,
-    at: '2026-08-10T08:10:00+05:30',
-  },
-  isSpam: false,
-  aiTaskCount: 0,
-  firstMessageAt: '2026-08-10T08:10:00+05:30',
-  lastMessageAt: '2026-08-10T08:10:00+05:30',
-};
-
-// Scenario 3: Expired response window — Priya Menon / Vikram
-
-export const conv_priya_expired: InboxConversation = {
-  id: 'conv_priya_expired',
-  contactId: 'contact_priya_menon',
-  rawMobile: null,
-  whatsappNumberId: 'wa_mumbai_sales',
-  assigneeId: 'user_vikram',
-  teamId: 'team_mumbai_sales',
-  botOwned: false,
-  status: 'open',
-  unreadCount: 0,
-  labelIds: ['lbl_vip'],
-  replyStatus: 'awaiting-agent',
-  responseWindow: {
-    status: 'expired',
-    expiresAt: '2026-08-09T18:15:00+05:30',
-    remainingMinutes: null,
-    canSendFreeform: false,
-  },
-  sla: { status: 'breached', deadline: '2026-08-09T20:00:00+05:30', minutesRemaining: null },
-  preview: {
-    text: 'I needed to ask about the exchange policy for the kurta set.',
-    isIncoming: true,
-    isNote: false,
-    at: '2026-08-09T17:15:00+05:30',
-  },
-  isSpam: false,
-  aiTaskCount: 0,
-  firstMessageAt: '2026-08-09T11:30:00+05:30',
-  lastMessageAt: '2026-08-09T17:15:00+05:30',
-};
-
-// Scenario 4: Expiring response window — Arjun Verma / Meera
-
-export const conv_arjun_expiring: InboxConversation = {
-  id: 'conv_arjun_expiring',
-  contactId: 'contact_arjun_verma',
-  rawMobile: null,
-  whatsappNumberId: 'wa_delhi_sales',
-  assigneeId: 'user_meera',
-  teamId: 'team_delhi_sales',
-  botOwned: false,
-  status: 'open',
-  unreadCount: 1,
-  labelIds: ['lbl_follow_up'],
-  replyStatus: 'awaiting-agent',
-  responseWindow: {
-    status: 'expiring',
-    expiresAt: '2026-08-10T11:05:00+05:30',
-    remainingMinutes: 63,
-    canSendFreeform: true,
-  },
-  sla: { status: 'warning', deadline: '2026-08-10T10:30:00+05:30', minutesRemaining: 28 },
-  preview: {
-    text: 'Any update on the wallpaper samples I requested?',
-    isIncoming: true,
-    isNote: false,
-    at: '2026-08-10T09:05:00+05:30',
-  },
-  isSpam: false,
-  aiTaskCount: 0,
-  firstMessageAt: '2026-08-08T16:00:00+05:30',
-  lastMessageAt: '2026-08-10T09:05:00+05:30',
-};
-
-// Scenario 5: Failed message — Rahul Shah, second conversation
-
-export const conv_rahul_failed: InboxConversation = {
-  id: 'conv_rahul_failed',
-  contactId: 'contact_rahul_shah',
-  rawMobile: null,
-  whatsappNumberId: 'wa_delhi_sales',
-  assigneeId: 'user_meera',
-  teamId: 'team_delhi_sales',
-  botOwned: false,
-  status: 'open',
-  unreadCount: 0,
-  labelIds: [],
-  replyStatus: 'awaiting-customer',
-  responseWindow: {
-    status: 'active',
-    expiresAt: '2026-08-11T07:20:00+05:30',
-    remainingMinutes: 1260,
-    canSendFreeform: true,
-  },
-  sla: { status: 'ok', deadline: '2026-08-10T16:00:00+05:30', minutesRemaining: 360 },
-  preview: {
-    text: 'Message failed to deliver. Tap to retry.',
-    isIncoming: false,
-    isNote: false,
-    at: '2026-08-10T07:20:00+05:30',
-  },
-  isSpam: false,
-  aiTaskCount: 0,
-  firstMessageAt: '2026-08-10T07:00:00+05:30',
-  lastMessageAt: '2026-08-10T07:20:00+05:30',
-};
-
-// Scenario 6: Bot-owned conversation — Sneha Iyer / no human assignee
-
-export const conv_sneha_bot: InboxConversation = {
-  id: 'conv_sneha_bot',
-  contactId: 'contact_sneha_iyer',
-  rawMobile: null,
-  whatsappNumberId: 'wa_delhi_sales',
-  assigneeId: null,
-  teamId: null,
-  botOwned: true,
-  status: 'open',
-  unreadCount: 0,
-  labelIds: [],
-  replyStatus: 'none',
-  responseWindow: {
-    status: 'active',
-    expiresAt: '2026-08-10T21:30:00+05:30',
-    remainingMinutes: 690,
-    canSendFreeform: true,
-  },
-  sla: { status: 'ok', deadline: '2026-08-10T14:30:00+05:30', minutesRemaining: 270 },
-  preview: {
-    text: 'Northline Bot: Thanks for your enquiry! Collecting details…',
-    isIncoming: false,
-    isNote: false,
-    at: '2026-08-10T09:30:00+05:30',
-  },
-  isSpam: false,
-  aiTaskCount: 0,
-  firstMessageAt: '2026-08-10T09:28:00+05:30',
-  lastMessageAt: '2026-08-10T09:30:00+05:30',
-};
-
-// Scenario 7: Spam conversation — anonymous number
-
-export const conv_spam_anon: InboxConversation = {
-  id: 'conv_spam_anon',
-  contactId: null,
-  rawMobile: '+91 88001 55555',
-  whatsappNumberId: 'wa_delhi_support',
-  assigneeId: null,
-  teamId: null,
-  botOwned: false,
-  status: 'open',
-  unreadCount: 0,
-  labelIds: [],
-  replyStatus: 'none',
-  responseWindow: {
-    status: 'active',
-    expiresAt: '2026-08-11T02:00:00+05:30',
-    remainingMinutes: 1080,
-    canSendFreeform: true,
-  },
-  sla: { status: 'ok', deadline: null, minutesRemaining: null },
-  preview: {
-    text: 'Congratulations! You have won a prize. Click here to claim.',
-    isIncoming: true,
-    isNote: false,
-    at: '2026-08-10T02:00:00+05:30',
-  },
-  isSpam: true,
-  aiTaskCount: 0,
-  firstMessageAt: '2026-08-10T02:00:00+05:30',
-  lastMessageAt: '2026-08-10T02:00:00+05:30',
-};
-
-// Scenario 8: Unassigned conversation — Arjun Verma, different number
-
-export const conv_unassigned: InboxConversation = {
-  id: 'conv_unassigned',
-  contactId: 'contact_arjun_verma',
-  rawMobile: null,
-  whatsappNumberId: 'wa_delhi_support',
-  assigneeId: null,
-  teamId: null,
-  botOwned: false,
-  status: 'open',
-  unreadCount: 3,
-  labelIds: ['lbl_support'],
-  replyStatus: 'awaiting-agent',
-  responseWindow: {
-    status: 'active',
-    expiresAt: '2026-08-10T20:55:00+05:30',
-    remainingMinutes: 655,
-    canSendFreeform: true,
-  },
-  sla: { status: 'warning', deadline: '2026-08-10T10:55:00+05:30', minutesRemaining: 53 },
-  preview: {
-    text: 'The curtain rods I received are scratched. Need replacement ASAP.',
-    isIncoming: true,
-    isNote: false,
-    at: '2026-08-10T08:55:00+05:30',
-  },
-  isSpam: false,
-  aiTaskCount: 0,
-  firstMessageAt: '2026-08-10T08:40:00+05:30',
-  lastMessageAt: '2026-08-10T08:55:00+05:30',
-};
-
-// Scenario 9: Overloaded/unavailable assignee — Rahul Shah assigned to Rohan (busy)
-
-export const conv_overloaded: InboxConversation = {
-  id: 'conv_overloaded',
-  contactId: 'contact_rahul_shah',
-  rawMobile: null,
-  whatsappNumberId: 'wa_delhi_sales',
-  assigneeId: 'user_rohan',
-  teamId: 'team_delhi_sales',
-  botOwned: false,
-  status: 'open',
-  unreadCount: 1,
-  labelIds: [],
-  replyStatus: 'awaiting-agent',
-  responseWindow: {
-    status: 'active',
-    expiresAt: '2026-08-10T19:15:00+05:30',
-    remainingMinutes: 615,
-    canSendFreeform: true,
-  },
-  sla: { status: 'ok', deadline: '2026-08-10T14:00:00+05:30', minutesRemaining: 240 },
-  preview: {
-    text: 'Just following up on the delivery timeline for the sofa set.',
-    isIncoming: true,
-    isNote: false,
-    at: '2026-08-10T07:15:00+05:30',
-  },
-  isSpam: false,
-  aiTaskCount: 0,
-  firstMessageAt: '2026-08-09T14:00:00+05:30',
-  lastMessageAt: '2026-08-10T07:15:00+05:30',
-};
-
-// Scenario 10: AI suggested task — Priya Menon / Anita
-
-export const conv_ai_task: InboxConversation = {
-  id: 'conv_ai_task',
-  contactId: 'contact_priya_menon',
-  rawMobile: null,
-  whatsappNumberId: 'wa_delhi_sales',
-  assigneeId: 'user_anita',
-  teamId: 'team_delhi_sales',
-  botOwned: false,
-  status: 'open',
-  unreadCount: 0,
-  labelIds: ['lbl_vip', 'lbl_follow_up'],
-  replyStatus: 'awaiting-customer',
-  responseWindow: {
-    status: 'active',
-    expiresAt: '2026-08-11T10:15:00+05:30',
-    remainingMinutes: 1455,
-    canSendFreeform: true,
-  },
-  sla: { status: 'ok', deadline: '2026-08-10T18:00:00+05:30', minutesRemaining: 480 },
-  preview: {
-    text: "I'd love to schedule a design consultation for my new home.",
-    isIncoming: true,
-    isNote: false,
-    at: '2026-08-09T22:15:00+05:30',
-  },
-  isSpam: false,
-  aiTaskCount: 1,
-  firstMessageAt: '2026-08-09T20:00:00+05:30',
-  lastMessageAt: '2026-08-09T22:15:00+05:30',
-};
+// (Mock conversation scenarios removed — conversations are hydrated from real data below.)
 
 // ---- All conversations in one array ---------------------------------------
 
-export const allConversations: InboxConversation[] = [
-  conv_rahul_active,
-  conv_unknown_number,
-  conv_priya_expired,
-  conv_arjun_expiring,
-  conv_rahul_failed,
-  conv_sneha_bot,
-  conv_spam_anon,
-  conv_unassigned,
-  conv_overloaded,
-  conv_ai_task,
-];
+export let allConversations: InboxConversation[] = [];
 
 export function findConversation(id: string): InboxConversation | undefined {
   return allConversations.find((c) => c.id === id);
@@ -556,457 +222,7 @@ export function findConversation(id: string): InboxConversation | undefined {
 
 // ---- Messages per conversation --------------------------------------------
 
-export const conversationMessages: Record<string, InboxMessage[]> = {
-  conv_rahul_active: [
-    {
-      id: 'msg_ra_1',
-      conversationId: 'conv_rahul_active',
-      kind: 'text',
-      direction: 'inbound',
-      text: 'Hi, I was browsing your catalogue and wanted to enquire about the Summer Collection.',
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-10T09:20:00+05:30', deliveredAt: '2026-08-10T09:20:05+05:30', readAt: '2026-08-10T09:21:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T09:20:00+05:30',
-    },
-    {
-      id: 'msg_ra_2',
-      conversationId: 'conv_rahul_active',
-      kind: 'automated',
-      direction: 'outbound',
-      text: 'Thanks for reaching out to Northline Retail! A team member will be with you shortly.',
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-10T09:20:10+05:30', deliveredAt: '2026-08-10T09:20:15+05:30', readAt: '2026-08-10T09:21:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: true,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T09:20:10+05:30',
-    },
-    {
-      id: 'msg_ra_3',
-      conversationId: 'conv_rahul_active',
-      kind: 'text',
-      direction: 'outbound',
-      text: 'Hello Rahul! Great to hear from you. The Summer Collection is in full swing — we have fabrics, furnishings, and gift sets. What specifically are you looking at?',
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-10T09:28:00+05:30', deliveredAt: '2026-08-10T09:28:10+05:30', readAt: '2026-08-10T09:35:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: 'user_meera',
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T09:28:00+05:30',
-    },
-    {
-      id: 'msg_ra_4',
-      conversationId: 'conv_rahul_active',
-      kind: 'text',
-      direction: 'inbound',
-      text: 'I need around 200 units of cotton kurta fabric. We have a festive order coming up.',
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-10T09:36:00+05:30', deliveredAt: '2026-08-10T09:36:05+05:30', readAt: '2026-08-10T09:36:30+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T09:36:00+05:30',
-    },
-    {
-      id: 'msg_ra_note',
-      conversationId: 'conv_rahul_active',
-      kind: 'note',
-      direction: 'outbound',
-      text: '@user_vikram — Rahul is a gold customer, bulk order 200 units. Check if we can give extra 5% discount on festive pricing.',
-      status: 'sent',
-      statusDetail: { sentAt: '2026-08-10T09:37:00+05:30', deliveredAt: null, readAt: null, failedAt: null, failureReason: null, failureCode: null },
-      sentById: 'user_meera',
-      isAutomated: false,
-      isNote: true,
-      mentionedUserIds: ['user_vikram'],
-      replyToMessageId: null,
-      at: '2026-08-10T09:37:00+05:30',
-    },
-    {
-      id: 'msg_ra_5',
-      conversationId: 'conv_rahul_active',
-      kind: 'text',
-      direction: 'inbound',
-      text: 'Can you confirm if the summer collection is still in stock?',
-      status: 'delivered',
-      statusDetail: { sentAt: '2026-08-10T09:42:00+05:30', deliveredAt: '2026-08-10T09:42:10+05:30', readAt: null, failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T09:42:00+05:30',
-    },
-  ],
-
-  conv_unknown_9911: [
-    {
-      id: 'msg_un_1',
-      conversationId: 'conv_unknown_9911',
-      kind: 'text',
-      direction: 'inbound',
-      text: 'Hello, I want to place a bulk order for Diwali gifting.',
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-10T08:10:00+05:30', deliveredAt: '2026-08-10T08:10:05+05:30', readAt: '2026-08-10T08:12:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T08:10:00+05:30',
-    },
-  ],
-
-  conv_priya_expired: [
-    {
-      id: 'msg_pe_1',
-      conversationId: 'conv_priya_expired',
-      kind: 'text',
-      direction: 'outbound',
-      text: "Hi Priya! Hope you're enjoying the kurta set. Is there anything I can help you with?",
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-09T11:30:00+05:30', deliveredAt: '2026-08-09T11:30:10+05:30', readAt: '2026-08-09T14:00:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: 'user_vikram',
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-09T11:30:00+05:30',
-    },
-    {
-      id: 'msg_pe_2',
-      conversationId: 'conv_priya_expired',
-      kind: 'text',
-      direction: 'inbound',
-      text: 'I needed to ask about the exchange policy for the kurta set.',
-      status: 'delivered',
-      statusDetail: { sentAt: '2026-08-09T17:15:00+05:30', deliveredAt: '2026-08-09T17:15:10+05:30', readAt: null, failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-09T17:15:00+05:30',
-    },
-    {
-      id: 'msg_pe_system',
-      conversationId: 'conv_priya_expired',
-      kind: 'system',
-      direction: 'outbound',
-      text: 'Customer message window closed (24 hours). Use a template to re-engage.',
-      status: 'sent',
-      statusDetail: { sentAt: '2026-08-10T17:15:00+05:30', deliveredAt: null, readAt: null, failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: true,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T17:15:00+05:30',
-    },
-  ],
-
-  conv_arjun_expiring: [
-    {
-      id: 'msg_ae_1',
-      conversationId: 'conv_arjun_expiring',
-      kind: 'text',
-      direction: 'inbound',
-      text: 'Hi, I was in touch earlier about wallpaper options for my living room project.',
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-08T16:00:00+05:30', deliveredAt: '2026-08-08T16:00:10+05:30', readAt: '2026-08-08T16:05:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-08T16:00:00+05:30',
-    },
-    {
-      id: 'msg_ae_2',
-      conversationId: 'conv_arjun_expiring',
-      kind: 'text',
-      direction: 'outbound',
-      text: "Hi Arjun! Yes, I'll pull together the wallpaper samples and send them across today.",
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-08T16:30:00+05:30', deliveredAt: '2026-08-08T16:30:10+05:30', readAt: '2026-08-09T09:00:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: 'user_meera',
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-08T16:30:00+05:30',
-    },
-    {
-      id: 'msg_ae_3',
-      conversationId: 'conv_arjun_expiring',
-      kind: 'text',
-      direction: 'inbound',
-      text: 'Any update on the wallpaper samples I requested?',
-      status: 'delivered',
-      statusDetail: { sentAt: '2026-08-10T09:05:00+05:30', deliveredAt: '2026-08-10T09:05:10+05:30', readAt: null, failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T09:05:00+05:30',
-    },
-  ],
-
-  conv_rahul_failed: [
-    {
-      id: 'msg_rf_1',
-      conversationId: 'conv_rahul_failed',
-      kind: 'text',
-      direction: 'inbound',
-      text: 'Meera, I wanted to check on the order status for my last purchase.',
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-10T07:00:00+05:30', deliveredAt: '2026-08-10T07:00:10+05:30', readAt: '2026-08-10T07:05:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T07:00:00+05:30',
-    },
-    {
-      id: 'msg_rf_2',
-      conversationId: 'conv_rahul_failed',
-      kind: 'text',
-      direction: 'outbound',
-      text: 'Hi Rahul! Let me check the dispatch details for you right away.',
-      status: 'failed',
-      statusDetail: { sentAt: null, deliveredAt: null, readAt: null, failedAt: '2026-08-10T07:20:00+05:30', failureReason: 'Message could not be delivered — WhatsApp returned error code 131026.', failureCode: '131026' },
-      sentById: 'user_meera',
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T07:20:00+05:30',
-    },
-  ],
-
-  conv_sneha_bot: [
-    {
-      id: 'msg_sb_1',
-      conversationId: 'conv_sneha_bot',
-      kind: 'text',
-      direction: 'inbound',
-      text: "Hi, I'd like to know more about your home furnishings range.",
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-10T09:28:00+05:30', deliveredAt: '2026-08-10T09:28:05+05:30', readAt: '2026-08-10T09:28:10+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T09:28:00+05:30',
-    },
-    {
-      id: 'msg_sb_2',
-      conversationId: 'conv_sneha_bot',
-      kind: 'bot',
-      direction: 'outbound',
-      text: "Thanks for your enquiry! I'm the Northline virtual assistant. I'll collect some details to connect you with the right team.\n\nWhich category interests you?\n1. Sofas & Seating\n2. Curtains & Blinds\n3. Wallpapers\n4. Bedding & Linen",
-      status: 'delivered',
-      statusDetail: { sentAt: '2026-08-10T09:28:10+05:30', deliveredAt: '2026-08-10T09:28:15+05:30', readAt: null, failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: true,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T09:28:10+05:30',
-    },
-    {
-      id: 'msg_sb_3',
-      conversationId: 'conv_sneha_bot',
-      kind: 'bot',
-      direction: 'outbound',
-      text: 'Thanks for your enquiry! Collecting details…',
-      status: 'delivered',
-      statusDetail: { sentAt: '2026-08-10T09:30:00+05:30', deliveredAt: '2026-08-10T09:30:10+05:30', readAt: null, failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: true,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T09:30:00+05:30',
-    },
-  ],
-
-  conv_spam_anon: [
-    {
-      id: 'msg_sp_1',
-      conversationId: 'conv_spam_anon',
-      kind: 'text',
-      direction: 'inbound',
-      text: 'Congratulations! You have won a prize. Click here to claim.',
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-10T02:00:00+05:30', deliveredAt: '2026-08-10T02:00:05+05:30', readAt: '2026-08-10T09:00:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T02:00:00+05:30',
-    },
-  ],
-
-  conv_unassigned: [
-    {
-      id: 'msg_ua_1',
-      conversationId: 'conv_unassigned',
-      kind: 'text',
-      direction: 'inbound',
-      text: 'Hello, I need help with a damaged product I received yesterday.',
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-10T08:40:00+05:30', deliveredAt: '2026-08-10T08:40:10+05:30', readAt: '2026-08-10T08:45:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T08:40:00+05:30',
-    },
-    {
-      id: 'msg_ua_2',
-      conversationId: 'conv_unassigned',
-      kind: 'text',
-      direction: 'inbound',
-      text: "I ordered curtain rods last week. They arrived today but they're all scratched.",
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-10T08:48:00+05:30', deliveredAt: '2026-08-10T08:48:10+05:30', readAt: '2026-08-10T08:50:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T08:48:00+05:30',
-    },
-    {
-      id: 'msg_ua_3',
-      conversationId: 'conv_unassigned',
-      kind: 'text',
-      direction: 'inbound',
-      text: 'The curtain rods I received are scratched. Need replacement ASAP.',
-      status: 'delivered',
-      statusDetail: { sentAt: '2026-08-10T08:55:00+05:30', deliveredAt: '2026-08-10T08:55:10+05:30', readAt: null, failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T08:55:00+05:30',
-    },
-  ],
-
-  conv_overloaded: [
-    {
-      id: 'msg_ol_1',
-      conversationId: 'conv_overloaded',
-      kind: 'text',
-      direction: 'inbound',
-      text: 'Hi, checking in — any update on when the sofa set will be delivered?',
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-09T14:00:00+05:30', deliveredAt: '2026-08-09T14:00:10+05:30', readAt: '2026-08-09T14:30:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-09T14:00:00+05:30',
-    },
-    {
-      id: 'msg_ol_2',
-      conversationId: 'conv_overloaded',
-      kind: 'text',
-      direction: 'outbound',
-      text: "Hi Rahul! I'm checking with our dispatch team on the current status. Will update you shortly.",
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-09T14:35:00+05:30', deliveredAt: '2026-08-09T14:35:10+05:30', readAt: '2026-08-09T15:00:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: 'user_rohan',
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-09T14:35:00+05:30',
-    },
-    {
-      id: 'msg_ol_3',
-      conversationId: 'conv_overloaded',
-      kind: 'text',
-      direction: 'inbound',
-      text: 'Just following up on the delivery timeline for the sofa set.',
-      status: 'delivered',
-      statusDetail: { sentAt: '2026-08-10T07:15:00+05:30', deliveredAt: '2026-08-10T07:15:10+05:30', readAt: null, failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-10T07:15:00+05:30',
-    },
-  ],
-
-  conv_ai_task: [
-    {
-      id: 'msg_at_1',
-      conversationId: 'conv_ai_task',
-      kind: 'text',
-      direction: 'inbound',
-      text: "Hi! I just moved into a new home and I'm looking to furnish it. Looking for premium options.",
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-09T20:00:00+05:30', deliveredAt: '2026-08-09T20:00:10+05:30', readAt: '2026-08-09T20:10:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-09T20:00:00+05:30',
-    },
-    {
-      id: 'msg_at_2',
-      conversationId: 'conv_ai_task',
-      kind: 'text',
-      direction: 'outbound',
-      text: "Congratulations on the new home, Priya! We'd love to help you create a beautiful space. Our premium range includes furniture, furnishings, and décor — all curated for a cohesive look.",
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-09T20:15:00+05:30', deliveredAt: '2026-08-09T20:15:10+05:30', readAt: '2026-08-09T22:00:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: 'user_anita',
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-09T20:15:00+05:30',
-    },
-    {
-      id: 'msg_at_3',
-      conversationId: 'conv_ai_task',
-      kind: 'text',
-      direction: 'inbound',
-      text: "I'd love to schedule a design consultation for my new home.",
-      status: 'read',
-      statusDetail: { sentAt: '2026-08-09T22:15:00+05:30', deliveredAt: '2026-08-09T22:15:10+05:30', readAt: '2026-08-10T09:00:00+05:30', failedAt: null, failureReason: null, failureCode: null },
-      sentById: null,
-      isAutomated: false,
-      isNote: false,
-      mentionedUserIds: [],
-      replyToMessageId: null,
-      at: '2026-08-09T22:15:00+05:30',
-    },
-  ],
-};
+export let conversationMessages: Record<string, InboxMessage[]> = {};
 
 // ---- AI Suggested Tasks ---------------------------------------------------
 
@@ -1107,3 +323,108 @@ export const inboxAnalytics: InboxAnalytics = {
     { date: '2026-08-10', open: 19, resolved: 0 },
   ],
 };
+
+// ---- Real-data hydration ---------------------------------------------------
+// Conversations + messages come from /api/crm/inbox (real WhatsApp threads).
+// Derived fields (response window, preview, reply status) are computed here so
+// the UI never calculates them. Config data (labels, quick replies, templates,
+// AI tasks, analytics) stays fixture-backed until those modules are built.
+
+interface InboxApiMessage { id: string; direction: string; text: string; status: string | null; at: string; }
+interface InboxApiConversation {
+  id: string;
+  whatsappNumberId: string;
+  contactId: string | null;
+  rawMobile: string | null;
+  contactName: string | null;
+  firstMessageAt: string;
+  lastMessageAt: string;
+  lastInboundAt: string | null;
+  messages: InboxApiMessage[];
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** WhatsApp 24h service window, computed from the last inbound message. */
+function computeResponseWindow(lastInboundAt: string | null): ResponseWindow {
+  if (!lastInboundAt) return { status: 'expired', expiresAt: null, remainingMinutes: null, canSendFreeform: false };
+  const expires = new Date(new Date(lastInboundAt).getTime() + DAY_MS);
+  const remaining = Math.round((expires.getTime() - Date.now()) / 60000);
+  if (remaining <= 0) return { status: 'expired', expiresAt: expires.toISOString(), remainingMinutes: 0, canSendFreeform: false };
+  return { status: remaining <= 60 ? 'expiring' : 'active', expiresAt: expires.toISOString(), remainingMinutes: remaining, canSendFreeform: true };
+}
+
+function mapStatus(direction: string, status: string | null): MessageStatus {
+  if (direction === 'inbound') return 'read';
+  switch (status) {
+    case 'sent': case 'delivered': case 'read': case 'failed': return status;
+    default: return 'sent';
+  }
+}
+
+function mapMessage(m: InboxApiMessage, conversationId: string): InboxMessage {
+  return {
+    id: m.id,
+    conversationId,
+    kind: 'text',
+    direction: m.direction === 'inbound' ? 'inbound' : 'outbound',
+    text: m.text,
+    status: mapStatus(m.direction, m.status),
+    statusDetail: { sentAt: m.at, deliveredAt: null, readAt: null, failedAt: null, failureReason: null, failureCode: null },
+    sentById: null,
+    isAutomated: false,
+    isNote: false,
+    mentionedUserIds: [],
+    replyToMessageId: null,
+    at: m.at,
+  };
+}
+
+function mapConversation(c: InboxApiConversation): InboxConversation {
+  const last = c.messages[c.messages.length - 1];
+  const preview: MessagePreview = {
+    text: last?.text ?? '',
+    isIncoming: last?.direction === 'inbound',
+    isNote: false,
+    at: last?.at ?? c.lastMessageAt,
+  };
+  const awaitingAgent = last?.direction === 'inbound';
+  return {
+    id: c.id,
+    contactId: c.contactId,
+    rawMobile: c.rawMobile,
+    whatsappNumberId: c.whatsappNumberId,
+    assigneeId: null,
+    teamId: null,
+    botOwned: false,
+    status: 'open',
+    unreadCount: 0,
+    labelIds: [],
+    replyStatus: awaitingAgent ? 'awaiting-agent' : (last ? 'awaiting-customer' : 'none'),
+    responseWindow: computeResponseWindow(c.lastInboundAt),
+    sla: { status: 'ok', deadline: null, minutesRemaining: null },
+    preview,
+    isSpam: false,
+    aiTaskCount: 0,
+    firstMessageAt: c.firstMessageAt,
+    lastMessageAt: c.lastMessageAt,
+  };
+}
+
+/** Replace the live inbox bindings (used after hydration and any refresh). */
+export function setInboxData(convs: InboxConversation[], msgs: Record<string, InboxMessage[]>): void {
+  allConversations = convs;
+  conversationMessages = msgs;
+}
+
+/** Fetch real conversations + messages and populate the live bindings. */
+export async function hydrateInboxData(): Promise<void> {
+  const res = await fetch('/api/crm/inbox', { credentials: 'same-origin' });
+  if (!res.ok) { setInboxData([], {}); return; }
+  const data = (await res.json()) as { conversations?: InboxApiConversation[] };
+  const rows = data.conversations ?? [];
+  const convs = rows.map(mapConversation);
+  const msgs: Record<string, InboxMessage[]> = {};
+  for (const c of rows) msgs[c.id] = c.messages.map((m) => mapMessage(m, c.id));
+  setInboxData(convs, msgs);
+}
