@@ -101,6 +101,26 @@ export interface Contact {
   primaryWhatsAppNumberId: string;
   createdAt: string;
   lastActivityAt: string;
+  // Requirement additions (Contacts module): B2B/B2C, lead status vs lifecycle,
+  // progressive enrichment, geography and structured interests. Optional so
+  // existing screens keep compiling while new fields are surfaced.
+  customerType?: 'b2b' | 'b2c';
+  contactPerson?: string | null;
+  leadStatus?: string;
+  lifecycleStage?: 'prospect' | 'customer';
+  lifecycleState?: string | null;
+  activatedAt?: string | null;
+  gstin?: string | null;
+  legalName?: string | null;
+  billingAddress?: string | null;
+  shippingAddress?: string | null;
+  state?: string | null;
+  zone?: string | null;
+  pincode?: string | null;
+  productInterests?: string[];
+  businessValue?: string | null;
+  consentOptInSource?: string | null;
+  consentOptInAt?: string | null;
 }
 
 /* ------------------------------------------------------------------------- */

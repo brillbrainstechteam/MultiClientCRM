@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { serializeCrmContact } from '@/lib/crm/contact-serialize';
 
 /**
  * Hydration endpoint for the embedded CRM.
@@ -81,11 +82,6 @@ export async function GET() {
     branchIds: branches.map((b) => b.id),
     whatsappNumberIds: numberIds,
     users,
-    contacts: contacts.map((c) => ({
-      id: c.id, name: c.name, company: c.company, mobile: c.mobile, email: c.email, city: c.city,
-      ownerId: c.ownerId, stage: c.stage, tags: c.tags, source: c.source, consent: c.consent,
-      salesTier: c.salesTier, branchId: c.branchId, primaryWhatsAppNumberId: c.primaryWhatsAppNumberId,
-      createdAt: c.createdAt.toISOString(), lastActivityAt: c.lastActivityAt.toISOString(),
-    })),
+    contacts: contacts.map(serializeCrmContact),
   });
 }

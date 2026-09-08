@@ -63,6 +63,23 @@ const stageOptions = [
   { value: 'dormant', label: 'Dormant' },
 ];
 
+// Req 34: the operating prospect pipeline (kept separate from lifecycle).
+const leadStatusOptions = [
+  { value: 'new', label: 'New' },
+  { value: 'assigned', label: 'Assigned' },
+  { value: 'attempted', label: 'Attempted' },
+  { value: 'connected', label: 'Connected' },
+  { value: 'engaged', label: 'Engaged' },
+  { value: 'enquiry_generated', label: 'Enquiry Generated' },
+  { value: 'not_interested', label: 'Not Interested' },
+  { value: 'dormant', label: 'Dormant' },
+];
+const businessValueOptions = [
+  { value: 'high', label: 'High' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'low', label: 'Low' },
+];
+
 function ContactForm({
   mode,
   existing,
@@ -79,14 +96,21 @@ function ContactForm({
   const navigate = useNavigate();
   const scopedHref = useScopedHref();
 
+  const [customerType, setCustomerType] = useState<'b2b' | 'b2c'>(existing?.customerType ?? 'b2b');
   const [name, setName] = useState(existing?.name ?? '');
   const [company, setCompany] = useState(existing?.company ?? '');
+  const [contactPerson, setContactPerson] = useState(existing?.contactPerson ?? '');
   const [mobile, setMobile] = useState(existing ? existing.mobile.replace('+91', '') : '');
   const [email, setEmail] = useState(existing?.email ?? '');
   const [city, setCity] = useState(existing?.city ?? '');
+  const [stateName, setStateName] = useState(existing?.state ?? '');
+  const [pincode, setPincode] = useState(existing?.pincode ?? '');
+  const [gstin, setGstin] = useState(existing?.gstin ?? '');
   const [tags, setTags] = useState(existing?.tags.join(', ') ?? '');
+  const [productInterests, setProductInterests] = useState(existing?.productInterests?.join(', ') ?? '');
   const [ownerId, setOwnerId] = useState(existing?.ownerId ?? users[0].id);
-  const [stage, setStage] = useState<string>(existing?.stage ?? 'new');
+  const [leadStatus, setLeadStatus] = useState<string>(existing?.leadStatus ?? 'new');
+  const [businessValue, setBusinessValue] = useState<string>(existing?.businessValue ?? 'medium');
   const [source, setSource] = useState(existing?.source ?? 'WhatsApp enquiry');
 
   const [submitting, setSubmitting] = useState(false);
@@ -101,18 +125,30 @@ function ContactForm({
 
   /** Persist to the API (create or update), then surface success/error. */
   const handleSave = async () => {
-    if (!name.trim() || !mobile.trim()) { setState('missing-required'); return; }
+    // Per-type mandatory fields (Contacts req 7,8): B2B needs business name +
+    // contact person + mobile; B2C needs name + mobile.
+    const missing = !mobile.trim() ||
+      (customerType === 'b2b' ? (!company.trim() || !contactPerson.trim()) : !name.trim());
+    if (missing) { setState('missing-required'); return; }
     const trimmed = mobile.trim();
     const fullMobile = trimmed.startsWith('+') ? trimmed : `+91${trimmed.replace(/\D/g, '')}`;
+    const csv = (s: string) => s.split(',').map((t) => t.trim()).filter(Boolean);
     const payload: Partial<Contact> = {
-      name: name.trim(),
+      customerType,
+      name: (name.trim() || contactPerson.trim() || company.trim()),
       company: company.trim() || null,
+      contactPerson: contactPerson.trim() || null,
       mobile: fullMobile,
       email: email.trim() || null,
       city: city.trim(),
-      tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
+      state: stateName.trim() || null,
+      pincode: pincode.trim() || null,
+      gstin: gstin.trim() || null,
+      tags: csv(tags),
+      productInterests: csv(productInterests),
       ownerId,
-      stage: stage as Contact['stage'],
+      leadStatus,
+      businessValue,
       source,
     };
     setSubmitting(true);
@@ -237,62 +273,61 @@ function ContactForm({
         </div>
       ) : null}
 
+      {/* Customer type — drives which fields are mandatory (req 7,8). */}
+      <div className="crm-ov-segment" role="group" aria-label="Customer type" style={{ marginBottom: 'var(--crm-space-4)' }}>
+        {(['b2b', 'b2c'] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            className={customerType === t ? 'crm-ov-segment__btn crm-ov-segment__btn--active' : 'crm-ov-segment__btn'}
+            onClick={() => setCustomerType(t)}
+          >
+            {t === 'b2b' ? 'Business (B2B)' : 'Individual (B2C)'}
+          </button>
+        ))}
+      </div>
+
       <div className="crm-contact-form">
+        {customerType === 'b2b' ? (
+          <>
+            <Input
+              label="Business name" required value={company}
+              onChange={(e) => setCompany(e.target.value)} placeholder="e.g. Shah Textiles"
+              error={missingRequired && !company ? 'Business name is required.' : undefined}
+            />
+            <Input
+              label="Contact person" required value={contactPerson}
+              onChange={(e) => setContactPerson(e.target.value)} placeholder="e.g. Rahul Shah"
+              error={missingRequired && !contactPerson ? 'Contact person is required.' : undefined}
+            />
+          </>
+        ) : (
+          <Input
+            label="Full name" required value={name}
+            onChange={(e) => setName(e.target.value)} placeholder="e.g. Priya Menon"
+            error={missingRequired && !name ? 'Name is required.' : undefined}
+          />
+        )}
         <Input
-          label="Full name"
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Rahul Shah"
-          error={missingRequired && !name ? 'Enter a name or a company.' : undefined}
+          label="WhatsApp mobile" required leadingAddon="+91" value={mobile}
+          onChange={(e) => setMobile(e.target.value)} placeholder="98110 20001"
+          error={invalidMobile ? 'Enter a valid 10-digit mobile number.' : (missingRequired && !mobile ? 'Mobile is required.' : undefined)}
         />
-        <Input
-          label="Company"
-          value={company}
-          onChange={(e) => setCompany(e.target.value)}
-          placeholder="Optional"
-        />
-        <Input
-          label="WhatsApp mobile"
-          required
-          leadingAddon="+91"
-          value={mobile}
-          onChange={(e) => setMobile(e.target.value)}
-          placeholder="98110 20001"
-          error={invalidMobile ? 'Enter a valid 10-digit mobile number.' : undefined}
-        />
-        <Input
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Optional"
-        />
-        <Input label="City" value={city} onChange={(e) => setCity(e.target.value)} />
-        <Input
-          label="Tags"
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          hint="Comma-separated"
-        />
+        <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Optional" />
+        <Input label="City" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Optional" />
+        <Input label="State" value={stateName} onChange={(e) => setStateName(e.target.value)} placeholder="Optional" />
+        <Input label="Pincode" value={pincode} onChange={(e) => setPincode(e.target.value)} placeholder="Optional" />
+        {customerType === 'b2b' ? (
+          <Input label="GSTIN" value={gstin} onChange={(e) => setGstin(e.target.value)} placeholder="Optional — added on conversion" />
+        ) : null}
+        <Input label="Product interests" value={productInterests} onChange={(e) => setProductInterests(e.target.value)} hint="Comma-separated" />
+        <Input label="Tags" value={tags} onChange={(e) => setTags(e.target.value)} hint="Comma-separated" />
+        <Select label="Owner" options={ownerOptions} value={ownerId} onChange={(e) => setOwnerId(e.target.value)} />
+        <Select label="Lead status" options={leadStatusOptions} value={leadStatus} onChange={(e) => setLeadStatus(e.target.value)} />
+        <Select label="Business value" options={businessValueOptions} value={businessValue} onChange={(e) => setBusinessValue(e.target.value)} />
         <Select
-          label="Owner"
-          options={ownerOptions}
-          value={ownerId}
-          onChange={(e) => setOwnerId(e.target.value)}
-        />
-        <Select
-          label="Lifecycle stage"
-          options={stageOptions}
-          value={stage}
-          onChange={(e) => setStage(e.target.value)}
-        />
-        <Select
-          label="Source / first interaction"
-          options={sourceOptions}
-          value={source}
-          onChange={(e) => setSource(e.target.value)}
-          disabled={mode === 'edit'}
+          label="Source / first interaction" options={sourceOptions} value={source}
+          onChange={(e) => setSource(e.target.value)} disabled={mode === 'edit'}
         />
       </div>
     </Drawer>

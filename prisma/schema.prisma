@@ -326,7 +326,7 @@ model CrmContact {
   email                    String?
   city                     String
   ownerId                  String
-  stage                    String   // new | engaged | qualified | customer | dormant
+  stage                    String   // legacy generic stage (kept for existing UI badges)
   tags                     String[]
   source                   String
   consent                  String   // opted-in | opted-out | pending
@@ -336,8 +336,57 @@ model CrmContact {
   createdAt                DateTime @default(now())
   lastActivityAt           DateTime @default(now())
 
+  // --- Req 7,8,12: B2B/B2C type + progressive capture ---
+  customerType             String   @default("b2b") // b2b | b2c
+  contactPerson            String?  // B2B primary contact person
+
+  // --- Req 34,37,38: Lead Status (prospecting) kept SEPARATE from Lifecycle ---
+  leadStatus               String   @default("new") // new|assigned|attempted|connected|engaged|enquiry_generated|not_interested|dormant
+  // --- Req 33,37,39,41: Customer Lifecycle (the relationship), separate again ---
+  lifecycleStage           String   @default("prospect") // prospect | customer
+  lifecycleState           String?  // active | dormant | reactivated (existing customers)
+  activatedAt              DateTime? // Req 33: activation date (prospect -> customer)
+
+  // --- Req 13,15: progressive enrichment on conversion ---
+  gstin                    String?
+  legalName                String?
+  billingAddress           String?
+  shippingAddress          String?
+
+  // --- Req 18: geography (optional until City/Pincode known) ---
+  state                    String?
+  zone                     String?
+  pincode                  String?
+
+  // --- Req 14,21: structured interests + business value ---
+  productInterests         String[]
+  businessValue            String?  // high | medium | low
+
+  // --- Req 29: consent detail ---
+  consentOptInSource       String?
+  consentOptInAt           DateTime?
+
+  createdSource            String?  // Req 16: original source / import source (audit)
+
   @@unique([tenantId, mobile])
   @@index([tenantId])
   @@index([tenantId, stage])
+  @@index([tenantId, leadStatus])
+  @@index([tenantId, lifecycleStage])
   @@index([tenantId, ownerId])
+}
+
+// Req 43: immutable log of lead-status / lifecycle transitions per contact.
+model CrmStageTransition {
+  id         String   @id @default(cuid())
+  tenantId   String
+  contactId  String
+  kind       String   // lead | lifecycle
+  fromValue  String?
+  toValue    String
+  byUserId   String?
+  note       String?
+  at         DateTime @default(now())
+
+  @@index([tenantId, contactId])
 }
