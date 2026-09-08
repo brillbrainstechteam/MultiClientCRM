@@ -120,3 +120,18 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ---- B2B Maps prospecting panel ---- */
+.crm-prospect__locked { display: flex; gap: 12px; align-items: flex-start; padding: 16px; border: 1px dashed var(--crm-border-strong); border-radius: 12px; background: var(--crm-surface-sunken); color: var(--crm-text-secondary); }
+.crm-prospect__locked strong { color: var(--crm-text-title); display: block; }
+.crm-prospect__locked p { margin: 3px 0 0; font-size: 13px; }
+.crm-prospect__title { display: flex; align-items: center; gap: 8px; font-size: 16px; color: var(--crm-text-title); margin: 0 0 4px; }
+.crm-prospect__sub { margin: 0 0 14px; font-size: 13px; color: var(--crm-text-secondary); }
+.crm-prospect__form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; align-items: end; }
+.crm-prospect__search { display: flex; align-items: end; }
+.crm-prospect__results { margin-top: 16px; border: 1px solid var(--crm-border-strong); border-radius: 12px; overflow: hidden; }
+.crm-prospect__results-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--crm-surface-band); font-size: 13px; }
+.crm-prospect__table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.crm-prospect__table th, .crm-prospect__table td { text-align: left; padding: 9px 14px; border-top: 1px solid var(--crm-border-subtle); }
+.crm-prospect__addr { color: var(--crm-text-muted); max-width: 320px; }
+@media (max-width: 900px) { .crm-prospect__form { grid-template-columns: repeat(2, 1fr); } }
