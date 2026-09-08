@@ -11,6 +11,7 @@ import {
 } from '@crm/design-system';
 import { findContact, users, type Contact } from '@crm/mock-data';
 import { duplicateClusters } from '@crm/mock-data';
+import { createContact, updateContact } from '@crm/app/crm-data';
 import { ConsentBadge, StageBadge } from './components';
 import { distinctSources } from './contact-selectors';
 
@@ -88,6 +89,8 @@ function ContactForm({
   const [stage, setStage] = useState<string>(existing?.stage ?? 'new');
   const [source, setSource] = useState(existing?.source ?? 'WhatsApp enquiry');
 
+  const [submitting, setSubmitting] = useState(false);
+
   const setState = (value: string | null) =>
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -95,6 +98,34 @@ function ContactForm({
       else next.set('state', value);
       return next;
     });
+
+  /** Persist to the API (create or update), then surface success/error. */
+  const handleSave = async () => {
+    if (!name.trim() || !mobile.trim()) { setState('missing-required'); return; }
+    const trimmed = mobile.trim();
+    const fullMobile = trimmed.startsWith('+') ? trimmed : `+91${trimmed.replace(/\D/g, '')}`;
+    const payload: Partial<Contact> = {
+      name: name.trim(),
+      company: company.trim() || null,
+      mobile: fullMobile,
+      email: email.trim() || null,
+      city: city.trim(),
+      tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
+      ownerId,
+      stage: stage as Contact['stage'],
+      source,
+    };
+    setSubmitting(true);
+    try {
+      if (mode === 'edit' && existing) await updateContact(existing.id, payload);
+      else await createContact(payload);
+      setState('save-success');
+    } catch {
+      setState('save-error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const invalidMobile = state === 'invalid-mobile';
   const missingRequired = state === 'missing-required';
@@ -143,8 +174,8 @@ function ContactForm({
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={() => setState('save-success')}>
-            {mode === 'edit' ? 'Save changes' : 'Add contact'}
+          <Button variant="primary" onClick={handleSave} disabled={submitting}>
+            {submitting ? 'Saving…' : mode === 'edit' ? 'Save changes' : 'Add contact'}
           </Button>
         </>
       }
