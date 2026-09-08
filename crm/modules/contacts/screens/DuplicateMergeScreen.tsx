@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { mergeContacts } from '@crm/app/crm-data';
 import { ArrowLeft, GitMerge, ShieldCheck } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PageHeader } from '@crm/components';
@@ -92,8 +93,14 @@ export default function DuplicateMergeScreen() {
   const canonical = records[primaryIndex];
   const activityCount = activityForContact(a.id).length + activityForContact(b.id).length;
 
-  const doMerge = () => {
+  const doMerge = async () => {
     setConfirmOpen(false);
+    const dupId = records[1 - primaryIndex].id;
+    try {
+      await mergeContacts(canonical.id, [dupId]);
+    } catch {
+      return; // leave the review open if the merge fails
+    }
     navigate(scopedHref(`/contacts/customer/${canonical.id}`, { flash: 'Contacts merged' }));
   };
 

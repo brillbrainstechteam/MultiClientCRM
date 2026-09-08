@@ -14,6 +14,7 @@ import {
   Toast,
 } from '@crm/design-system';
 import { findContact, findSegment, findUser, users } from '@crm/mock-data';
+import { bulkContacts } from '@crm/app/crm-data';
 import { ConsentBadge, StageBadge } from '../components';
 import { consentOptions, distinctSources } from '../contact-selectors';
 import { useZones } from '../zones/zone-store';
@@ -37,6 +38,8 @@ export function OperationalOverlays() {
   const flash = searchParams.get('flash');
   const contactId = searchParams.get('contactId');
   const count = searchParams.get('count');
+  const selectedIds = searchParams.get('selectedIds');
+  const targetIds = selectedIds ? selectedIds.split(',').filter(Boolean) : contactId ? [contactId] : [];
 
   const contact = contactId ? findContact(contactId) : undefined;
   const targetLabel = contact ? contact.name : `${count ?? 'the selected'} contacts`;
@@ -69,7 +72,7 @@ export function OperationalOverlays() {
     <>
       {drawer === 'advanced-filter' ? <AdvancedFilterDrawer onClose={closeAll} /> : null}
       {drawer === 'assign' ? (
-        <AssignDrawer targetLabel={targetLabel} affected={affected} contactOwnerId={contact?.ownerId} onClose={closeAll} onApply={apply} />
+        <AssignDrawer targetLabel={targetLabel} affected={affected} contactOwnerId={contact?.ownerId} onClose={closeAll} onApply={apply} targetIds={targetIds} />
       ) : null}
       {drawer === 'assign-zone' ? (
         <AssignZoneDrawer
@@ -80,19 +83,19 @@ export function OperationalOverlays() {
         />
       ) : null}
       {drawer === 'tags' ? (
-        <TagsDrawer targetLabel={targetLabel} onClose={closeAll} onApply={apply} />
+        <TagsDrawer targetLabel={targetLabel} onClose={closeAll} onApply={apply} targetIds={targetIds} />
       ) : null}
       {drawer === 'stage-followup' ? (
-        <StageFollowupDrawer targetLabel={targetLabel} contactId={contactId} onClose={closeAll} onApply={apply} />
+        <StageFollowupDrawer targetLabel={targetLabel} contactId={contactId} onClose={closeAll} onApply={apply} targetIds={targetIds} />
       ) : null}
       {drawer === 'export' ? (
         <ExportDrawer count={count} onClose={closeAll} onApply={apply} />
       ) : null}
       {drawer === 'consent' ? (
-        <ConsentDrawer targetLabel={targetLabel} contactId={contactId} onClose={closeAll} onApply={apply} />
+        <ConsentDrawer targetLabel={targetLabel} contactId={contactId} onClose={closeAll} onApply={apply} targetIds={targetIds} />
       ) : null}
       {modal === 'confirm' ? (
-        <ConfirmOverlay onCancel={closeAll} onApply={apply} targetLabel={targetLabel} />
+        <ConfirmOverlay onCancel={closeAll} onApply={apply} targetLabel={targetLabel} targetIds={targetIds} />
       ) : null}
       {flash ? <Toast tone="success" message={flash} onDismiss={dismissFlash} /> : null}
     </>
@@ -182,12 +185,14 @@ function AssignDrawer({
   contactOwnerId,
   onClose,
   onApply,
+  targetIds,
 }: {
   targetLabel: string;
   affected: number;
   contactOwnerId?: string;
   onClose: () => void;
   onApply: (message: string) => void;
+  targetIds: string[];
 }) {
   const currentOwner = contactOwnerId ? users.find((u) => u.id === contactOwnerId) : undefined;
   const [ownerId, setOwnerId] = useState(users[0].id);
@@ -204,7 +209,7 @@ function AssignDrawer({
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={() => onApply(`Reassigned ${targetLabel} to ${users.find((u) => u.id === ownerId)?.name}`)}>
+          <Button variant="primary" onClick={async () => { if (targetIds.length) { try { await bulkContacts(targetIds, { op: 'assign', ownerId }); } catch { return; } } onApply(`Reassigned ${targetLabel} to ${users.find((u) => u.id === ownerId)?.name}`); }}>
             Confirm assignment
           </Button>
         </>
@@ -412,7 +417,7 @@ function AssignZoneDrawer({
 /* ---- CON-S14 Tags ------------------------------------------------------- */
 const TAG_MASTER = ['bulk-buyer', 'festive-2026', 'premium', 'repeat', 'inbound', 'export', 'high-value', 'lapsed'];
 
-function TagsDrawer({ targetLabel, onClose, onApply }: { targetLabel: string; onClose: () => void; onApply: (m: string) => void }) {
+function TagsDrawer({ targetLabel, onClose, onApply, targetIds }: { targetLabel: string; onClose: () => void; onApply: (m: string) => void; targetIds: string[] }) {
   const [mode, setMode] = useState<'add' | 'remove'>('add');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -442,7 +447,7 @@ function TagsDrawer({ targetLabel, onClose, onApply }: { targetLabel: string; on
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" disabled={selected.size === 0} onClick={() => onApply(`${mode === 'add' ? 'Added' : 'Removed'} ${selected.size} tag(s) for ${targetLabel}`)}>
+          <Button variant="primary" disabled={selected.size === 0} onClick={async () => { if (targetIds.length) { try { await bulkContacts(targetIds, { op: 'tags', tags: [...selected], tagMode: mode }); } catch { return; } } onApply(`${mode === 'add' ? 'Added' : 'Removed'} ${selected.size} tag(s) for ${targetLabel}`); }}>
             Apply
           </Button>
         </>
@@ -472,11 +477,13 @@ function StageFollowupDrawer({
   contactId,
   onClose,
   onApply,
+  targetIds,
 }: {
   targetLabel: string;
   contactId: string | null;
   onClose: () => void;
   onApply: (m: string) => void;
+  targetIds: string[];
 }) {
   const contact = contactId ? findContact(contactId) : undefined;
   const [stage, setStage] = useState<string>(contact?.stage ?? 'qualified');
@@ -497,7 +504,7 @@ function StageFollowupDrawer({
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={() => onApply(`Stage updated for ${targetLabel}`)}>
+          <Button variant="primary" onClick={async () => { if (targetIds.length) { try { await bulkContacts(targetIds, { op: 'stage', stage }); } catch { return; } } onApply(`Stage updated for ${targetLabel}`); }}>
             Save
           </Button>
         </>
@@ -597,14 +604,17 @@ function ConsentDrawer({
   contactId,
   onClose,
   onApply,
+  targetIds,
 }: {
   targetLabel: string;
   contactId: string | null;
   onClose: () => void;
   onApply: (m: string) => void;
+  targetIds: string[];
 }) {
   const [, setSearchParams] = useSearchParams();
   const contact = contactId ? findContact(contactId) : undefined;
+  const [consent, setConsent] = useState(contact?.consent ?? 'pending');
 
   const openErasure = () =>
     setSearchParams((prev) => {
@@ -626,7 +636,7 @@ function ConsentDrawer({
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={() => onApply(`Consent updated for ${targetLabel}`)}>
+          <Button variant="primary" onClick={async () => { if (targetIds.length) { try { await bulkContacts(targetIds, { op: 'consent', consent }); } catch { return; } } onApply(`Consent updated for ${targetLabel}`); }}>
             Save consent
           </Button>
         </>
@@ -640,7 +650,7 @@ function ConsentDrawer({
       ) : null}
 
       <div className="crm-ov-form">
-        <Select label="Consent state" options={[{ value: 'opted-in', label: 'Opted in' }, { value: 'opted-out', label: 'Opted out' }, { value: 'pending', label: 'Pending' }]} defaultValue={contact?.consent ?? 'pending'} />
+        <Select label="Consent state" options={[{ value: 'opted-in', label: 'Opted in' }, { value: 'opted-out', label: 'Opted out' }, { value: 'pending', label: 'Pending' }]} value={consent} onChange={(e) => setConsent(e.target.value)} />
         <Input label="Opt-out reason" placeholder="Optional" />
       </div>
 
@@ -680,10 +690,12 @@ function ConfirmOverlay({
   onCancel,
   onApply,
   targetLabel,
+  targetIds,
 }: {
   onCancel: () => void;
   onApply: (m: string) => void;
   targetLabel: string;
+  targetIds: string[];
 }) {
   const [searchParams] = useSearchParams();
   const action = searchParams.get('action') ?? '';
@@ -706,7 +718,7 @@ function ConfirmOverlay({
       message={message}
       confirmLabel={copy.confirm}
       tone={copy.tone}
-      onConfirm={() => onApply(copy.done)}
+      onConfirm={async () => { if ((action === 'bulk-delete' || action === 'delete-contact') && targetIds.length) { try { await bulkContacts(targetIds, { op: 'delete' }); } catch { return; } } onApply(copy.done); }}
       onCancel={onCancel}
     />
   );

@@ -305,14 +305,14 @@ export default function AllContactsScreen() {
             ) : null}
             {/* Hide bulk actions a role can never perform (hide-vs-disable). */}
             {can(role, 'assign') ? (
-              <Button variant="ghost" size="sm" onClick={() => openOverlay({ drawer: 'assign', count: String(selected.size) })}>
+              <Button variant="ghost" size="sm" onClick={() => openOverlay({ drawer: 'assign', count: String(selected.size), selectedIds: [...selected].join(',') })}>
                 Assign owner
               </Button>
             ) : null}
-            <Button variant="ghost" size="sm" onClick={() => openOverlay({ drawer: 'tags', count: String(selected.size) })}>
+            <Button variant="ghost" size="sm" onClick={() => openOverlay({ drawer: 'tags', count: String(selected.size), selectedIds: [...selected].join(',') })}>
               Tags
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => openOverlay({ drawer: 'stage-followup', count: String(selected.size) })}>
+            <Button variant="ghost" size="sm" onClick={() => openOverlay({ drawer: 'stage-followup', count: String(selected.size), selectedIds: [...selected].join(',') })}>
               Stage
             </Button>
             {can(role, 'export') ? (
@@ -321,12 +321,12 @@ export default function AllContactsScreen() {
               </Button>
             ) : null}
             {can(role, 'assign') ? (
-              <Button variant="ghost" size="sm" onClick={() => openOverlay({ drawer: 'consent', count: String(selected.size) })}>
+              <Button variant="ghost" size="sm" onClick={() => openOverlay({ drawer: 'consent', count: String(selected.size), selectedIds: [...selected].join(',') })}>
                 Consent
               </Button>
             ) : null}
             {can(role, 'delete') ? (
-              <Button variant="ghost" size="sm" onClick={() => openOverlay({ modal: 'confirm', action: 'bulk-delete', count: String(selected.size) })}>
+              <Button variant="ghost" size="sm" onClick={() => openOverlay({ modal: 'confirm', action: 'bulk-delete', count: String(selected.size), selectedIds: [...selected].join(',') })}>
                 Delete
               </Button>
             ) : null}

@@ -9,15 +9,16 @@ import {
   Smartphone,
   Upload,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@crm/components';
 import { useScopedHref } from '@crm/app/use-scoped-href';
-import { Badge, Button, StatusBadge } from '@crm/design-system';
+import { Badge, Button, StatusBadge, Toast } from '@crm/design-system';
 import { importJobs, type ImportMethod } from '@crm/mock-data';
 import { ImportRow } from '../components';
 import { methodLabels } from '../imports/import-flow';
 import { downloadTemplate } from '../imports/import-template';
+import { parseCsv, importContacts } from '@crm/app/crm-data';
 
 /**
  * CON-S07 — Imports & Sync Hub. Import methods, connected-source status, import
@@ -28,6 +29,28 @@ export default function ImportsHubScreen() {
   const scopedHref = useScopedHref();
   const [searchParams, setSearchParams] = useSearchParams();
   const googleConnected = searchParams.get('googleAuth') === 'connected';
+
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  /** Real CSV upload: parse client-side and import via the API. */
+  const onCsvChosen = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImporting(true);
+    try {
+      const rows = parseCsv(await file.text());
+      if (rows.length === 0) { setResult('No valid rows found in that file.'); return; }
+      const r = await importContacts(rows, 'skip');
+      setResult(`Imported ${r.created} new · ${r.updated} updated · ${r.skipped} skipped.`);
+    } catch {
+      setResult('Import failed. Check the file and try again.');
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const startImport = (method?: ImportMethod) =>
     navigate(scopedHref('/contacts/imports/new/method', method ? { method } : undefined));
@@ -43,6 +66,7 @@ export default function ImportsHubScreen() {
 
   return (
     <div className="crm-hub">
+      {result ? <Toast tone="success" message={result} onDismiss={() => setResult(null)} /> : null}
       <PageHeader
         title="Imports & Sync"
         description="Bring contacts in from files, images or connected sources — and track every import."
@@ -55,6 +79,10 @@ export default function ImportsHubScreen() {
               onClick={() => downloadTemplate('csv')}
             >
               Download Import Template
+            </Button>
+            <input ref={fileRef} type="file" accept=".csv,text/csv" hidden onChange={onCsvChosen} />
+            <Button variant="primary" iconLeft={<Upload />} disabled={importing} onClick={() => fileRef.current?.click()}>
+              {importing ? 'Importing…' : 'Upload CSV'}
             </Button>
             <Button variant="secondary" iconLeft={<Plus />} onClick={() => setSearchParams((p) => { const n = new URLSearchParams(p); n.set('drawer', 'contact'); n.set('mode', 'add'); return n; })}>
               Add manually
