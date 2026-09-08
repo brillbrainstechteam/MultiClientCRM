@@ -26,7 +26,7 @@ export default async function AccountPage() {
       <ChangePasswordForm />
 
       <p className="crm-authform__footer">
-        <Link href="/dashboard" className="crm-authform__link">← Back to dashboard</Link>
+        <Link href="/crm/dashboard" className="crm-authform__link">← Back to dashboard</Link>
       </p>
     </AuthShell>
   );

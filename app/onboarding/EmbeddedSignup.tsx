@@ -106,7 +106,7 @@ export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeatu
           })
           .then(() => {
             setStatus('Connected! Redirecting…');
-            window.location.href = '/dashboard';
+            window.location.href = '/crm/dashboard';
           })
           .catch((err: Error) => {
             setBusy(false);

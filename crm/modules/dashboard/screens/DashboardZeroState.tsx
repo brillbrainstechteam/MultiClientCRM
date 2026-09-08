@@ -69,7 +69,7 @@ export default function DashboardZeroState({ firstName }: { firstName: string })
       <PageHeader
         title="Get started"
         actions={
-          <Button variant="primary" iconLeft={<PlugZap />} onClick={() => navigate(dashHref(CONNECT_TO))}>
+          <Button variant="primary" iconLeft={<PlugZap />} onClick={() => window.location.assign('/onboarding')}>
             Connect your number
           </Button>
         }
@@ -86,10 +86,10 @@ export default function DashboardZeroState({ firstName }: { firstName: string })
             campaigns and automating replies — all from one place.
           </p>
           <div className="crm-zero__hero-actions">
-            <Button variant="primary" size="lg" iconLeft={<PlugZap />} onClick={() => navigate(dashHref(CONNECT_TO))}>
+            <Button variant="primary" size="lg" iconLeft={<PlugZap />} onClick={() => window.location.assign('/onboarding')}>
               Connect your number
             </Button>
-            <Button variant="secondary" size="lg" onClick={() => navigate(dashHref(SETUP_HOME))}>
+            <Button variant="secondary" size="lg" onClick={() => window.location.assign('/onboarding')}>
               See how it works
             </Button>
           </div>
@@ -113,7 +113,7 @@ export default function DashboardZeroState({ firstName }: { firstName: string })
                 <span className="crm-zero__step-hint">{step.hint}</span>
               </span>
               {index === 0 ? (
-                <Button variant="primary" size="sm" iconRight={<ArrowRight />} onClick={() => navigate(dashHref(CONNECT_TO))}>
+                <Button variant="primary" size="sm" iconRight={<ArrowRight />} onClick={() => window.location.assign('/onboarding')}>
                   Start
                 </Button>
               ) : (
@@ -146,7 +146,7 @@ export default function DashboardZeroState({ firstName }: { firstName: string })
         </div>
         <div className="crm-zero__unlock">
           <span>Connect your number to unlock these.</span>
-          <Button variant="primary" iconLeft={<PlugZap />} onClick={() => navigate(dashHref(CONNECT_TO))}>
+          <Button variant="primary" iconLeft={<PlugZap />} onClick={() => window.location.assign('/onboarding')}>
             Connect your number
           </Button>
         </div>

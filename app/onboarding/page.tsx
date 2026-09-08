@@ -38,7 +38,7 @@ export default async function OnboardingPage() {
             <code>NEXT_PUBLIC_META_CONFIG_ID</code> in <code>.env</code> (see the README checklist) to
             enable Embedded Signup, then reload this page.
           </div>
-          <Link href="/dashboard" className="crm-authform__link" style={{ textAlign: 'center' }}>
+          <Link href="/crm/dashboard" className="crm-authform__link" style={{ textAlign: 'center' }}>
             Skip for now →
           </Link>
         </div>
@@ -51,7 +51,7 @@ export default async function OnboardingPage() {
             >
               <strong>Connected.</strong> {connected.displayPhone ?? 'Your WhatsApp number'} is linked
               {connected.verifiedName ? ` as “${connected.verifiedName}”` : ''}.{' '}
-              <Link href="/dashboard" className="crm-authform__link">Go to dashboard →</Link>
+              <Link href="/crm/dashboard" className="crm-authform__link">Go to dashboard →</Link>
               {' · '}Connect another number below.
             </div>
           ) : null}

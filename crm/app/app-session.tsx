@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { whatsappNumbers } from '@crm/mock-data/workspace';
 
 /**
  * Lightweight, browser-persisted account/session state for the prototype.
@@ -46,11 +47,12 @@ const DEFAULT_STATE: SessionState = {
 function loadState(): SessionState {
   if (typeof window === 'undefined') return DEFAULT_STATE;
   try {
+    const connected = whatsappNumbers.length > 0; // real: derived from connected numbers
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_STATE;
-    return { ...DEFAULT_STATE, ...(JSON.parse(raw) as Partial<SessionState>) };
+    if (!raw) return { ...DEFAULT_STATE, connected };
+    return { ...DEFAULT_STATE, ...(JSON.parse(raw) as Partial<SessionState>), connected };
   } catch {
-    return DEFAULT_STATE;
+    return { ...DEFAULT_STATE, connected: whatsappNumbers.length > 0 };
   }
 }
 

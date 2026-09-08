@@ -29,5 +29,5 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   const connected = await prisma.whatsAppAccount.findFirst({
     where: { tenantId: user.tenantId, status: 'connected' },
   });
-  redirect(connected ? '/dashboard' : '/onboarding');
+  redirect(connected ? '/crm/dashboard' : '/onboarding');
 }
