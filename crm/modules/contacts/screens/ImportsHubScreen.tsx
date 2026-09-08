@@ -14,11 +14,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@crm/components';
 import { useScopedHref } from '@crm/app/use-scoped-href';
 import { Badge, Button, ConfirmDialog, StatusBadge, Toast } from '@crm/design-system';
-import { importJobs, type ImportMethod } from '@crm/mock-data';
+import { contacts, importJobs, type ImportMethod } from '@crm/mock-data';
 import { ImportRow } from '../components';
 import { methodLabels } from '../imports/import-flow';
 import { downloadTemplate } from '../imports/import-template';
 import { parseCsv, importContacts } from '@crm/app/crm-data';
+import { parseVcf, buildVcf } from '../vcf';
 
 /**
  * CON-S07 — Imports & Sync Hub. Import methods, connected-source status, import
@@ -32,11 +33,41 @@ export default function ImportsHubScreen() {
 
   const fileRef = useRef<HTMLInputElement>(null);
   const scanRef = useRef<HTMLInputElement>(null);
+  const vcfRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  // OCR candidates awaiting the user's review before import (req 15).
+  // Candidates (from OCR or vCard) awaiting review before import (req 15).
   const [scanned, setScanned] = useState<Array<Record<string, string>> | null>(null);
+  const [scanSource, setScanSource] = useState('OCR scan');
+
+  /** vCard (.vcf) import: parse client-side, then review before importing. */
+  const onVcfChosen = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const rows = parseVcf(await file.text()) as Array<Record<string, string>>;
+      if (rows.length === 0) { setResult('No contacts found in that .vcf file.'); return; }
+      setScanSource('vCard import');
+      setScanned(rows);
+    } catch {
+      setResult('Could not read that .vcf file.');
+    }
+  };
+
+  /** Export the tenant's contacts as a downloadable .vcf (vCard) file. */
+  const onExportVcf = () => {
+    const vcf = buildVcf(
+      contacts.map((c) => ({ name: c.name, company: c.company, contactPerson: c.contactPerson, mobile: c.mobile, email: c.email, city: c.city })),
+    );
+    const blob = new Blob([vcf], { type: 'text/vcard' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'talktrack-contacts.vcf'; a.click();
+    URL.revokeObjectURL(url);
+    setResult(`Exported ${contacts.length} contact(s) as vCard.`);
+  };
 
   /** Real CSV upload: parse client-side and import via the API. */
   const onCsvChosen = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -78,9 +109,10 @@ export default function ImportsHubScreen() {
       });
       const data = await res.json();
       if (!res.ok) { setResult(data.error ?? 'Scan failed.'); return; }
-      const contacts: Array<Record<string, string>> = data.contacts ?? [];
-      if (contacts.length === 0) { setResult('No contacts could be read from that file.'); return; }
-      setScanned(contacts);
+      const found: Array<Record<string, string>> = data.contacts ?? [];
+      if (found.length === 0) { setResult('No contacts could be read from that file.'); return; }
+      setScanSource('OCR scan');
+      setScanned(found);
     } catch {
       setResult('Scan failed. Try a clearer image.');
     } finally {
@@ -94,8 +126,8 @@ export default function ImportsHubScreen() {
     setScanned(null);
     setImporting(true);
     try {
-      const r = await importContacts(rows.map((c) => ({ ...c, source: 'OCR scan' })), 'skip');
-      setResult(`Imported ${r.created} new · ${r.updated} updated · ${r.skipped} skipped from the scan.`);
+      const r = await importContacts(rows.map((c) => ({ ...c, source: scanSource })), 'skip');
+      setResult(`Imported ${r.created} new · ${r.updated} updated · ${r.skipped} skipped (${scanSource}).`);
     } catch {
       setResult('Import failed after scan.');
     } finally {
@@ -149,6 +181,13 @@ export default function ImportsHubScreen() {
             <input ref={scanRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" hidden onChange={onScanChosen} />
             <Button variant="secondary" iconLeft={<ScanLine />} disabled={scanning} onClick={() => scanRef.current?.click()}>
               {scanning ? 'Scanning…' : 'Scan card / photo / PDF'}
+            </Button>
+            <input ref={vcfRef} type="file" accept=".vcf,text/vcard,text/x-vcard" hidden onChange={onVcfChosen} />
+            <Button variant="secondary" iconLeft={<FileText />} onClick={() => vcfRef.current?.click()}>
+              Import .vcf
+            </Button>
+            <Button variant="secondary" iconLeft={<Download />} onClick={onExportVcf}>
+              Export vCard
             </Button>
             <Button variant="secondary" iconLeft={<Plus />} onClick={() => setSearchParams((p) => { const n = new URLSearchParams(p); n.set('drawer', 'contact'); n.set('mode', 'add'); return n; })}>
               Add manually
