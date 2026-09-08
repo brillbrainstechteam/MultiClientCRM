@@ -50,3 +50,48 @@ export const salesTierTone: Record<SalesTier, BadgeTone> = {
   silver: 'neutral',
   standard: 'neutral',
 };
+
+/* --- Requirement additions: Lead Status (pipeline) vs Customer Lifecycle --- */
+
+export const leadStatusLabel: Record<string, string> = {
+  new: 'New',
+  assigned: 'Assigned',
+  attempted: 'Attempted',
+  connected: 'Connected',
+  engaged: 'Engaged',
+  enquiry_generated: 'Enquiry Generated',
+  not_interested: 'Not Interested',
+  dormant: 'Dormant',
+};
+
+export const leadStatusTone: Record<string, BadgeTone> = {
+  new: 'info',
+  assigned: 'info',
+  attempted: 'warning',
+  connected: 'brand',
+  engaged: 'brand',
+  enquiry_generated: 'success',
+  not_interested: 'danger',
+  dormant: 'neutral',
+};
+
+export const lifecycleLabel: Record<string, string> = {
+  prospect: 'Prospect',
+  customer: 'Customer',
+};
+
+export const lifecycleTone: Record<string, BadgeTone> = {
+  prospect: 'info',
+  customer: 'success',
+};
+
+export const lifecycleStateLabel: Record<string, string> = {
+  active: 'Active',
+  dormant: 'Dormant',
+  reactivated: 'Reactivated',
+};
+
+export const customerTypeLabel: Record<string, string> = {
+  b2b: 'B2B',
+  b2c: 'B2C',
+};

@@ -25,12 +25,14 @@ import {
 import {
   ConsentBadge,
   contentStateView,
+  CustomerTypeBadge,
+  LeadStatusBadge,
+  LifecycleBadge,
   SalesTierBadge,
   SourceBadge,
-  StageBadge,
   TimelineItem,
 } from '../components';
-import { consentLabel, salesTierLabel, stageLabel } from '../contact-labels';
+import { consentLabel, salesTierLabel, leadStatusLabel, lifecycleLabel } from '../contact-labels';
 import { can, canViewField, dealValueFor } from '../permissions';
 
 const tabs: TabItem[] = [
@@ -175,7 +177,9 @@ export default function Customer360Screen() {
             <span>· {contact.city}</span>
           </div>
           <div className="crm-c360__chips">
-            <StageBadge stage={contact.stage} />
+            <CustomerTypeBadge type={contact.customerType} />
+            <LeadStatusBadge status={contact.leadStatus} />
+            <LifecycleBadge stage={contact.lifecycleStage} state={contact.lifecycleState} />
             <ConsentBadge consent={contact.consent} />
             <SalesTierBadge tier={contact.salesTier} />
             <SourceBadge source={contact.source} />
@@ -202,11 +206,17 @@ export default function Customer360Screen() {
         {activeTab === 'profile' ? (
           <FieldGrid
             fields={[
+              ['Type', (contact.customerType ?? 'b2b').toUpperCase()],
               ['Full name', contact.name],
               ['Company', contact.company ?? notSet()],
+              ['Contact person', contact.contactPerson ?? notSet()],
               ['WhatsApp mobile', contact.mobile],
               ['Email', contact.email ?? notSet()],
               ['City', contact.city],
+              ['State', contact.state ?? notSet()],
+              ['Pincode', contact.pincode ?? notSet()],
+              ['GSTIN', contact.gstin ?? notSet()],
+              ['Product interests', contact.productInterests && contact.productInterests.length ? contact.productInterests.join(', ') : notSet()],
               ['Tags', contact.tags.length ? contact.tags.join(', ') : notSet()],
             ]}
           />
@@ -215,7 +225,10 @@ export default function Customer360Screen() {
         {activeTab === 'sales' ? (
           <FieldGrid
             fields={[
-              ['Lifecycle stage', stageLabel[contact.stage]],
+              ['Lead status', leadStatusLabel[contact.leadStatus ?? 'new'] ?? (contact.leadStatus ?? 'New')],
+              ['Lifecycle', lifecycleLabel[contact.lifecycleStage ?? 'prospect'] ?? 'Prospect'],
+              ['Activated on', contact.activatedAt ? new Date(contact.activatedAt).toLocaleDateString('en-IN') : notSet()],
+              ['Business value', contact.businessValue ? contact.businessValue[0].toUpperCase() + contact.businessValue.slice(1) : notSet()],
               ['Sales tier', salesTierLabel[contact.salesTier]],
               ['Owner', owner?.name ?? 'Unassigned'],
               // Sensitive field: hidden entirely from roles without access (no leakage).

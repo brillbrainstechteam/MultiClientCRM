@@ -34,18 +34,43 @@ const dateOperators: ConditionOperator[] = ['in-last-days'];
 
 export const fieldDefs: FieldDef[] = [
   {
-    key: 'stage',
-    label: 'Lifecycle stage',
+    key: 'leadStatus',
+    label: 'Lead status',
     type: 'enum',
     operators: enumOperators,
     options: [
       { value: 'new', label: 'New' },
+      { value: 'assigned', label: 'Assigned' },
+      { value: 'attempted', label: 'Attempted' },
+      { value: 'connected', label: 'Connected' },
       { value: 'engaged', label: 'Engaged' },
-      { value: 'qualified', label: 'Qualified' },
-      { value: 'customer', label: 'Customer' },
+      { value: 'enquiry_generated', label: 'Enquiry Generated' },
+      { value: 'not_interested', label: 'Not Interested' },
       { value: 'dormant', label: 'Dormant' },
     ],
-    get: (c) => c.stage,
+    get: (c) => c.leadStatus ?? 'new',
+  },
+  {
+    key: 'lifecycle',
+    label: 'Lifecycle',
+    type: 'enum',
+    operators: enumOperators,
+    options: [
+      { value: 'prospect', label: 'Prospect' },
+      { value: 'customer', label: 'Customer' },
+    ],
+    get: (c) => c.lifecycleStage ?? 'prospect',
+  },
+  {
+    key: 'customerType',
+    label: 'Customer type',
+    type: 'enum',
+    operators: enumOperators,
+    options: [
+      { value: 'b2b', label: 'B2B' },
+      { value: 'b2c', label: 'B2C' },
+    ],
+    get: (c) => c.customerType ?? 'b2b',
   },
   {
     key: 'consent',
@@ -101,6 +126,13 @@ export const fieldDefs: FieldDef[] = [
     type: 'tag',
     operators: tagOperators,
     get: (c) => c.tags,
+  },
+  {
+    key: 'productInterest',
+    label: 'Product interest',
+    type: 'tag',
+    operators: tagOperators,
+    get: (c) => c.productInterests ?? [],
   },
   {
     key: 'lastActivityAt',

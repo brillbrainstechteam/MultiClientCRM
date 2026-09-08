@@ -16,13 +16,16 @@ import {
   type Column,
 } from '@crm/design-system';
 import { findUser, users, type Contact } from '@crm/mock-data';
-import { ConsentBadge, ContactIdentity, contentStateView, SalesTierBadge, StageBadge } from '../components';
+import { ConsentBadge, ContactIdentity, contentStateView, CustomerTypeBadge, LeadStatusBadge, LifecycleBadge, SalesTierBadge } from '../components';
 import { assignZone } from '../zones/zone-assignment';
 import { getContactZone, useContactZones } from '../zones/contact-zone-store';
 import {
   consentOptions,
+  customerTypeFilterOptions,
   distinctSources,
   filterContacts,
+  leadStatusFilterOptions,
+  lifecycleFilterOptions,
   type ContactFilters,
 } from '../contact-selectors';
 import { consentLabel, stageLabel } from '../contact-labels';
@@ -59,6 +62,9 @@ export default function AllContactsScreen() {
   const filters: ContactFilters = {
     q: searchParams.get('q'),
     stage: searchParams.get('stage'),
+    leadStatus: searchParams.get('leadStatus'),
+    lifecycle: searchParams.get('lifecycle'),
+    customerType: searchParams.get('customerType'),
     consent: searchParams.get('consent'),
     ownerId: searchParams.get('ownerId'),
     source: searchParams.get('source'),
@@ -67,7 +73,7 @@ export default function AllContactsScreen() {
   const forcedNoResults = searchParams.get('state') === 'no-results';
   const rows = useMemo(
     () => (forcedNoResults ? [] : filterContacts(scope, filters)),
-    [forcedNoResults, scope.branchId, scope.whatsappNumberId, filters.q, filters.stage, filters.consent, filters.ownerId, filters.source],
+    [forcedNoResults, scope.branchId, scope.whatsappNumberId, filters.q, filters.stage, filters.leadStatus, filters.lifecycle, filters.customerType, filters.consent, filters.ownerId, filters.source],
   );
 
   const setParam = (key: string, value: string | null) => {
@@ -123,7 +129,9 @@ export default function AllContactsScreen() {
       render: (c) => <ContactIdentity contact={c} to={scopedHref(`/contacts/customer/${c.id}`)} />,
       width: '24%',
     },
-    { key: 'stage', header: 'Stage', render: (c) => <StageBadge stage={c.stage} /> },
+    { key: 'type', header: 'Type', render: (c) => <CustomerTypeBadge type={c.customerType} /> },
+    { key: 'leadStatus', header: 'Lead status', render: (c) => <LeadStatusBadge status={c.leadStatus} /> },
+    { key: 'lifecycle', header: 'Lifecycle', render: (c) => <LifecycleBadge stage={c.lifecycleStage} state={c.lifecycleState} /> },
     { key: 'consent', header: 'Consent', render: (c) => <ConsentBadge consent={c.consent} /> },
     {
       key: 'owner',
@@ -227,12 +235,28 @@ export default function AllContactsScreen() {
         />
         <div className="crm-all__filters">
           <Select
-            label="Stage"
+            label="Lead status"
             hideLabel
             size="sm"
-            options={[{ value: '', label: 'All stages' }, ...stageOptions]}
-            value={filters.stage ?? ''}
-            onChange={(e) => setParam('stage', e.target.value)}
+            options={[{ value: '', label: 'All lead statuses' }, ...leadStatusFilterOptions]}
+            value={filters.leadStatus ?? ''}
+            onChange={(e) => setParam('leadStatus', e.target.value)}
+          />
+          <Select
+            label="Lifecycle"
+            hideLabel
+            size="sm"
+            options={[{ value: '', label: 'All lifecycle' }, ...lifecycleFilterOptions]}
+            value={filters.lifecycle ?? ''}
+            onChange={(e) => setParam('lifecycle', e.target.value)}
+          />
+          <Select
+            label="Type"
+            hideLabel
+            size="sm"
+            options={[{ value: '', label: 'All types' }, ...customerTypeFilterOptions]}
+            value={filters.customerType ?? ''}
+            onChange={(e) => setParam('customerType', e.target.value)}
           />
           <Select
             label="Consent"

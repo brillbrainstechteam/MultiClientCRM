@@ -1,6 +1,6 @@
 /** Contacts-specific reusable components (composed by Batch 1+ screens). */
 
-export { StageBadge, ConsentBadge, SalesTierBadge, SourceBadge } from './ContactBadges';
+export { StageBadge, ConsentBadge, SalesTierBadge, SourceBadge, LeadStatusBadge, LifecycleBadge, CustomerTypeBadge } from './ContactBadges';
 export { ContactIdentity } from './ContactIdentity';
 export type { ContactIdentityProps } from './ContactIdentity';
 export { TimelineItem } from './TimelineItem';

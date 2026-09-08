@@ -113,6 +113,9 @@ function stageDisplay(stage: ContactStage): string {
 export interface ContactFilters {
   q?: string | null;
   stage?: string | null;
+  leadStatus?: string | null;
+  lifecycle?: string | null;
+  customerType?: string | null;
   consent?: string | null;
   ownerId?: string | null;
   source?: string | null;
@@ -123,6 +126,9 @@ export function filterContacts(scope: ContactScope, filters: ContactFilters): Co
   return contacts.filter((contact) => {
     if (!inScope(contact, scope)) return false;
     if (filters.stage && contact.stage !== filters.stage) return false;
+    if (filters.leadStatus && (contact.leadStatus ?? 'new') !== filters.leadStatus) return false;
+    if (filters.lifecycle && (contact.lifecycleStage ?? 'prospect') !== filters.lifecycle) return false;
+    if (filters.customerType && (contact.customerType ?? 'b2b') !== filters.customerType) return false;
     if (filters.consent && contact.consent !== filters.consent) return false;
     if (filters.ownerId && contact.ownerId !== filters.ownerId) return false;
     if (filters.source && contact.source !== filters.source) return false;
@@ -151,4 +157,24 @@ export const consentOptions: { value: ConsentState; label: string }[] = [
   { value: 'opted-in', label: 'Opted in' },
   { value: 'opted-out', label: 'Opted out' },
   { value: 'pending', label: 'Consent pending' },
+];
+
+/* Filter dropdown option lists for the requirement's lead/lifecycle/type fields. */
+export const leadStatusFilterOptions: { value: string; label: string }[] = [
+  { value: 'new', label: 'New' },
+  { value: 'assigned', label: 'Assigned' },
+  { value: 'attempted', label: 'Attempted' },
+  { value: 'connected', label: 'Connected' },
+  { value: 'engaged', label: 'Engaged' },
+  { value: 'enquiry_generated', label: 'Enquiry Generated' },
+  { value: 'not_interested', label: 'Not Interested' },
+  { value: 'dormant', label: 'Dormant' },
+];
+export const lifecycleFilterOptions: { value: string; label: string }[] = [
+  { value: 'prospect', label: 'Prospect' },
+  { value: 'customer', label: 'Customer' },
+];
+export const customerTypeFilterOptions: { value: string; label: string }[] = [
+  { value: 'b2b', label: 'B2B' },
+  { value: 'b2c', label: 'B2C' },
 ];
