@@ -13,10 +13,11 @@ import { useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@crm/components';
 import { useScopedHref } from '@crm/app/use-scoped-href';
-import { Badge, Button, ConfirmDialog, StatusBadge, Toast } from '@crm/design-system';
+import { Badge, Button, ConfirmDialog, Toast } from '@crm/design-system';
 import { contacts, importJobs, type ImportMethod } from '@crm/mock-data';
 import { ImportRow } from '../components';
 import { ProspectingPanel } from '../ProspectingPanel';
+import { GoogleSyncPanel } from '../GoogleSyncPanel';
 import { methodLabels } from '../imports/import-flow';
 import { downloadTemplate } from '../imports/import-template';
 import { parseCsv, importContacts } from '@crm/app/crm-data';
@@ -29,8 +30,7 @@ import { parseVcf, buildVcf } from '../vcf';
 export default function ImportsHubScreen() {
   const navigate = useNavigate();
   const scopedHref = useScopedHref();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const googleConnected = searchParams.get('googleAuth') === 'connected';
+  const [, setSearchParams] = useSearchParams();
 
   const fileRef = useRef<HTMLInputElement>(null);
   const scanRef = useRef<HTMLInputElement>(null);
@@ -217,25 +217,7 @@ export default function ImportsHubScreen() {
 
       <section className="crm-hub__section">
         <h2 className="crm-hub__title">Connected sources</h2>
-        <div className="crm-hub__source">
-          <div className="crm-hub__source-left">
-            <ContactIcon aria-hidden="true" />
-            <div>
-              <p className="crm-hub__source-name">Google Contacts</p>
-              <p className="crm-hub__source-meta">Read-only · CRM is source of truth</p>
-            </div>
-          </div>
-          {googleConnected ? (
-            <StatusBadge tone="success">Connected</StatusBadge>
-          ) : (
-            <div className="crm-hub__source-actions">
-              <StatusBadge tone="danger">Disconnected</StatusBadge>
-              <Button variant="secondary" size="sm" onClick={() => setSearchParams((p) => { const n = new URLSearchParams(p); n.set('modal', 'google-contacts'); return n; })}>
-                Connect
-              </Button>
-            </div>
-          )}
-        </div>
+        <GoogleSyncPanel />
       </section>
 
       <section className="crm-hub__section">

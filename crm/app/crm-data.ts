@@ -45,6 +45,15 @@ async function refreshAndNotify() {
   notify();
 }
 
+/**
+ * Re-fetch the workspace + contacts and notify listeners. For callers that
+ * mutate CRM data through their own API route (e.g. the Google Contacts import)
+ * and then need the visible list to reflect it.
+ */
+export async function refreshCrmData(): Promise<void> {
+  await refreshAndNotify();
+}
+
 async function jsonOrThrow(res: Response) {
   if (!res.ok) {
     const msg = (await res.json().catch(() => ({}))).error ?? 'Request failed.';
