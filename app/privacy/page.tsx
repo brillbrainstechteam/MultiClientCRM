@@ -36,6 +36,24 @@ export default function PrivacyPage() {
         the business that granted them.
       </p>
 
+      <h2 style={sx.h2}>Google user data</h2>
+      <p style={sx.p}>
+        If a business chooses to connect its Google account, TalkTrackCRM requests access only to
+        Google Contacts (<code>contacts</code>), Google Sheets (<code>spreadsheets</code>) and files
+        this app creates in Google Drive (<code>drive.file</code>). We use this access solely to (a)
+        import the business’s contacts into its own CRM, (b) write contacts the business creates back
+        to its Google Contacts, and (c) sync the business’s contact data into a Google Sheet it owns.
+      </p>
+      <p style={sx.p}>
+        TalkTrackCRM’s use and transfer of information received from Google APIs adheres to the{' '}
+        <a href="https://developers.google.com/terms/api-services-user-data-policy" style={sx.a}>Google API Services User Data Policy</a>,
+        including the Limited Use requirements. We do not sell Google user data, do not use it for
+        advertising, and do not transfer it to third parties except as needed to provide the
+        service to the business, for security, or to comply with law. Google user data is stored only
+        for the connected business, is not used to train generalised AI models, and access can be
+        revoked by the business at any time from its Google account or by disconnecting in TalkTrackCRM.
+      </p>
+
       <h2 style={sx.h2}>Retention & deletion</h2>
       <p style={sx.p}>
         Businesses may disconnect their WhatsApp account at any time, which revokes our access. On
