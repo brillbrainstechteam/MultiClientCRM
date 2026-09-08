@@ -9,6 +9,7 @@ import { createSession } from '@/lib/auth/session';
 const schema = z.object({
   businessName: z.string().min(1),
   businessType: z.string().min(1),
+  businessModel: z.enum(['b2b', 'b2c', 'both']).default('both'),
   businessPhone: z.string().min(6),
   email: z.string().email(),
   gst: z.string().optional(),
@@ -37,6 +38,7 @@ export async function signupAction(_prev: SignupState, formData: FormData): Prom
         gstNumber: d.gst || null,
         cin: d.cin || null,
         entityType: d.businessType,
+        businessModel: d.businessModel,
       },
     });
     return tx.user.create({

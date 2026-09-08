@@ -19,11 +19,20 @@ const businessTypes = [
   { value: 'other', label: 'Other' },
 ];
 
+// Who the business sells to — distinct from the legal "Business type" above.
+// Drives default contact type (B2B/B2C) and business-unit structure.
+const businessModels = [
+  { value: 'b2b', label: 'B2B — sell to businesses' },
+  { value: 'b2c', label: 'B2C — sell to consumers' },
+  { value: 'both', label: 'Both B2B & B2C' },
+];
+
 const initial: SignupState = {};
 
 export default function SignupPage() {
   const [state, formAction, pending] = useActionState(signupAction, initial);
   const [businessType, setBusinessType] = useState('proprietorship');
+  const [businessModel, setBusinessModel] = useState('b2b');
   const [agree, setAgree] = useState(false);
 
   const showCin = businessType !== 'proprietorship';
@@ -48,14 +57,25 @@ export default function SignupPage() {
         <div className="crm-authform__fields">
           <Input label="Business name" name="businessName" required placeholder="e.g. Northline Retail" />
 
-          <Select
-            label="Business type"
-            name="businessType"
-            required
-            options={businessTypes}
-            value={businessType}
-            onChange={(e) => setBusinessType(e.target.value)}
-          />
+          <div className="crm-authform__row2">
+            <Select
+              label="Business type"
+              name="businessType"
+              required
+              options={businessTypes}
+              value={businessType}
+              onChange={(e) => setBusinessType(e.target.value)}
+            />
+            <Select
+              label="Business model"
+              name="businessModel"
+              required
+              hint="Who you mostly sell to"
+              options={businessModels}
+              value={businessModel}
+              onChange={(e) => setBusinessModel(e.target.value)}
+            />
+          </div>
 
           <div className="crm-authform__row2">
             <Input label="Business phone number" name="businessPhone" required leadingAddon="+91" placeholder="98110 20001" inputMode="tel" />
