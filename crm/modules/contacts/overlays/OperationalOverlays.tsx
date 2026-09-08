@@ -614,7 +614,7 @@ function ConsentDrawer({
 }) {
   const [, setSearchParams] = useSearchParams();
   const contact = contactId ? findContact(contactId) : undefined;
-  const [consent, setConsent] = useState(contact?.consent ?? 'pending');
+  const [consent, setConsent] = useState<string>(contact?.consent ?? 'pending');
 
   const openErasure = () =>
     setSearchParams((prev) => {

@@ -8,8 +8,9 @@
  * UI reflects the change. CrmRoot subscribes and remounts the routed subtree on
  * change, so no screen needs rewriting.
  */
-import { setContacts, type Contact } from '@crm/mock-data/contacts';
+import { setContacts } from '@crm/mock-data/contacts';
 import { setWorkspaceData } from '@crm/mock-data/workspace';
+import type { Contact } from '@crm/mock-data/types';
 
 const listeners = new Set<() => void>();
 
