@@ -5,7 +5,7 @@ import type { Contact } from './types';
  * extend this fixture set; other modules must reference these IDs rather than
  * inventing their own customer records.
  */
-export const contacts: Contact[] = [
+export let contacts: Contact[] = [
   {
     id: 'contact_rahul_shah',
     name: 'Rahul Shah',
@@ -241,4 +241,10 @@ export function contactsInScope(scope: {
       !scope.whatsappNumberId || contact.primaryWhatsAppNumberId === scope.whatsappNumberId;
     return branchOk && numberOk;
   });
+}
+
+
+/** Replace the contact set with real DB rows (hydration). */
+export function setContacts(next: Contact[]): void {
+  contacts = next;
 }

@@ -256,3 +256,88 @@ model Message {
 
   @@index([conversationId])
 }
+
+// ===========================================================================
+// CRM operational models (embedded prototype data layer).
+//
+// These mirror the prototype's TypeScript types 1:1 so the ported screens can
+// hydrate from real, per-tenant rows instead of in-code fixtures. They are
+// deliberately decoupled from the legacy Contact/Conversation/Message tables
+// (tenantId is a plain indexed column, not a relation) so the prototype UI can
+// be wired module-by-module without disturbing the existing native modules.
+// ===========================================================================
+
+model CrmBranch {
+  id       String @id
+  tenantId String
+  name     String
+  city     String
+
+  @@index([tenantId])
+}
+
+model CrmNumber {
+  id                       String   @id
+  tenantId                 String
+  displayNumber            String
+  displayName              String
+  brand                    String
+  branchId                 String
+  department               String
+  connectionStatus         String   // connected | degraded | disconnected
+  qualityRating            String   // high | medium | low | unrated
+  messagingLimit           String
+  permittedRoles           String[] // owner | manager | agent
+
+  @@index([tenantId])
+}
+
+model CrmTeam {
+  id       String @id
+  tenantId String
+  name     String
+  branchId String
+
+  @@index([tenantId])
+}
+
+model CrmUser {
+  id                          String   @id
+  tenantId                    String
+  name                        String
+  initials                    String
+  email                       String
+  role                        String   // owner | manager | agent
+  roleLabel                   String
+  teamId                      String
+  branchId                    String
+  permittedWhatsAppNumberIds  String[]
+  availability                String   // available | busy | away | offline
+
+  @@index([tenantId])
+}
+
+model CrmContact {
+  id                       String   @id
+  tenantId                 String
+  name                     String
+  company                  String?
+  mobile                   String
+  email                    String?
+  city                     String
+  ownerId                  String
+  stage                    String   // new | engaged | qualified | customer | dormant
+  tags                     String[]
+  source                   String
+  consent                  String   // opted-in | opted-out | pending
+  salesTier                String   // platinum | gold | silver | standard
+  branchId                 String
+  primaryWhatsAppNumberId  String
+  createdAt                DateTime @default(now())
+  lastActivityAt           DateTime @default(now())
+
+  @@unique([tenantId, mobile])
+  @@index([tenantId])
+  @@index([tenantId, stage])
+  @@index([tenantId, ownerId])
+}

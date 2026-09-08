@@ -5,13 +5,13 @@ import type { Branch, Team, User, WhatsAppNumber, Workspace } from './types';
  * captures of the same route always render identical content.
  */
 
-export const branches: Branch[] = [
+export let branches: Branch[] = [
   { id: 'branch_delhi', name: 'Delhi NCR', city: 'New Delhi' },
   { id: 'branch_mumbai', name: 'Mumbai West', city: 'Mumbai' },
   { id: 'branch_bengaluru', name: 'Bengaluru South', city: 'Bengaluru' },
 ];
 
-export const whatsappNumbers: WhatsAppNumber[] = [
+export let whatsappNumbers: WhatsAppNumber[] = [
   {
     id: 'wa_delhi_sales',
     displayNumber: '+91 98110 20001',
@@ -62,13 +62,13 @@ export const whatsappNumbers: WhatsAppNumber[] = [
   },
 ];
 
-export const teams: Team[] = [
+export let teams: Team[] = [
   { id: 'team_delhi_sales', name: 'Delhi Sales', branchId: 'branch_delhi' },
   { id: 'team_delhi_support', name: 'Delhi Support', branchId: 'branch_delhi' },
   { id: 'team_mumbai_sales', name: 'Mumbai Sales', branchId: 'branch_mumbai' },
 ];
 
-export const users: User[] = [
+export let users: User[] = [
   {
     id: 'user_anita',
     name: 'Anita Sharma',
@@ -196,4 +196,15 @@ export function findWhatsAppNumber(numberId: string): WhatsAppNumber | undefined
 
 export function findTeam(teamId: string): Team | undefined {
   return teams.find((team) => team.id === teamId);
+}
+
+
+/** Replace workspace reference data with real DB rows (hydration). */
+export function setWorkspaceData(next: {
+  branches?: Branch[]; whatsappNumbers?: WhatsAppNumber[]; teams?: Team[]; users?: User[];
+}): void {
+  if (next.branches) branches = next.branches;
+  if (next.whatsappNumbers) whatsappNumbers = next.whatsappNumbers;
+  if (next.teams) teams = next.teams;
+  if (next.users) users = next.users;
 }
