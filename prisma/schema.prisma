@@ -257,6 +257,22 @@ model Message {
   @@index([conversationId])
 }
 
+// Per-tenant Google account connection (OAuth) for Contacts + Sheets sync.
+// One connection per tenant; whichever user connects it. Tokens are plaintext
+// for now — encrypt at rest before production (same caveat as WhatsAppAccount).
+model GoogleConnection {
+  id           String    @id @default(cuid())
+  tenantId     String    @unique
+  email        String                          // the connected Google account
+  accessToken  String
+  refreshToken String?                         // absent if Google withheld it (already-granted re-consent)
+  expiresAt    DateTime                        // access-token expiry
+  scope        String
+  sheetId      String?                         // the synced Google Sheet (created on first sync)
+  connectedAt  DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
 // ===========================================================================
 // CRM operational models (embedded prototype data layer).
 //
