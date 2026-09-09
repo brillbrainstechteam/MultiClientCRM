@@ -36,6 +36,11 @@ export async function PATCH(req: Request) {
   if (b.gstNumber !== undefined) data.gstNumber = str(b.gstNumber) || null;
   if (b.cin !== undefined) data.cin = str(b.cin) || null;
   if (b.entityType !== undefined && str(b.entityType)) data.entityType = str(b.entityType);
+  // Plan changes are owner-only.
+  if (['trial', 'starter', 'growth', 'advanced'].includes(String(b.plan))) {
+    if (user.role !== 'owner') return NextResponse.json({ error: 'Only the owner can change the plan.' }, { status: 403 });
+    data.plan = String(b.plan);
+  }
 
   await prisma.tenant.update({ where: { id: user.tenantId }, data });
   await audit({ tenantId: user.tenantId, actorId: user.id, action: 'profile.updated', targetType: 'tenant', targetId: user.tenantId });

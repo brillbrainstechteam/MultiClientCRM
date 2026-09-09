@@ -1,186 +1,83 @@
-import { Check, Wallet as WalletIcon, Zap } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Check } from 'lucide-react';
 import { PageHeader } from '@crm/components';
-import { useAppSession, type PlanKey } from '@crm/app/app-session';
-import { Badge, Banner, Button, Tabs, Toggle, type TabItem } from '@crm/design-system';
-import {
-  RECHARGE_OPTIONS,
-  messageRateLabels,
-  messageRates,
-  planTiers,
-  usageThisCycle,
-  walletTransactions,
-} from './billing-data';
-
-const money = (value: number) => `₹${value.toLocaleString('en-IN')}`;
-
-const tabs: TabItem[] = [
-  { id: 'plans', label: 'Plans' },
-  { id: 'wallet', label: 'Wallet' },
-  { id: 'usage', label: 'Usage' },
-];
+import { Badge, Banner, Button, Toast } from '@crm/design-system';
 
 /**
- * Billing — Plans (tier cards + upgrade), Wallet (balance, add money,
- * auto-recharge, transactions) and Usage (messages this cycle). Reads and
- * writes the persisted app session so plan/wallet changes reflect on the
- * dashboard credits strip. Mock only — no real payment.
+ * Billing — real plan management. Shows the tenant's current plan (from the DB)
+ * and the tier line-up; switching a plan persists to the tenant (owner-only).
+ * Metered charges (WhatsApp/telephony/AI minutes) are billed separately and
+ * payment collection is a later phase — so no mock wallet/transactions here.
  */
+
+type PlanKey = 'trial' | 'starter' | 'growth' | 'advanced';
+
+const PLANS: { key: PlanKey; name: string; blurb: string; features: string[] }[] = [
+  { key: 'trial', name: 'Trial', blurb: '14 days', features: ['1 WhatsApp number', '2 users', 'Shared inbox', 'Contact import + Google sync', 'Test campaigns'] },
+  { key: 'starter', name: 'Starter', blurb: 'For small teams', features: ['1 number', '5 users', '5 campaigns/month', 'Basic automation', 'Prospecting (limited)'] },
+  { key: 'growth', name: 'Growth', blurb: 'Scaling businesses', features: ['3 numbers', '15 users', '25 campaigns/month', 'Advanced automation', 'Calling + recording', 'Multi-branch', 'API/webhooks (limited)'] },
+  { key: 'advanced', name: 'Advanced', blurb: 'Custom scale', features: ['10+ numbers', '50+ users', 'Unlimited campaigns*', 'AI voice agents (add-on)', 'Custom roles', 'Full API/webhooks'] },
+];
+
 export default function BillingPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const session = useAppSession();
-  const tab = searchParams.get('tab') ?? 'plans';
+  const [plan, setPlan] = useState<PlanKey | null>(null);
+  const [busy, setBusy] = useState<PlanKey | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
-  const setTab = (id: string) =>
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('tab', id);
-      return next;
-    });
+  useEffect(() => {
+    fetch('/api/crm/settings/profile', { credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.json() : null)).then((d) => setPlan((d?.plan as PlanKey) ?? 'trial')).catch(() => setPlan('trial'));
+  }, []);
+
+  const switchTo = async (key: PlanKey) => {
+    setBusy(key);
+    try {
+      const res = await fetch('/api/crm/settings/profile', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+        body: JSON.stringify({ plan: key }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { setToast(String(d.error ?? 'Could not change plan.')); return; }
+      setPlan(key); setToast(`Plan changed to ${key}.`);
+    } finally { setBusy(null); }
+  };
 
   return (
-    <div className="crm-billing">
-      <PageHeader title="Billing" description="Manage your plan, messaging wallet and usage." />
-      <Tabs tabs={tabs} activeId={tab} onChange={setTab} ariaLabel="Billing sections" />
-
-      {tab === 'plans' ? <PlansTab currentPlan={session.plan} trialDaysLeft={session.trialDaysLeft} onChoose={session.setPlan} /> : null}
-      {tab === 'wallet' ? <WalletTab balance={session.walletBalance} onAdd={session.addWallet} /> : null}
-      {tab === 'usage' ? <UsageTab /> : null}
-    </div>
-  );
-}
-
-/* ---- Plans -------------------------------------------------------------- */
-function PlansTab({ currentPlan, trialDaysLeft, onChoose }: { currentPlan: PlanKey; trialDaysLeft: number; onChoose: (p: PlanKey) => void }) {
-  return (
-    <div className="crm-billing__section">
-      {currentPlan === 'trial' ? (
-        <Banner
-          tone="warning"
-          title={`You're on the free trial — ${trialDaysLeft} days left`}
-          description="Choose a plan to keep sending messages after your trial ends."
-        />
-      ) : null}
-
-      <div className="crm-plan-grid">
-        {planTiers.map((tier) => {
-          const isCurrent = tier.key === currentPlan;
+    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {toast ? <Toast tone="success" message={toast} onDismiss={() => setToast(null)} /> : null}
+      <PageHeader title="Plan & billing" description="Your subscription tier. Messaging, telephony and AI usage are metered separately." />
+      <Banner tone="info" title="Usage-based charges are separate"
+        description="WhatsApp conversation/template fees, telephony minutes and AI-voice minutes are metered and billed on top of the plan. Payment collection is being integrated." />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14 }}>
+        {PLANS.map((p) => {
+          const current = plan === p.key;
           return (
-            <div key={tier.key} className={`crm-plan${tier.recommended ? ' crm-plan--recommended' : ''}${isCurrent ? ' crm-plan--current' : ''}`}>
-              {tier.recommended ? <span className="crm-plan__ribbon">Recommended</span> : null}
-              <span className="crm-plan__name">{tier.name}</span>
-              <span className="crm-plan__price">
-                {tier.priceMonthly === 0 ? 'Free' : money(tier.priceMonthly)}
-                {tier.priceMonthly > 0 ? <span className="crm-plan__per">/mo</span> : null}
-              </span>
-              <span className="crm-plan__tagline">{tier.tagline}</span>
-              <ul className="crm-plan__features">
-                {tier.features.map((f) => (
-                  <li key={f}><Check aria-hidden="true" /> {f}</li>
+            <section key={p.key} style={{ ...card, ...(current ? cardCurrent : {}) }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h2 style={{ margin: 0, fontSize: 18, color: 'var(--crm-text-title, #1b2733)' }}>{p.name}</h2>
+                {current ? <Badge tone="success">Current</Badge> : null}
+              </div>
+              <p style={{ margin: '2px 0 8px', fontSize: 13, color: 'var(--crm-text-muted, #6b7a88)' }}>{p.blurb}</p>
+              <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+                {p.features.map((fte) => (
+                  <li key={fte} style={{ display: 'flex', gap: 6, fontSize: 13, color: 'var(--crm-text-primary, #2b3948)' }}>
+                    <Check size={15} style={{ color: 'var(--crm-text-brand, #2f6bff)', flexShrink: 0, marginTop: 1 }} /> {fte}
+                  </li>
                 ))}
               </ul>
-              {isCurrent ? (
-                <Button variant="secondary" fullWidth disabled>Current plan</Button>
-              ) : (
-                <Button variant={tier.recommended ? 'primary' : 'secondary'} fullWidth onClick={() => onChoose(tier.key)}>
-                  {tier.key === 'trial' ? 'Switch to trial' : `Choose ${tier.name}`}
-                </Button>
-              )}
-            </div>
+              <div style={{ marginTop: 12 }}>
+                {current
+                  ? <Button variant="secondary" disabled>Current plan</Button>
+                  : <Button variant="primary" disabled={busy !== null} onClick={() => switchTo(p.key)}>{busy === p.key ? 'Switching…' : `Switch to ${p.name}`}</Button>}
+              </div>
+            </section>
           );
         })}
       </div>
-      <p className="crm-billing__note">
-        Plan prices exclude 18% GST and are placeholders while real platform costs are finalised. Message costs are billed separately from your wallet.
-      </p>
+      <p style={{ fontSize: 12, color: 'var(--crm-text-muted, #6b7a88)', margin: 0 }}>*Subject to WhatsApp/provider messaging limits and number quality.</p>
     </div>
   );
 }
 
-/* ---- Wallet ------------------------------------------------------------- */
-function WalletTab({ balance, onAdd }: { balance: number; onAdd: (amount: number) => void }) {
-  return (
-    <div className="crm-billing__section">
-      <div className="crm-wallet__grid">
-        <div className="crm-wallet__balance">
-          <span className="crm-wallet__balance-icon" aria-hidden="true"><WalletIcon /></span>
-          <span className="crm-wallet__balance-label">Messaging wallet balance</span>
-          <span className="crm-wallet__balance-value">{money(balance)}</span>
-          {balance < 200 ? <Badge tone="danger">Low balance — top up to keep sending</Badge> : null}
-          <div className="crm-wallet__add">
-            {RECHARGE_OPTIONS.map((amount) => (
-              <Button key={amount} variant="secondary" size="sm" onClick={() => onAdd(amount)}>
-                + {money(amount)}
-              </Button>
-            ))}
-          </div>
-          <label className="crm-wallet__auto">
-            <Toggle label="Auto-recharge when balance is low" defaultChecked />
-          </label>
-        </div>
-
-        <div className="crm-wallet__rates">
-          <h3 className="crm-billing__subtitle">Message rates</h3>
-          <p className="crm-billing__note">Charged per template message delivered (indicative).</p>
-          <ul className="crm-wallet__rate-list">
-            {(Object.keys(messageRates) as (keyof typeof messageRates)[]).map((key) => (
-              <li key={key}>
-                <span>{messageRateLabels[key]}</span>
-                <span className="crm-wallet__rate">₹{messageRates[key].toFixed(2)}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      <h3 className="crm-billing__subtitle">Recent transactions</h3>
-      <div className="crm-wallet__txns">
-        {walletTransactions.map((tx) => (
-          <div key={tx.id} className="crm-wallet__txn">
-            <span className="crm-wallet__txn-label">{tx.label}</span>
-            <span className="crm-wallet__txn-date">{new Date(tx.at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
-            <span className={`crm-wallet__txn-amt crm-wallet__txn-amt--${tx.amount >= 0 ? 'in' : 'out'}`}>
-              {tx.amount >= 0 ? '+' : '−'}{money(Math.abs(tx.amount))}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ---- Usage -------------------------------------------------------------- */
-function UsageTab() {
-  const { rows, freeConversationsUsed, freeConversationsTotal } = usageThisCycle;
-  const totalCost = rows.reduce((sum, r) => sum + r.cost, 0);
-  const freePct = Math.round((freeConversationsUsed / freeConversationsTotal) * 100);
-
-  return (
-    <div className="crm-billing__section">
-      <div className="crm-usage__free">
-        <div className="crm-usage__free-head">
-          <span>Free conversations this cycle</span>
-          <span className="crm-usage__free-count">{freeConversationsUsed} / {freeConversationsTotal}</span>
-        </div>
-        <span className="crm-usage__bar" aria-hidden="true"><span className="crm-usage__bar-fill" style={{ width: `${freePct}%` }} /></span>
-      </div>
-
-      <h3 className="crm-billing__subtitle">Messages sent this cycle</h3>
-      <div className="crm-usage__table">
-        <div className="crm-usage__row crm-usage__row--head"><span>Category</span><span>Sent</span><span>Rate</span><span>Cost</span></div>
-        {rows.map((row) => (
-          <div key={row.category} className="crm-usage__row">
-            <span>{messageRateLabels[row.category]}</span>
-            <span>{row.sent.toLocaleString('en-IN')}</span>
-            <span>₹{messageRates[row.category].toFixed(2)}</span>
-            <span>{money(row.cost)}</span>
-          </div>
-        ))}
-        <div className="crm-usage__row crm-usage__row--total"><span>Total</span><span /><span /><span>{money(totalCost)}</span></div>
-      </div>
-      <p className="crm-billing__note">
-        <Zap aria-hidden="true" style={{ width: 13, height: 13, verticalAlign: 'middle' }} /> Utility and service messages inside the 24-hour customer window are free.
-      </p>
-    </div>
-  );
-}
+const card: React.CSSProperties = { display: 'flex', flexDirection: 'column', padding: 18, borderRadius: 12, background: 'var(--crm-surface, #fff)', border: '1px solid var(--crm-border, #e5e9ee)' };
+const cardCurrent: React.CSSProperties = { borderColor: 'var(--crm-text-brand, #2f6bff)', boxShadow: '0 0 0 1px var(--crm-text-brand, #2f6bff)' };
