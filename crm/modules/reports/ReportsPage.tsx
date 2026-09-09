@@ -36,6 +36,21 @@ export default function ReportsPage() {
       </div>
 
       <div style={sx.grid}>
+        <Panel title="Needs attention">
+          <div style={sx.bars}>
+            <div style={sx.attnRow}>
+              <span style={sx.barLabel}>Stale prospects</span>
+              <Badge tone={stats.staleProspects ? 'warning' : 'neutral'}>{stats.staleProspects}</Badge>
+              <span style={sx.pct}>no activity &gt; {STALE_PROSPECT_DAYS}d</span>
+            </div>
+            <div style={sx.attnRow}>
+              <span style={sx.barLabel}>Dormant customers</span>
+              <Badge tone={stats.dormantCustomers ? 'danger' : 'neutral'}>{stats.dormantCustomers}</Badge>
+              <span style={sx.pct}>no activity &gt; {DORMANT_CUSTOMER_DAYS}d</span>
+            </div>
+          </div>
+        </Panel>
+
         <Panel title="Customer type">
           <BarList rows={[
             { label: 'B2B', value: stats.b2b, tone: 'brand' },
@@ -78,6 +93,11 @@ export default function ReportsPage() {
 
 // ---- Aggregation -----------------------------------------------------------
 
+// Decision #3: prospect goes stale after 30 days idle; customer dormant after 90.
+// Workspace default — will become configurable per workspace (see docs/OPEN_ITEMS.md).
+const STALE_PROSPECT_DAYS = 30;
+const DORMANT_CUSTOMER_DAYS = 90;
+
 const LEAD_LABELS: Record<string, string> = {
   new: 'New', assigned: 'Assigned', attempted: 'Attempted', connected: 'Connected',
   engaged: 'Engaged', enquiry_generated: 'Enquiry generated', not_interested: 'Not interested', dormant: 'Dormant',
@@ -108,6 +128,15 @@ function computeStats(
     for (const m of list) { messages++; if (m.direction === 'inbound') inbound++; else outbound++; }
   }
 
+  // Dormancy (decision #3): stale prospects vs dormant customers, by idle days.
+  const now = Date.now();
+  let staleProspects = 0, dormantCustomers = 0;
+  for (const c of cs) {
+    const days = (now - new Date(c.lastActivityAt).getTime()) / 86_400_000;
+    if (c.lifecycleStage === 'customer') { if (days > DORMANT_CUSTOMER_DAYS) dormantCustomers++; }
+    else if (days > STALE_PROSPECT_DAYS) staleProspects++;
+  }
+
   const topSources = Object.entries(bySource)
     .sort((a, b) => b[1] - a[1]).slice(0, 6)
     .map(([label, value]) => ({ label, value }));
@@ -129,6 +158,8 @@ function computeStats(
     messages,
     inbound,
     outbound,
+    staleProspects,
+    dormantCustomers,
   };
 }
 
@@ -178,6 +209,7 @@ const sx: Record<string, React.CSSProperties> = {
   panelTitle: { fontSize: 13, fontWeight: 600, color: 'var(--crm-text-muted, #6b7a88)', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 0.4 },
   bars: { display: 'flex', flexDirection: 'column', gap: 10 },
   barRow: { display: 'grid', gridTemplateColumns: '110px 1fr auto', alignItems: 'center', gap: 10 },
+  attnRow: { display: 'flex', alignItems: 'center', gap: 10 },
   barLabel: { fontSize: 13, color: 'var(--crm-text-primary, #2b3948)' },
   barTrack: { height: 8, background: 'var(--crm-border, #eef1f4)', borderRadius: 999, overflow: 'hidden' },
   barFill: { height: '100%', background: 'var(--crm-text-brand, #2f6bff)', borderRadius: 999 },
