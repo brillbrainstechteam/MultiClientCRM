@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@crm/components';
 import { useScopedHref } from '@crm/app/use-scoped-href';
 import { useWorkspace } from '@crm/app/workspace-context';
-import { branches, teams } from '@crm/mock-data';
+import { branches, teams, users } from '@crm/mock-data';
 import {
   Button,
   ConfirmDialog,
@@ -21,7 +21,6 @@ import { AvailabilityBadge, EmploymentStatusBadge } from '../components';
 import { can } from '../permissions';
 import { findWorkload, roles } from '../team-access-mock-data';
 import {
-  filterMembers,
   memberBranchLabel,
   memberLastActivityLabel,
   memberNumberCue,
@@ -31,6 +30,14 @@ import {
 import type { TeamMember } from '../team-access-types';
 
 type RowAction = { type: 'reactivate' | 'resend' | 'cancel'; member: TeamMember };
+
+/** Map a real auth user's role to a Team & Access role id (for the Role column/filter). */
+const REAL_ROLE_ID: Record<string, string> = {
+  owner: 'role_owner',
+  admin: 'role_admin',
+  manager: 'role_manager',
+  agent: 'role_team_member',
+};
 
 /** TEAM-S02 — People directory. Compact operational columns, not an HR spreadsheet (SPEC §4). */
 export default function PeopleScreen() {
@@ -59,18 +66,53 @@ export default function PeopleScreen() {
       return next;
     });
 
-  const members = useMemo(
+  // Real team = the tenant's auth users (from bootstrap), mapped into the
+  // People directory shape. Everyone here is an active member; invite/exit
+  // lifecycle and workload land once the roles/permissions module is built
+  // (see docs/OPEN_ITEMS.md).
+  const realMembers: TeamMember[] = useMemo(
     () =>
-      filterMembers({
-        search,
-        status: view === 'active' || view === 'pending' || view === 'inactive' ? view : null,
-        branchId: branchFilter,
-        teamId: teamFilter,
-        roleId: roleFilter,
-        numberId: numberFilter,
-      }),
-    [search, view, branchFilter, teamFilter, roleFilter, numberFilter],
+      users.map((u) => ({
+        id: u.id,
+        userId: u.id,
+        name: u.name,
+        initials: u.initials,
+        email: u.email,
+        mobile: '',
+        employmentStatus: 'active',
+        inviteStatus: 'none',
+        roleId: REAL_ROLE_ID[u.role] ?? u.role,
+        branchIds: [u.branchId],
+        departmentIds: [],
+        teamIds: [u.teamId],
+        numberAccess: u.permittedWhatsAppNumberIds,
+        defaultNumberId: u.permittedWhatsAppNumberIds[0] ?? null,
+        availability: u.availability,
+        capacityByWorkType: {} as TeamMember['capacityByWorkType'],
+        managerId: null,
+        title: u.roleLabel,
+        invitedAt: null,
+        joinedAt: null,
+        lastActivityAt: null,
+        twoFactorEnabled: false,
+        activeSessionCount: 0,
+      })),
+    [],
   );
+
+  const members = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const status = view === 'active' || view === 'pending' || view === 'inactive' ? view : null;
+    return realMembers.filter((m) => {
+      if (status && m.employmentStatus !== status) return false;
+      if (branchFilter && !m.branchIds.includes(branchFilter)) return false;
+      if (teamFilter && !m.teamIds.includes(teamFilter)) return false;
+      if (roleFilter && m.roleId !== roleFilter) return false;
+      if (numberFilter && !m.numberAccess.includes(numberFilter)) return false;
+      if (q && !(m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q) || m.title.toLowerCase().includes(q))) return false;
+      return true;
+    });
+  }, [realMembers, search, view, branchFilter, teamFilter, roleFilter, numberFilter]);
 
   const showNoResults = forcedState === 'no-results' || (members.length === 0 && (search || view || branchFilter || teamFilter || roleFilter || numberFilter));
 
