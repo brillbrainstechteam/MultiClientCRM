@@ -1,116 +1,72 @@
-import { Download } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@crm/components';
-import { useWorkspace } from '@crm/app/workspace-context';
-import { Badge, Button, type Column, DataTable, EmptyState, Select } from '@crm/design-system';
-import { can } from '../permissions';
-import { auditEvents, branches, whatsappNumbers } from '../team-access-mock-data';
-import type { AuditEvent, AuditEventType } from '../team-access-types';
+import { Badge, DataTable, EmptyState, LoadingSkeleton, Select, type Column } from '@crm/design-system';
+import { users } from '@crm/mock-data';
+import type { AuditEventType } from '../team-access-types';
 
+// Retained for AuditEventDrawer (HR-event labels), even though the live audit
+// trail below uses the operational action strings from /api/crm/audit.
 const eventTypeLabel: Record<AuditEventType, string> = {
-  member: 'Member',
-  role_access: 'Role & access',
-  number_access: 'Number access',
-  assignment_ownership: 'Assignment & ownership',
-  export: 'Export',
-  security_session: 'Security & session',
-  offboarding: 'Offboarding',
+  member: 'Member', role_access: 'Role & access', number_access: 'Number access',
+  assignment_ownership: 'Assignment & ownership', export: 'Export',
+  security_session: 'Security & session', offboarding: 'Offboarding',
 };
 
-/** TEAM-S21 — Audit. Actor/target/event history; event detail and export overlay separately. */
+interface AuditRow { id: string; actorId: string | null; action: string; targetType: string | null; targetId: string | null; detail: string | null; at: string }
+
+const ACTION_LABEL: Record<string, string> = {
+  'campaign.sent': 'Campaign sent', 'automation.ran': 'Automation ran', 'order.status': 'Order status changed',
+  'profile.updated': 'Profile updated', 'conversation.assigned': 'Conversation assigned', 'kundli.generated': 'Pre-call brief generated',
+};
+
+/** TEAM-S21 — Audit. Live workspace activity trail from /api/crm/audit. */
 export default function AuditScreen() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { role } = useWorkspace();
+  const [rows, setRows] = useState<AuditRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actor, setActor] = useState('');
+  const [action, setAction] = useState('');
 
-  const actorFilter = searchParams.get('actor');
-  const eventFilter = searchParams.get('event') as AuditEventType | null;
-  const branchFilter = searchParams.get('branch');
-  const numberFilter = searchParams.get('number');
-  const dateFilter = searchParams.get('date');
+  useEffect(() => {
+    fetch('/api/crm/audit', { credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.json() : { events: [] })).then((d) => setRows(d.events ?? [])).catch(() => setRows([])).finally(() => setLoading(false));
+  }, []);
 
-  const setFilter = (key: string, value: string) =>
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (value) next.set(key, value);
-      else next.delete(key);
-      return next;
-    });
+  const actorName = (id: string | null) => (id ? users.find((u) => u.id === id)?.name ?? 'System' : 'System');
 
-  const openEvent = (eventId: string) =>
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('drawer', 'event');
-      next.set('eventId', eventId);
-      return next;
-    });
+  const filtered = useMemo(() => rows.filter((r) => (!actor || r.actorId === actor) && (!action || r.action === action)), [rows, actor, action]);
 
-  const rows = auditEvents.filter((event) => {
-    if (actorFilter && event.actorId !== actorFilter) return false;
-    if (eventFilter && event.type !== eventFilter) return false;
-    if (branchFilter && event.branchId !== branchFilter) return false;
-    if (numberFilter && event.numberId !== numberFilter) return false;
-    if (dateFilter && !event.timestamp.startsWith(dateFilter)) return false;
-    return true;
-  });
-
-  const actorOptions = [
+  const actorOptions = useMemo(() => [
     { value: '', label: 'All actors' },
-    ...Array.from(new Map(auditEvents.map((e) => [e.actorId, e.actorName])).entries()).map(([id, name]) => ({ value: id, label: name })),
-  ];
+    ...Array.from(new Set(rows.map((r) => r.actorId).filter(Boolean))).map((id) => ({ value: id as string, label: actorName(id) })),
+  ], [rows]);
+  const actionOptions = useMemo(() => [
+    { value: '', label: 'All actions' },
+    ...Array.from(new Set(rows.map((r) => r.action))).map((a) => ({ value: a, label: ACTION_LABEL[a] ?? a })),
+  ], [rows]);
 
-  const canExport = can(role, 'exportAudit');
-
-  const columns: Column<AuditEvent>[] = [
-    { key: 'timestamp', header: 'Time', render: (e) => new Date(e.timestamp).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) },
-    { key: 'actor', header: 'Actor', render: (e) => e.actorName },
-    { key: 'target', header: 'Target', render: (e) => e.targetLabel },
-    { key: 'type', header: 'Event', render: (e) => <Badge tone="neutral">{eventTypeLabel[e.type]}</Badge> },
-    {
-      key: 'summary',
-      header: 'Summary',
-      render: (e) => (e.sensitive && role !== 'owner' ? <span className="crm-audit__masked">Restricted detail — masked for your role</span> : e.summary),
-    },
+  const columns: Column<AuditRow>[] = [
+    { key: 'at', header: 'Time', render: (r) => new Date(r.at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) },
+    { key: 'actor', header: 'Actor', render: (r) => actorName(r.actorId) },
+    { key: 'action', header: 'Action', render: (r) => <Badge tone="neutral">{ACTION_LABEL[r.action] ?? r.action}</Badge> },
+    { key: 'target', header: 'Target', render: (r) => (r.targetType ? `${r.targetType}${r.targetId ? ` · ${r.targetId.slice(0, 8)}` : ''}` : '—') },
+    { key: 'detail', header: 'Detail', render: (r) => r.detail ?? '—' },
   ];
 
   return (
-    <div className="crm-audit">
+    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
       <PageHeader
         title="Audit"
-        description="Every access, role, assignment and offboarding change with who/what/when and why."
-        actions={
-          canExport ? (
-            <Button variant="secondary" iconLeft={<Download />} onClick={() => setSearchParams((prev) => { const next = new URLSearchParams(prev); next.set('modal', 'export'); return next; })}>
-              Export
-            </Button>
-          ) : (
-            <Button variant="secondary" iconLeft={<Download />} disabled title="Export is Owner-only">
-              Export
-            </Button>
-          )
-        }
+        description="Every workspace action — assignments, campaign sends, automation runs, order changes and more — with who and when."
         toolbar={
-          <div className="crm-audit__toolbar">
-            <Select label="Actor" hideLabel size="sm" options={actorOptions} value={actorFilter ?? ''} onChange={(e) => setFilter('actor', e.target.value)} />
-            <Select
-              label="Event"
-              hideLabel
-              size="sm"
-              options={[{ value: '', label: 'All events' }, ...Object.entries(eventTypeLabel).map(([value, label]) => ({ value, label }))]}
-              value={eventFilter ?? ''}
-              onChange={(e) => setFilter('event', e.target.value)}
-            />
-            <Select label="Branch" hideLabel size="sm" options={[{ value: '', label: 'All branches' }, ...branches.map((b) => ({ value: b.id, label: b.name }))]} value={branchFilter ?? ''} onChange={(e) => setFilter('branch', e.target.value)} />
-            <Select label="Number" hideLabel size="sm" options={[{ value: '', label: 'All numbers' }, ...whatsappNumbers.map((n) => ({ value: n.id, label: n.displayName }))]} value={numberFilter ?? ''} onChange={(e) => setFilter('number', e.target.value)} />
-            <input type="date" className="crm-audit__date" value={dateFilter ?? ''} onChange={(e) => setFilter('date', e.target.value)} aria-label="Date" />
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Select label="Actor" hideLabel size="sm" options={actorOptions} value={actor} onChange={(e) => setActor(e.target.value)} />
+            <Select label="Action" hideLabel size="sm" options={actionOptions} value={action} onChange={(e) => setAction(e.target.value)} />
           </div>
         }
       />
-
-      {rows.length === 0 ? (
-        <EmptyState title="No matching audit events" description="Try clearing a filter." actions={<Button variant="secondary" onClick={() => setSearchParams(new URLSearchParams())}>Clear filters</Button>} />
-      ) : (
-        <DataTable caption="Audit history" columns={columns} rows={rows} rowKey={(e) => e.id} onRowClick={(e) => openEvent(e.id)} />
-      )}
+      {loading ? <LoadingSkeleton height={56} />
+        : filtered.length === 0 ? <EmptyState title="No audit events yet" description="Workspace actions will appear here as your team uses the CRM." />
+          : <DataTable caption="Audit trail" columns={columns} rows={filtered} rowKey={(r) => r.id} />}
     </div>
   );
 }

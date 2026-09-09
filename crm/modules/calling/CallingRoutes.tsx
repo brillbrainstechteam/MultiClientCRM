@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { CallingLayout } from './CallingLayout';
 import CallAnalyticsScreen from './screens/CallAnalyticsScreen';
-import CallDeskScreen from './screens/CallDeskScreen';
+import CallDeskRealScreen from './screens/CallDeskRealScreen';
 import CallHistoryScreen from './screens/CallHistoryScreen';
 import CallListDetailScreen from './screens/CallListDetailScreen';
 import CallListsScreen from './screens/CallListsScreen';
@@ -18,7 +18,7 @@ export function CallingRoutes() {
   return (
     <Routes>
       <Route element={<CallingLayout />}>
-        <Route index element={<CallDeskScreen />} />
+        <Route index element={<CallDeskRealScreen />} />
         <Route path="queue" element={<CallQueueScreen />} />
         <Route path="task/:taskId" element={<CallWorkspaceScreen />} />
         <Route path="history" element={<CallHistoryScreen />} />
