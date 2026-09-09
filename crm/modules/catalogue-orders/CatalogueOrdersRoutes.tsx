@@ -12,7 +12,7 @@ import BulkMediaMatchScreen from './screens/BulkMediaMatchScreen';
 import InventoryScreen from './screens/InventoryScreen';
 import CataloguePickerHostScreen from './screens/CataloguePickerHostScreen';
 import ShareComposerScreen from './screens/ShareComposerScreen';
-import SelectionsListScreen from './screens/SelectionsListScreen';
+import SelectionsRealScreen from './screens/SelectionsRealScreen';
 import SelectionBuilderScreen from './screens/SelectionBuilderScreen';
 import OrdersListScreen from './screens/OrdersListScreen';
 import OrderDetailScreen from './screens/OrderDetailScreen';
@@ -52,7 +52,7 @@ export function CatalogueOrdersRoutes() {
         <Route path="inventory" element={<InventoryScreen />} />
         <Route path="picker" element={<CataloguePickerHostScreen />} />
         <Route path="share" element={<ShareComposerScreen />} />
-        <Route path="selections" element={<SelectionsListScreen />} />
+        <Route path="selections" element={<SelectionsRealScreen />} />
         <Route path="selections/new" element={<SelectionBuilderScreen />} />
         <Route path="selections/:selectionId" element={<SelectionBuilderScreen />} />
         <Route path="orders" element={<OrdersListScreen />} />
