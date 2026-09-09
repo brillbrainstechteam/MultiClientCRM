@@ -33,6 +33,9 @@ function audienceWhere(tenantId: string, filter: Record<string, unknown> | null)
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
+  if (!['owner', 'admin', 'manager'].includes(user.role)) {
+    return NextResponse.json({ error: 'Your role cannot send campaigns.' }, { status: 403 });
+  }
   const { id } = await params;
 
   const campaign = await prisma.crmCampaign.findFirst({ where: { id, tenantId: user.tenantId } });

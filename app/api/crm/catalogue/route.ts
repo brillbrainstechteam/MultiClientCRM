@@ -20,6 +20,9 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
+  if (!['owner', 'admin', 'manager'].includes(user.role)) {
+    return NextResponse.json({ error: 'Your role cannot manage the catalogue.' }, { status: 403 });
+  }
   const b = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const title = typeof b?.title === 'string' ? b.title.trim() : '';
   if (!title) return NextResponse.json({ error: 'Title is required.' }, { status: 400 });
