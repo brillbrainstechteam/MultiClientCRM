@@ -47,19 +47,25 @@ export async function POST(req: Request) {
   if (!name) return NextResponse.json({ error: 'Campaign name is required.' }, { status: 400 });
 
   const scheduledAt = typeof b?.scheduledAt === 'string' && b.scheduledAt ? new Date(b.scheduledAt) : null;
+  const isTrigger = b?.type === 'trigger';
+  const triggerEvent = isTrigger && ['first_message', 'keyword', 'inbound_message'].includes(String(b?.triggerEvent)) ? String(b?.triggerEvent) : null;
 
   const campaign = await prisma.crmCampaign.create({
     data: {
       tenantId: user.tenantId,
       name,
-      type: 'broadcast',
-      status: scheduledAt ? 'scheduled' : 'draft',
+      type: isTrigger ? 'trigger' : 'broadcast',
+      // Event-based campaigns are 'live' once created (they fire on events);
+      // broadcasts start as draft/scheduled.
+      status: isTrigger ? 'sending' : scheduledAt ? 'scheduled' : 'draft',
       templateId: typeof b?.templateId === 'string' ? b.templateId : null,
       templateName: typeof b?.templateName === 'string' ? b.templateName : null,
       templateLocale: typeof b?.templateLocale === 'string' ? b.templateLocale : null,
       whatsappNumberId: typeof b?.whatsappNumberId === 'string' ? b.whatsappNumberId : null,
       segmentId: typeof b?.segmentId === 'string' ? b.segmentId : null,
       audienceFilter: (b?.audienceFilter ?? undefined) as never,
+      triggerEvent,
+      triggerKeyword: isTrigger && typeof b?.triggerKeyword === 'string' ? b.triggerKeyword.trim() : null,
       scheduledAt,
       createdByUserId: user.id,
     },

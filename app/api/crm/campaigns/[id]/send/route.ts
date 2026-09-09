@@ -3,6 +3,7 @@ import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { decrypt } from '@/lib/crypto';
 import { graphBase } from '@/lib/meta/config';
+import { audit } from '@/lib/crm/audit';
 
 const MAX_RECIPIENTS = 1000;
 const digits = (s: string) => (s ?? '').replace(/\D/g, '');
@@ -107,5 +108,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   await prisma.crmCampaign.update({ where: { id }, data: { status: 'completed', sentCount: sent, failedCount: failed } });
+  await audit({ tenantId: user.tenantId, actorId: user.id, action: 'campaign.sent', targetType: 'campaign', targetId: id, detail: `${campaign.name}: ${sent} sent, ${failed} failed` });
   return NextResponse.json({ totalRecipients: audience.length, sent, failed });
 }

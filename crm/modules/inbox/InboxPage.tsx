@@ -656,6 +656,13 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
       next.set(activeConvId, { userId, teamId });
       return next;
     });
+    // Persist the assignment (best-effort; UI already reflects it optimistically).
+    void fetch(`/api/crm/conversations/${activeConvId}/assign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ assigneeUserId: userId }),
+    }).catch(() => undefined);
   }, [activeConvId]);
 
   const handleChangeStatus = useCallback((status: 'open' | 'pending' | 'resolved') => {

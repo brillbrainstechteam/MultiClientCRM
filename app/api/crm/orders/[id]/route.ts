@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { audit } from '@/lib/crm/audit';
 
 const ORDER_STATUSES = [
   'draft', 'enquiry', 'quotation', 'confirmed', 'payment_pending', 'part_paid', 'paid',
@@ -25,5 +26,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (typeof b.total === 'number') data.total = b.total;
 
   await prisma.crmOrder.update({ where: { id }, data: data as never });
+  if (typeof b.status === 'string' && data.status) {
+    await audit({ tenantId: user.tenantId, actorId: user.id, action: 'order.status', targetType: 'order', targetId: id, detail: `${existing.orderNo} -> ${data.status}` });
+  }
   return NextResponse.json({ ok: true });
 }

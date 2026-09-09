@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { decrypt } from '@/lib/crypto';
 import { graphBase } from '@/lib/meta/config';
+import { audit } from '@/lib/crm/audit';
 
 /**
  * Automation — lean "trigger -> conditions -> actions" rules, executed on
@@ -79,7 +80,65 @@ async function applyActions(ctx: InboundContext, actions: RuleAction[]): Promise
   }
 }
 
-/** Evaluate + run all enabled inbound-triggered rules for the tenant. Best-effort. */
+/** Send an approved template to the contact (event-based campaign send). */
+async function sendTemplate(ctx: InboundContext, templateName: string, locale: string | null, contactName: string): Promise<boolean> {
+  if (!ctx.accessToken) return false;
+  const token = decrypt(ctx.accessToken);
+  const res = await fetch(`${graphBase()}/${ctx.phoneNumberId}/messages`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      to: ctx.from,
+      type: 'template',
+      template: {
+        name: templateName,
+        language: { code: locale || 'en' },
+        components: [{ type: 'body', parameters: [{ type: 'text', text: contactName || 'there' }] }],
+      },
+    }),
+  });
+  return res.ok;
+}
+
+/**
+ * Fire enabled event-based (trigger) campaigns for this inbound event: send the
+ * campaign's template to the contact, once per contact per campaign. Best-effort.
+ */
+async function runTriggerCampaigns(ctx: InboundContext): Promise<void> {
+  const campaigns = await prisma.crmCampaign.findMany({
+    where: { tenantId: ctx.tenantId, type: 'trigger', status: 'sending', templateName: { not: null } },
+  });
+  if (campaigns.length === 0) return;
+
+  const contact = await prisma.crmContact.findFirst({ where: { tenantId: ctx.tenantId, mobile: `+${ctx.from}` }, select: { id: true, name: true } });
+
+  for (const c of campaigns) {
+    const evt = c.triggerEvent ?? 'inbound_message';
+    const fires =
+      evt === 'first_message' ? ctx.isFirstMessage
+        : evt === 'keyword' ? Boolean(c.triggerKeyword && ctx.text.toLowerCase().includes(c.triggerKeyword.toLowerCase()))
+          : true;
+    if (!fires) continue;
+
+    // Once per contact per campaign.
+    const already = await prisma.crmCampaignRecipient.findFirst({ where: { campaignId: c.id, mobile: ctx.from }, select: { id: true } });
+    if (already) continue;
+
+    try {
+      const ok = await sendTemplate(ctx, c.templateName!, c.templateLocale, contact?.name ?? '');
+      await prisma.crmCampaignRecipient.create({
+        data: { campaignId: c.id, tenantId: ctx.tenantId, contactId: contact?.id ?? null, mobile: ctx.from, status: ok ? 'sent' : 'failed' },
+      });
+      await prisma.crmCampaign.update({ where: { id: c.id }, data: ok ? { sentCount: { increment: 1 }, totalRecipients: { increment: 1 } } : { failedCount: { increment: 1 }, totalRecipients: { increment: 1 } } });
+      if (ok) await audit({ tenantId: ctx.tenantId, action: 'campaign.sent', targetType: 'campaign', targetId: c.id, detail: `Event-based (${evt}) -> ${ctx.from}` });
+    } catch {
+      // never break the webhook
+    }
+  }
+}
+
+/** Evaluate + run all enabled inbound-triggered rules + event-based campaigns. Best-effort. */
 export async function runInboundAutomations(ctx: InboundContext): Promise<void> {
   const rules = await prisma.crmAutomationRule.findMany({
     where: { tenantId: ctx.tenantId, enabled: true, trigger: { in: ['inbound_message', 'first_message', 'keyword'] } },
@@ -92,8 +151,11 @@ export async function runInboundAutomations(ctx: InboundContext): Promise<void> 
     try {
       await applyActions(ctx, actions);
       await prisma.crmAutomationRule.update({ where: { id: rule.id }, data: { runCount: { increment: 1 }, lastRunAt: new Date() } });
+      await audit({ tenantId: ctx.tenantId, action: 'automation.ran', targetType: 'rule', targetId: rule.id, detail: rule.name });
     } catch {
       // never let one rule break the webhook
     }
   }
+
+  await runTriggerCampaigns(ctx);
 }

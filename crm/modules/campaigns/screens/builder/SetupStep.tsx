@@ -7,9 +7,8 @@ import type { WhatsAppNumber } from '@crm/mock-data';
 
 const typeChoices: { value: CampaignType; label: string; description: string; phase2?: boolean }[] = [
   { value: 'one-time', label: 'One-time', description: 'Sent once to the audience you configure.' },
+  { value: 'trigger', label: 'Event-based', description: 'Sent automatically to a contact when an event occurs (e.g. first message, keyword).' },
   { value: 'recurring', label: 'Recurring', description: 'Repeats on a schedule.', phase2: true },
-  { value: 'trigger', label: 'Trigger-based', description: 'Sent automatically when an event occurs.', phase2: true },
-  { value: 'api', label: 'API', description: 'Sent by an external system via API.', phase2: true },
 ];
 
 /** CAM-S03 — Builder Setup: name, type, sender selection. */

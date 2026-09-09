@@ -11,6 +11,7 @@ import { PersonalisationStep } from './builder/PersonalisationStep';
 import { ReviewStep } from './builder/ReviewStep';
 import { SetupStep } from './builder/SetupStep';
 import { TemplateStep } from './builder/TemplateStep';
+import { TriggerStep } from './builder/TriggerStep';
 
 const phase2StepId: Partial<Record<CampaignType, string>> = {
   recurring: 'recurrence',
@@ -97,10 +98,15 @@ function BuilderInner() {
   const returnTo = searchParams.get('returnTo') ?? '/campaigns';
   const sender = draft.whatsappNumberId ? findWhatsAppNumber(draft.whatsappNumberId) : undefined;
 
-  const isPhase2Type = draft.type === 'recurring' || draft.type === 'trigger' || draft.type === 'api';
-  const steps: StepperItem[] = isPhase2Type
-    ? [{ id: 'setup', label: 'Setup' }, { id: phase2StepId[draft.type]!, label: phase2Label[draft.type]! }]
-    : builderSteps;
+  // Event-based (trigger) campaigns flow through their own Trigger step and
+  // create directly via the API. Recurring/API remain Phase 2 placeholders.
+  const isTrigger = draft.type === 'trigger';
+  const isPhase2Type = draft.type === 'recurring' || draft.type === 'api';
+  const steps: StepperItem[] = isTrigger
+    ? [{ id: 'setup', label: 'Setup' }, { id: 'trigger', label: 'Event & template' }]
+    : isPhase2Type
+      ? [{ id: 'setup', label: 'Setup' }, { id: phase2StepId[draft.type]!, label: phase2Label[draft.type]! }]
+      : builderSteps;
 
   const setStep = (id: string) => {
     setDraft((d) => ({ ...d, draftLastStep: id === 'setup' || id === 'template' || id === 'audience' || id === 'personalisation' || id === 'review' ? (id as Campaign['draftLastStep']) : d.draftLastStep }));
@@ -112,7 +118,7 @@ function BuilderInner() {
   };
 
   const goBack = () => setStep(isPhase2Type ? 'setup' : (backStep[step] ?? 'setup'));
-  const goContinueFromSetup = () => setStep(isPhase2Type ? phase2StepId[draft.type]! : 'template');
+  const goContinueFromSetup = () => setStep(isTrigger ? 'trigger' : isPhase2Type ? phase2StepId[draft.type]! : 'template');
   const goContinueFromTemplate = () => setStep('audience');
   const goContinueFromAudience = () => setStep('personalisation');
   const goContinueFromPersonalisation = () => setStep('review');
@@ -134,7 +140,7 @@ function BuilderInner() {
         title={title}
         subtitle="Setup → Template → Audience → Personalisation → Review & Launch"
         steps={steps}
-        currentId={isPhase2Type ? (step === 'setup' ? 'setup' : phase2StepId[draft.type]!) : step}
+        currentId={isTrigger ? step : isPhase2Type ? (step === 'setup' ? 'setup' : phase2StepId[draft.type]!) : step}
         onCancel={() => setExitModalOpen(true)}
         footer={
           <div className="crm-camp-builder__footer">
@@ -180,6 +186,10 @@ function BuilderInner() {
       >
         {step === 'setup' ? (
           <SetupStep draft={draft} setDraft={setDraft} availableWhatsAppNumbers={availableWhatsAppNumbers} />
+        ) : null}
+
+        {isTrigger && step === 'trigger' ? (
+          <TriggerStep draft={draft} />
         ) : null}
 
         {!isPhase2Type && step === 'template' ? (
