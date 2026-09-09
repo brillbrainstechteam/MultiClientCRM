@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Trash2, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Trash2, Zap, Workflow } from 'lucide-react';
 import { PageHeader } from '@crm/components';
+import { useScopedHref } from '@crm/app/use-scoped-href';
 import {
   Badge, Button, ConfirmDialog, DataTable, EmptyState, IconButton, Input,
   LoadingSkeleton, Modal, Select, Textarea, Toast, Toggle, type Column,
@@ -33,6 +35,8 @@ function actionSummary(a: Rule['actions'][number]): string {
 }
 
 export default function AutomationLibraryScreen() {
+  const navigate = useNavigate();
+  const scopedHref = useScopedHref();
   const [rules, setRules] = useState<Rule[]>([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
@@ -114,7 +118,10 @@ export default function AutomationLibraryScreen() {
       <PageHeader
         title="Automation rules"
         description="Trigger → condition → action rules that run automatically on incoming WhatsApp messages."
-        actions={<Button variant="primary" iconLeft={<Plus />} onClick={() => setModalOpen(true)}>New rule</Button>}
+        actions={<>
+          <Button variant="secondary" iconLeft={<Workflow />} onClick={() => navigate(scopedHref('/automation/flows'))}>Flow builder</Button>
+          <Button variant="primary" iconLeft={<Plus />} onClick={() => setModalOpen(true)}>New rule</Button>
+        </>}
       />
 
       {loading ? (
