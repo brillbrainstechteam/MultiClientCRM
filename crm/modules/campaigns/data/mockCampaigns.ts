@@ -790,7 +790,9 @@ const campServiceReminder: Campaign = {
   conversionTrackingConfigured: false,
 };
 
-export const campaigns: Campaign[] = [
+export let campaigns: Campaign[] = [
+  // Seed fixtures — replaced at startup by hydrateCampaigns with the tenant's
+  // real campaigns from /api/crm/campaigns.
   draftFestiveRound2,
   draftTemplateInvalidated,
   draftSenderDisconnected,
@@ -806,4 +808,78 @@ export const campaigns: Campaign[] = [
 
 export function findCampaign(campaignId: string): Campaign | undefined {
   return campaigns.find((campaign) => campaign.id === campaignId);
+}
+
+// ---- Real-data hydration ---------------------------------------------------
+// Campaigns come from /api/crm/campaigns (real CrmCampaign rows). The rich
+// builder sub-objects (audience waterfall, analytics, spend) are derived from
+// the stored counts; full builder wiring fills the rest as it lands.
+
+interface ApiCampaign {
+  id: string; name: string; status: string;
+  templateId: string | null; templateLocale: string | null;
+  whatsappNumberId: string | null; segmentId: string | null;
+  scheduledAt: string | null; createdByUserId: string | null;
+  totalRecipients: number; sentCount: number; deliveredCount: number; readCount: number; failedCount: number;
+  createdAt: string; updatedAt: string;
+}
+
+function mapApiCampaign(c: ApiCampaign): Campaign {
+  const statusMap: Record<string, Campaign['status']> = {
+    draft: 'draft', scheduled: 'scheduled', sending: 'live', completed: 'completed', failed: 'completed',
+  };
+  const status = statusMap[c.status] ?? 'draft';
+  const total = c.totalRecipients ?? 0;
+  const processed = c.sentCount + c.failedCount;
+  const active = status === 'live' || status === 'completed';
+  return {
+    id: c.id,
+    name: c.name,
+    type: 'one-time',
+    status,
+    isArchived: false,
+    creatorId: c.createdByUserId ?? '',
+    branchId: 'branch_main',
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt,
+    whatsappNumberId: c.whatsappNumberId,
+    templateId: c.templateId,
+    templateLocale: c.templateLocale,
+    includedSources: c.segmentId ? [{ id: c.segmentId, kind: 'segment', label: 'Segment', count: total }] : [],
+    excludedSources: [],
+    audience: {
+      includedRaw: total, duplicatesRemoved: 0, manualExclusions: 0, consentIneligible: 0,
+      invalidContactData: 0, invalidPersonalisation: 0, finalEligible: total,
+    },
+    variableMappings: [],
+    scheduledAt: c.scheduledAt,
+    timezone: null,
+    progress: active ? {
+      totalEligible: total, processed, remaining: Math.max(0, total - processed),
+      sent: c.sentCount, deliveredAvailable: true, delivered: c.deliveredCount,
+      failed: c.failedCount, health: c.failedCount > 0 ? 'partial' : 'normal',
+    } : null,
+    recipients: [],
+    analytics: active ? {
+      sent: c.sentCount, delivered: c.deliveredCount, read: c.readCount, replied: 0, failed: c.failedCount,
+      clicksAvailable: false, clicks: null, conversionsAvailable: false, conversions: null,
+      costPerResultAvailable: false, costPerResult: null, currency: 'INR',
+    } : null,
+    spend: { estimateAvailable: false, estimatedCost: null, actualAvailable: false, actualSpend: null, currency: 'INR' },
+    auditEvents: [],
+    conversionTrackingConfigured: false,
+  };
+}
+
+/** Replace the live campaigns list (used after hydration and writes). */
+export function setCampaigns(next: Campaign[]): void {
+  campaigns = next;
+}
+
+/** Fetch the tenant's real campaigns and populate the list. */
+export async function hydrateCampaigns(): Promise<void> {
+  const res = await fetch('/api/crm/campaigns', { credentials: 'same-origin' });
+  if (!res.ok) { setCampaigns([]); return; }
+  const data = (await res.json()) as { campaigns?: ApiCampaign[] };
+  setCampaigns((data.campaigns ?? []).map(mapApiCampaign));
 }
