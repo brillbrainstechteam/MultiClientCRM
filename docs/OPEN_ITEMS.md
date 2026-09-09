@@ -26,6 +26,8 @@ _Auto-decided in your absence (change anytime):_ **Automation = Option B** (lean
 - **Onboarding / Embedded Signup**, **Auth + Landing**.
 - **Team & Access → People** — real team from auth users.
 - **Campaigns V1 — backend**: list/create/send APIs (real audience, opt-out suppression, dedupe + cap, template send via Cloud API, per-recipient results). Tables live in prod.
+- **Event-based campaigns** (type `trigger`): create via the builder's Event & template step (removed the `api` type); fires the chosen approved template to a contact when the event occurs (first message / keyword / any inbound), once per contact per campaign, executed on the WhatsApp webhook. `triggerEvent`/`triggerKeyword` on CrmCampaign.
+- **Team & Access — backend**: conversation **assignment** persisted (`/api/crm/conversations/[id]/assign`, wired into Inbox assign, role-gated) + **audit log** (`/api/crm/audit`) capturing campaign sends, automation runs, order status changes, profile updates and assignments; `teamFunction` on User; People screen already real.
 - **Automation — engine + API (Option B)**: rules API (`/api/crm/automations`) + webhook execution (first_message / keyword / inbound triggers → send_message / add_tag / set_lead_status). Rules are disabled by default.
 - **Calling — backend (BYOT)**: telephony connection (`/api/crm/telephony`) + call log (`/api/crm/calls`, list + log/click-to-call entry). Provider-agnostic; ready for creds.
 - **Settings** — real hub with **Business profile** (edit business name/model/GST/CIN/entity, `/api/crm/settings/profile`, owner/admin-gated) and **Integrations** (live Google + telephony + WhatsApp connection status). Hub links to every settings area.
@@ -43,7 +45,7 @@ without logging in, so I build them behind the deploy build-check.
 1. **Campaigns builder → API wiring.** The multi-step builder UI isn't yet posting to the create/send API. (Backend done.)
 2. **Automation rules UI.** A simple create/enable/edit rules screen mapped to the API (the prototype's screen is the heavier flow-builder = Option A; deferred).
 3. **Calling dialer UI wiring.** Hydrate the calling workspace (tasks/attempts/lists) from `/api/crm/calls`; model call tasks/lists if we want the full dialer (mostly meaningful once a provider is connected).
-4. **Team & Access — Structure / Performance / Work-distribution / Audit.** Needs a foundational **assignment + activity/audit tracking layer** (conversations/contacts have no assignee or activity log yet). I'll build that tracking, then these screens become real.
+4. **Team & Access — Structure / Performance / Work-distribution / Audit UI.** The tracking layer is now built (assignment + audit log + APIs). Remaining is wiring the UI screens: Audit screen to `/api/crm/audit` (its event-type enum is HR-focused and needs a small mapping/broadening), Performance/Work-distribution to per-agent assignment counts, Structure to real branches/teams (single-branch today).
 5. **Dashboard Overview / Alerts** — real KPIs (same source as Reports) + the alert set above.
 5b. **Settings sub-screens** — WhatsApp Number Registry (real numbers: needs mapping the rich onboarding record, or a simpler real numbers view), Contact settings, Team/Routing settings, Import history. (Settings hub + Business profile + Integrations are done.)
 6. **Catalogue & Orders V1** (lean, per decision #4) — new schema (catalogue items + enquiry→quotation→order), no Razorpay.

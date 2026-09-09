@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { audit } from '@/lib/crm/audit';
 
 /** The signed-in tenant's business profile. */
 export async function GET() {
@@ -37,5 +38,6 @@ export async function PATCH(req: Request) {
   if (b.entityType !== undefined && str(b.entityType)) data.entityType = str(b.entityType);
 
   await prisma.tenant.update({ where: { id: user.tenantId }, data });
+  await audit({ tenantId: user.tenantId, actorId: user.id, action: 'profile.updated', targetType: 'tenant', targetId: user.tenantId });
   return NextResponse.json({ ok: true });
 }

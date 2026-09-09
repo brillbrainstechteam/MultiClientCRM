@@ -42,6 +42,7 @@ model User {
   email        String   @unique
   passwordHash String
   role         String   @default("owner") // owner | admin | manager | agent
+  teamFunction String?  // sales | marketing | support | other (orthogonal to role)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -106,6 +107,9 @@ model Conversation {
   // The customer's WhatsApp id (E.164 without '+').
   contactPhone  String
   contactName   String?
+  // Team & Access: which agent this conversation is assigned to (persisted).
+  assigneeUserId String?
+  status         String  @default("open") // open | pending | resolved
   lastMessageAt DateTime @default(now())
   createdAt     DateTime @default(now())
 
@@ -421,6 +425,10 @@ model CrmCampaign {
   whatsappNumberId  String?                          // WhatsAppAccount id used to send
   segmentId         String?                          // optional CRM segment
   audienceFilter    Json?                            // structured audience filter snapshot
+  // Event-based (type = 'trigger'): fire the template to a single contact when
+  // the event occurs. triggerKeyword applies when triggerEvent = 'keyword'.
+  triggerEvent      String?                          // first_message | keyword | inbound_message
+  triggerKeyword    String?
   scheduledAt       DateTime?
   createdByUserId   String?
   totalRecipients   Int      @default(0)
@@ -595,4 +603,20 @@ model CrmOrderItem {
   lineTotal       Float?
 
   @@index([orderId])
+}
+
+// ---- Audit log (Team & Access -> Audit; workspace-wide activity trail) -----
+
+model CrmAuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String
+  actorId    String?                          // user who performed the action (null = system/automation)
+  action     String                           // e.g. campaign.sent | automation.ran | order.status | contact.assigned | profile.updated
+  targetType String?                           // campaign | order | contact | conversation | rule | tenant | ...
+  targetId   String?
+  detail     String?
+  at         DateTime @default(now())
+
+  @@index([tenantId, at])
+  @@index([tenantId, actorId])
 }
