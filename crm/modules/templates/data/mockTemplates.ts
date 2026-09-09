@@ -1,4 +1,13 @@
-import type { Template, TemplateComponents } from '../domain/types';
+import type {
+  Template,
+  TemplateComponents,
+  TemplateButton,
+  TemplateVariable,
+  ButtonType,
+  HeaderFormat,
+  MetaCategory,
+  MetaTemplateStatus,
+} from '../domain/types';
 
 /**
  * Deterministic template fixtures (BATCHES.md Batch 0 "Required fixtures").
@@ -18,8 +27,9 @@ function standardComponents(overrides: Partial<TemplateComponents> = {}): Templa
   };
 }
 
-export const templates: Template[] = [
-  // ---- Approved standard (referenced by Dashboard campaigns) ----
+export let templates: Template[] = [
+  // ---- Seed fixtures (replaced at startup by hydrateTemplates with the real
+  // approved templates fetched from the connected WhatsApp Business Account) ----
   {
     id: 'tmpl_festive_launch',
     familyId: 'family_festive_launch',
@@ -660,4 +670,101 @@ export function existingTemplateNames(wabaId: string, excludeId?: string): strin
   return templates
     .filter((template) => template.wabaId === wabaId && template.id !== excludeId && template.crmState !== 'deleted')
     .map((template) => template.name);
+}
+
+// ---- Real-data hydration ---------------------------------------------------
+// Approved WhatsApp templates come from the connected WABA via
+// /api/crm/templates (Meta Graph message_templates). We map the core Meta
+// fields into the repository's Template shape; CRM-only fields (useCase,
+// folders, internal approval) default sensibly until edited.
+
+interface RawGraphButton { type?: string; text?: string; url?: string; phone_number?: string }
+interface RawGraphComponent { type?: string; format?: string; text?: string; buttons?: RawGraphButton[] }
+interface RawGraphTemplate {
+  id?: string;
+  name?: string;
+  language?: string;
+  status?: string;
+  category?: string;
+  components?: RawGraphComponent[];
+}
+
+const META_STATUS = new Set<MetaTemplateStatus>(['pending', 'approved', 'rejected', 'in_appeal', 'disabled', 'paused', 'unknown']);
+const HEADER_FORMAT: Record<string, HeaderFormat> = { TEXT: 'text', IMAGE: 'image', VIDEO: 'video', DOCUMENT: 'document' };
+const BUTTON_TYPE: Record<string, ButtonType> = { QUICK_REPLY: 'quick-reply', URL: 'website', PHONE_NUMBER: 'call-phone', COPY_CODE: 'coupon' };
+
+const localeLabelFor = (locale: string): string => {
+  try { return new Intl.DisplayNames(['en'], { type: 'language' }).of(locale.replace('_', '-')) ?? locale; }
+  catch { return locale; }
+};
+
+function mapComponents(components: RawGraphComponent[]): TemplateComponents {
+  const header = components.find((c) => c.type === 'HEADER');
+  const body = components.find((c) => c.type === 'BODY');
+  const footer = components.find((c) => c.type === 'FOOTER');
+  const buttonsComp = components.find((c) => c.type === 'BUTTONS');
+  const bodyText = body?.text ?? '';
+
+  const variables: TemplateVariable[] = [...new Set([...bodyText.matchAll(/\{\{(\d+)\}\}/g)].map((m) => Number(m[1])))]
+    .sort((a, b) => a - b)
+    .map((index) => ({ id: `var_${index}`, index, description: `Variable ${index}`, sampleValue: '' }));
+
+  const buttons: TemplateButton[] = (buttonsComp?.buttons ?? []).map((b, i) => ({
+    id: `btn_${i + 1}`,
+    type: BUTTON_TYPE[b.type ?? ''] ?? 'quick-reply',
+    label: b.text ?? '',
+    value: b.url ?? b.phone_number,
+  }));
+
+  const headerFmt = HEADER_FORMAT[header?.format ?? ''] ?? 'none';
+  return {
+    headerFormat: headerFmt,
+    headerText: headerFmt === 'text' ? header?.text : undefined,
+    headerMediaLabel: headerFmt !== 'none' && headerFmt !== 'text' ? `${headerFmt} header` : undefined,
+    body: bodyText,
+    footer: footer?.text,
+    buttons,
+    variables,
+  };
+}
+
+function mapRawTemplate(t: RawGraphTemplate, wabaId: string): Template {
+  const locale = t.language ?? 'en';
+  const statusRaw = (t.status ?? 'unknown').toLowerCase() as MetaTemplateStatus;
+  const catRaw = (t.category ?? 'marketing').toLowerCase();
+  const now = new Date().toISOString();
+  return {
+    id: `tpl_${t.id ?? `${t.name}_${locale}`}`,
+    familyId: `family_${t.name ?? 'template'}`,
+    wabaId,
+    name: t.name ?? 'template',
+    useCase: 'other',
+    metaCategory: (['marketing', 'utility', 'authentication'].includes(catRaw) ? catRaw : 'marketing') as MetaCategory,
+    locale,
+    localeLabel: localeLabelFor(locale),
+    format: 'standard',
+    components: mapComponents(t.components ?? []),
+    metaStatus: META_STATUS.has(statusRaw) ? statusRaw : 'unknown',
+    crmState: 'normal',
+    metaTemplateId: t.id,
+    creatorId: '',
+    createdAt: now,
+    updatedAt: now,
+    tags: [],
+    submissionHistory: [],
+  };
+}
+
+/** Replace the live templates repository (used after hydration). */
+export function setTemplates(next: Template[]): void {
+  templates = next;
+}
+
+/** Fetch the connected WABA's approved templates and populate the repository. */
+export async function hydrateTemplates(): Promise<void> {
+  const res = await fetch('/api/crm/templates', { credentials: 'same-origin' });
+  if (!res.ok) { setTemplates([]); return; }
+  const data = (await res.json()) as { wabaId?: string; templates?: RawGraphTemplate[] };
+  const wabaId = data.wabaId ?? 'waba_main';
+  setTemplates((data.templates ?? []).map((t) => mapRawTemplate(t, wabaId)));
 }

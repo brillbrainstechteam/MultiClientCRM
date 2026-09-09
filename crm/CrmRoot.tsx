@@ -7,6 +7,7 @@ import { AppSessionProvider } from '@crm/app/app-session';
 import { WorkspaceProvider } from '@crm/app/workspace-context';
 import { hydrateCrmData, onCrmDataChanged } from '@crm/app/crm-data';
 import { hydrateInboxData } from '@crm/modules/inbox/inbox-mock-data';
+import { hydrateTemplates } from '@crm/modules/templates/data/mockTemplates';
 
 /**
  * Entry point for the embedded CRM (Approach A) with real-data hydration.
@@ -24,7 +25,7 @@ export default function CrmRoot() {
     let cancelled = false;
     // Inbox conversations are best-effort — a failure there shouldn't block the
     // whole workspace, so it never rejects the combined hydration.
-    Promise.all([hydrateCrmData(), hydrateInboxData().catch(() => {})])
+    Promise.all([hydrateCrmData(), hydrateInboxData().catch(() => {}), hydrateTemplates().catch(() => {})])
       .then(() => { if (!cancelled) setState('ready'); })
       .catch(() => { if (!cancelled) setState('error'); });
     // Remount the app subtree after each successful write so screens re-read data.
