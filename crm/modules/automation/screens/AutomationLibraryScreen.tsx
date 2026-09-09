@@ -1,318 +1,161 @@
-import { useMemo, useState } from 'react';
-import { Copy, MoreHorizontal, Plus } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, Trash2, Zap } from 'lucide-react';
 import { PageHeader } from '@crm/components';
-import { useScopedHref } from '@crm/app/use-scoped-href';
-import { useWorkspace } from '@crm/app/workspace-context';
 import {
-  Button,
-  ConfirmDialog,
-  DataTable,
-  EmptyState,
-  IconButton,
-  LoadingSkeleton,
-  Popover,
-  SearchField,
-  Select,
-  Tabs,
-  type Column,
-  type TabItem,
+  Badge, Button, ConfirmDialog, DataTable, EmptyState, IconButton, Input,
+  LoadingSkeleton, Modal, Select, Textarea, Toast, Toggle, type Column,
 } from '@crm/design-system';
-import { findUser, users } from '@crm/mock-data';
-import { AutomationStatusBadge, TestedBadge } from '../components';
-import type { AutomationFlow } from '../domain/types';
-import { categoryLabel } from '../automation-labels';
-import { distinctCategories, filterFlows, lifecycleCounts, type LibraryView } from '../automation-selectors';
-import { can } from '../permissions';
-import { archiveFlow, cloneFlow, deleteFlow, pauseFlow, resumeFlow, useFlows } from '../data';
-
-const primaryTabs: { id: LibraryView; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'draft', label: 'Draft' },
-  { id: 'testing', label: 'Testing' },
-  { id: 'live', label: 'Live' },
-  { id: 'paused', label: 'Paused' },
-  { id: 'inactive', label: 'Inactive' },
-];
-
-type ConfirmAction = { type: 'archive' | 'delete' | 'pause' | 'resume'; flow: AutomationFlow };
 
 /**
- * AUT-S01 — Automation Library. All flows and operational lifecycle
- * management (AUTOMATION_GENERATION_SPEC.md §3). Lifecycle status is a
- * filter on this one screen, never a separate page.
+ * Automation — real rules manager (Option B). Lists the tenant's rules from
+ * /api/crm/automations and lets you create / enable / delete them. Rules run on
+ * the WhatsApp webhook (see lib/crm/automation.ts). The visual flow-builder
+ * (Option A) remains a separate, deferred surface.
  */
+
+interface Rule {
+  id: string; name: string; enabled: boolean; trigger: string;
+  conditions: Array<{ field?: string; op?: string; value?: string }>;
+  actions: Array<{ type?: string; text?: string; tag?: string; value?: string }>;
+  runCount: number; lastRunAt: string | null;
+}
+
+const TRIGGER_LABEL: Record<string, string> = {
+  first_message: 'First message', keyword: 'Keyword match', inbound_message: 'Any inbound message',
+};
+const LEAD_STATUSES = ['new', 'assigned', 'attempted', 'connected', 'engaged', 'enquiry_generated', 'not_interested', 'dormant'];
+
+function actionSummary(a: Rule['actions'][number]): string {
+  if (a.type === 'send_message') return `Auto-reply: "${(a.text ?? '').slice(0, 40)}${(a.text ?? '').length > 40 ? '…' : ''}"`;
+  if (a.type === 'add_tag') return `Add tag: ${a.tag}`;
+  if (a.type === 'set_lead_status') return `Set lead status: ${a.value}`;
+  return a.type ?? '—';
+}
+
 export default function AutomationLibraryScreen() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const scopedHref = useScopedHref();
-  const { branchId, whatsappNumberId, role, currentUser } = useWorkspace();
-  const flows = useFlows();
+  const [rules, setRules] = useState<Rule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<Rule | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const [menuFlowId, setMenuFlowId] = useState<string | null>(null);
-  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
+  // Create-form state
+  const [name, setName] = useState('');
+  const [trigger, setTrigger] = useState('first_message');
+  const [keyword, setKeyword] = useState('');
+  const [actionType, setActionType] = useState('send_message');
+  const [message, setMessage] = useState('');
+  const [tag, setTag] = useState('');
+  const [leadStatus, setLeadStatus] = useState('connected');
+  const [enabled, setEnabled] = useState(true);
 
-  const scope = {
-    branchId: branchId === 'all' ? null : branchId,
-    whatsappNumberId: whatsappNumberId === 'all' ? null : whatsappNumberId,
+  const load = () =>
+    fetch('/api/crm/automations', { credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.json() : { rules: [] }))
+      .then((d) => setRules(d.rules ?? []))
+      .catch(() => setRules([]))
+      .finally(() => setLoading(false));
+
+  useEffect(() => { void load(); }, []);
+
+  const resetForm = () => { setName(''); setTrigger('first_message'); setKeyword(''); setActionType('send_message'); setMessage(''); setTag(''); setLeadStatus('connected'); setEnabled(true); };
+
+  const create = async () => {
+    if (!name.trim()) { setToast('Give the rule a name.'); return; }
+    const conditions = trigger === 'keyword' && keyword.trim() ? [{ field: 'text', op: 'contains', value: keyword.trim() }] : [];
+    const actions =
+      actionType === 'send_message' ? [{ type: 'send_message', text: message.trim() }]
+        : actionType === 'add_tag' ? [{ type: 'add_tag', tag: tag.trim() }]
+          : [{ type: 'set_lead_status', value: leadStatus }];
+    if (actionType === 'send_message' && !message.trim()) { setToast('Enter the auto-reply message.'); return; }
+    if (actionType === 'add_tag' && !tag.trim()) { setToast('Enter a tag.'); return; }
+
+    setBusy(true);
+    try {
+      const res = await fetch('/api/crm/automations', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+        body: JSON.stringify({ name: name.trim(), trigger, enabled, conditions, actions }),
+      });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setToast(String(d.error ?? 'Could not create the rule.')); return; }
+      setModalOpen(false); resetForm(); await load();
+      setToast('Rule created.');
+    } finally { setBusy(false); }
   };
 
-  const view = (searchParams.get('view') as LibraryView | null) ?? 'all';
-  const filters = {
-    q: searchParams.get('q'),
-    view,
-    category: searchParams.get('category'),
-    ownerId: searchParams.get('ownerId'),
+  const toggle = async (rule: Rule) => {
+    setRules((prev) => prev.map((r) => (r.id === rule.id ? { ...r, enabled: !r.enabled } : r))); // optimistic
+    await fetch(`/api/crm/automations/${rule.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+      body: JSON.stringify({ enabled: !rule.enabled }),
+    }).catch(() => void load());
   };
 
-  const forcedState = searchParams.get('state');
-  const isLoading = forcedState === 'loading';
-  const forcedEmpty = forcedState === 'empty';
-  const forcedNoResults = forcedState === 'no-results';
-  const permissionDenied = !can(role, 'view');
-
-  const rows = useMemo(
-    () => (forcedEmpty || forcedNoResults ? [] : filterFlows(scope, filters, flows)),
-    [forcedEmpty, forcedNoResults, scope.branchId, scope.whatsappNumberId, filters.q, filters.view, filters.category, filters.ownerId, flows],
-  );
-
-  const counts = lifecycleCounts(scope, flows);
-  const categories = distinctCategories(flows);
-
-  const setParam = (key: string, value: string | null) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (value === null || value === '') next.delete(key);
-      else next.set(key, value);
-      next.delete('state');
-      return next;
-    });
+  const remove = async (rule: Rule) => {
+    setConfirmDelete(null);
+    await fetch(`/api/crm/automations/${rule.id}`, { method: 'DELETE', credentials: 'same-origin' }).catch(() => undefined);
+    await load();
+    setToast('Rule deleted.');
   };
 
-  const hasFilters = Boolean(filters.q || filters.category || filters.ownerId);
-  const clearAll = () =>
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      for (const key of ['q', 'category', 'ownerId', 'state']) next.delete(key);
-      return next;
-    });
-
-  const tabItems: TabItem[] = primaryTabs.map((tab) => ({ id: tab.id, label: tab.label, count: countFor(counts, tab.id) }));
-
-  const menuFlow = menuFlowId ? rows.find((f) => f.id === menuFlowId) ?? flows.find((f) => f.id === menuFlowId) : undefined;
-
-  const runConfirm = () => {
-    if (!confirmAction) return;
-    const { type, flow } = confirmAction;
-    if (type === 'archive') archiveFlow(flow.id, currentUser.id);
-    if (type === 'delete') deleteFlow(flow.id, currentUser.id);
-    if (type === 'pause') pauseFlow(flow.id, currentUser.id, 'Paused from the Automation Library.');
-    if (type === 'resume') resumeFlow(flow.id, currentUser.id);
-    setConfirmAction(null);
-  };
-
-  const columns: Column<AutomationFlow>[] = [
-    {
-      key: 'name',
-      header: 'Flow',
-      width: '26%',
-      render: (flow) => (
-        <div>
-          <p className="crm-aut-lib__name">{flow.name}</p>
-          <p className="crm-aut-lib__purpose">{flow.purpose}</p>
-        </div>
-      ),
-    },
-    { key: 'status', header: 'Status', render: (flow) => <AutomationStatusBadge status={flow.status} /> },
-    { key: 'tested', header: 'Tested', render: (flow) => <TestedBadge testedAt={flow.testedAt} changedSinceTest={flow.changedSinceTest} /> },
-    { key: 'trigger', header: 'Trigger', render: (flow) => <span className="crm-aut-lib__muted">{flow.trigger.summary}</span> },
-    {
-      key: 'owner',
-      header: 'Owner',
-      render: (flow) => {
-        const owner = findUser(flow.ownerId);
-        return <span className="crm-aut-lib__muted">{owner?.name ?? 'Unknown'}</span>;
-      },
-    },
-    { key: 'updated', header: 'Last updated', align: 'right', render: (flow) => <span className="crm-aut-lib__muted">{formatDate(flow.updatedAt)}</span> },
-    {
-      key: 'actions',
-      header: '',
-      align: 'right',
-      render: (flow) => (
-        <div className="crm-aut-lib__row-actions" onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" size="sm" iconLeft={<Copy />} onClick={() => navigate(scopedHref(`/automation/${cloneFlow(flow.id, currentUser.id)?.id ?? flow.id}`))}>
-            Clone
-          </Button>
-          <IconButton label="More actions" icon={<MoreHorizontal />} size="sm" onClick={() => setMenuFlowId(flow.id)} />
-        </div>
-      ),
-    },
-  ];
-
-  const categoryOptions = [{ value: '', label: 'All types' }, ...categories.map((c) => ({ value: c, label: categoryLabel[c] ?? c }))];
-  const ownerOptions = [{ value: '', label: 'All owners' }, ...users.filter((u) => u.role !== 'agent').map((u) => ({ value: u.id, label: u.name }))];
-
-  if (permissionDenied) {
-    return (
-      <div className="crm-aut-lib">
-        <PageHeader title="Journeys & Automation" description="Trigger-driven workflows, delays, data collection, actions and human handoff." />
-        <EmptyState
-          title="You do not have access to Automation"
-          description={`Your role (${currentUser.roleLabel}) cannot view flows. Ask a workspace owner or manager if you need access.`}
-          actions={<Button variant="secondary" onClick={() => navigate('/dashboard')}>Go to Dashboard</Button>}
-        />
-      </div>
-    );
-  }
+  const columns: Column<Rule>[] = useMemo(() => [
+    { key: 'name', header: 'Rule', render: (r) => <strong>{r.name}</strong> },
+    { key: 'trigger', header: 'When', render: (r) => TRIGGER_LABEL[r.trigger] ?? r.trigger },
+    { key: 'condition', header: 'Condition', render: (r) => (r.conditions[0]?.value ? `contains "${r.conditions[0].value}"` : '—') },
+    { key: 'action', header: 'Then', render: (r) => (r.actions[0] ? actionSummary(r.actions[0]) : '—') },
+    { key: 'runs', header: 'Runs', render: (r) => String(r.runCount) },
+    { key: 'enabled', header: 'Enabled', render: (r) => <Toggle checked={r.enabled} onChange={() => toggle(r)} label={`Enable ${r.name}`} hideLabel /> },
+    { key: 'actions', header: '', align: 'right', render: (r) => <IconButton label="Delete rule" icon={<Trash2 />} size="sm" onClick={() => setConfirmDelete(r)} /> },
+  ], []);
 
   return (
-    <div className="crm-aut-lib">
+    <div style={{ padding: 24 }}>
+      {toast ? <Toast tone="success" message={toast} onDismiss={() => setToast(null)} /> : null}
       <PageHeader
-        title="Journeys & Automation"
-        description="Trigger-driven workflows, delays, data collection, actions and human handoff."
-        actions={
-          <Button variant="primary" iconLeft={<Plus />} onClick={() => navigate(scopedHref('/automation/new'))} disabled={!can(role, 'create')} title={can(role, 'create') ? undefined : 'Your role cannot create flows.'}>
-            New Flow
-          </Button>
-        }
-        toolbar={<Tabs tabs={tabItems} activeId={view} ariaLabel="Flow lifecycle" onChange={(id) => setParam('view', id === 'all' ? null : id)} />}
+        title="Automation rules"
+        description="Trigger → condition → action rules that run automatically on incoming WhatsApp messages."
+        actions={<Button variant="primary" iconLeft={<Plus />} onClick={() => setModalOpen(true)}>New rule</Button>}
       />
 
-      <div className="crm-aut-lib__toolbar">
-        <SearchField label="Search flows" placeholder="Search name, purpose or trigger…" width="320px" value={filters.q ?? ''} onChange={(e) => setParam('q', e.target.value)} />
-        <div className="crm-aut-lib__filters">
-          <Select label="Type" hideLabel size="sm" options={categoryOptions} value={filters.category ?? ''} onChange={(e) => setParam('category', e.target.value)} />
-          <Select label="Owner" hideLabel size="sm" options={ownerOptions} value={filters.ownerId ?? ''} onChange={(e) => setParam('ownerId', e.target.value)} />
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="crm-aut-lib__loading">
-          <LoadingSkeleton lines={6} />
-        </div>
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>{[1, 2, 3].map((i) => <LoadingSkeleton key={i} height={56} />)}</div>
+      ) : rules.length === 0 ? (
+        <EmptyState
+          title="No automation rules yet"
+          description="Create a rule to auto-reply, tag, or update lead status when a message comes in."
+          actions={<Button variant="primary" iconLeft={<Zap />} onClick={() => setModalOpen(true)}>Create your first rule</Button>}
+        />
       ) : (
-        <>
-          <DataTable
-            caption="Automation flows"
-            columns={columns}
-            rows={rows}
-            rowKey={(flow) => flow.id}
-            onRowClick={(flow) => navigate(scopedHref(`/automation/${flow.id}`))}
-            emptyState={
-              <EmptyState
-                title={hasFilters ? 'No flows match these filters' : 'No flows yet'}
-                description={hasFilters ? 'Try widening the filters, or clear them to see every flow.' : 'Start from a proven flow in the Starter Gallery.'}
-                actions={
-                  hasFilters ? (
-                    <Button variant="secondary" onClick={clearAll}>Clear filters</Button>
-                  ) : (
-                    <Button variant="primary" iconLeft={<Plus />} onClick={() => navigate(scopedHref('/automation/new'))}>New Flow</Button>
-                  )
-                }
-              />
-            }
-          />
-          <p className="crm-aut-lib__count">{rows.length} flows</p>
-        </>
+        <DataTable caption="Automation rules" columns={columns} rows={rules} rowKey={(r) => r.id} />
       )}
 
-      <Popover open={Boolean(menuFlow)} title={menuFlow ? menuFlow.name : 'Flow actions'} onClose={() => setMenuFlowId(null)}>
-        {menuFlow ? (
-          <div className="crm-aut-lib__menu">
-            <button className="crm-aut-lib__menu-item" onClick={() => { setMenuFlowId(null); navigate(scopedHref(`/automation/${menuFlow.id}`)); }}>
-              Open / Edit
-            </button>
-            <button className="crm-aut-lib__menu-item" onClick={() => { setMenuFlowId(null); navigate(scopedHref(`/automation/${menuFlow.id}`, { panel: 'test' })); }}>
-              Test
-            </button>
-            {menuFlow.status !== 'live' ? (
-              <button className="crm-aut-lib__menu-item" onClick={() => { setMenuFlowId(null); navigate(scopedHref(`/automation/${menuFlow.id}`, { modal: 'publish' })); }} disabled={!can(role, 'publish')}>
-                Go Live
-              </button>
-            ) : null}
-            {menuFlow.status === 'live' && can(role, 'pause') ? (
-              <button className="crm-aut-lib__menu-item" onClick={() => { setMenuFlowId(null); setConfirmAction({ type: 'pause', flow: menuFlow }); }}>
-                Pause
-              </button>
-            ) : null}
-            {menuFlow.status === 'paused' && can(role, 'pause') ? (
-              <button className="crm-aut-lib__menu-item" onClick={() => { setMenuFlowId(null); setConfirmAction({ type: 'resume', flow: menuFlow }); }}>
-                Resume
-              </button>
-            ) : null}
-            <button className="crm-aut-lib__menu-item" onClick={() => { setMenuFlowId(null); navigate(scopedHref(`/automation/${menuFlow.id}`, { panel: 'versions' })); }}>
-              Versions
-            </button>
-            {menuFlow.status !== 'inactive' ? (
-              <button className="crm-aut-lib__menu-item" onClick={() => { setMenuFlowId(null); setConfirmAction({ type: 'archive', flow: menuFlow }); }}>
-                Archive
-              </button>
-            ) : null}
-            {can(role, 'delete') ? (
-              <button className="crm-aut-lib__menu-item crm-aut-lib__menu-item--danger" onClick={() => { setMenuFlowId(null); setConfirmAction({ type: 'delete', flow: menuFlow }); }}>
-                Delete
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-      </Popover>
+      <Modal
+        open={modalOpen}
+        title="New automation rule"
+        onClose={() => setModalOpen(false)}
+        footer={<>
+          <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
+          <Button variant="primary" disabled={busy} onClick={create}>{busy ? 'Creating…' : 'Create rule'}</Button>
+        </>}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Input label="Rule name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Welcome new contacts" />
+          <Select label="When this happens" value={trigger} onChange={(e) => setTrigger(e.target.value)}
+            options={Object.entries(TRIGGER_LABEL).map(([value, label]) => ({ value, label }))} />
+          {trigger === 'keyword' ? <Input label="Keyword" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="e.g. price" /> : null}
+          <Select label="Do this" value={actionType} onChange={(e) => setActionType(e.target.value)}
+            options={[{ value: 'send_message', label: 'Send an auto-reply' }, { value: 'add_tag', label: 'Add a tag' }, { value: 'set_lead_status', label: 'Set lead status' }]} />
+          {actionType === 'send_message' ? <Textarea label="Auto-reply message" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Hi! Thanks for reaching out — how can we help?" /> : null}
+          {actionType === 'add_tag' ? <Input label="Tag" value={tag} onChange={(e) => setTag(e.target.value)} placeholder="e.g. hot-lead" /> : null}
+          {actionType === 'set_lead_status' ? <Select label="Lead status" value={leadStatus} onChange={(e) => setLeadStatus(e.target.value)} options={LEAD_STATUSES.map((s) => ({ value: s, label: s }))} /> : null}
+          <Toggle checked={enabled} onChange={() => setEnabled((v) => !v)} label="Enable immediately" />
+        </div>
+      </Modal>
 
-      <ConfirmDialog
-        open={Boolean(confirmAction)}
-        title={confirmTitle(confirmAction)}
-        message={confirmMessage(confirmAction)}
-        confirmLabel={confirmLabel(confirmAction)}
-        tone={confirmAction?.type === 'delete' ? 'danger' : 'default'}
-        onConfirm={runConfirm}
-        onCancel={() => setConfirmAction(null)}
-      />
+      {confirmDelete ? (
+        <ConfirmDialog open title="Delete this rule?" message={`"${confirmDelete.name}" will stop running.`} confirmLabel="Delete" tone="danger"
+          onConfirm={() => remove(confirmDelete)} onCancel={() => setConfirmDelete(null)} />
+      ) : null}
     </div>
   );
-}
-
-function countFor(counts: ReturnType<typeof lifecycleCounts>, view: LibraryView): number {
-  switch (view) {
-    case 'all': return counts.all;
-    case 'draft': return counts.draft;
-    case 'testing': return counts.testing;
-    case 'live': return counts.live;
-    case 'paused': return counts.paused;
-    case 'inactive': return counts.inactive;
-    default: return 0;
-  }
-}
-
-function confirmTitle(action: ConfirmAction | null): string {
-  if (!action) return '';
-  switch (action.type) {
-    case 'archive': return 'Archive this flow?';
-    case 'delete': return 'Delete this flow?';
-    case 'pause': return 'Pause this flow?';
-    case 'resume': return 'Resume this flow?';
-  }
-}
-
-function confirmMessage(action: ConfirmAction | null): string {
-  if (!action) return '';
-  switch (action.type) {
-    case 'archive': return `"${action.flow.name}" will stop running and move to Inactive. Version history and audit log are kept.`;
-    case 'delete': return `"${action.flow.name}" will be permanently deleted. This cannot be undone.`;
-    case 'pause': return `"${action.flow.name}" will stop responding to new triggers until resumed.`;
-    case 'resume': return `"${action.flow.name}" will go back to Live and start responding to triggers again.`;
-  }
-}
-
-function confirmLabel(action: ConfirmAction | null): string {
-  if (!action) return 'Confirm';
-  switch (action.type) {
-    case 'archive': return 'Archive flow';
-    case 'delete': return 'Delete flow';
-    case 'pause': return 'Pause flow';
-    case 'resume': return 'Resume flow';
-  }
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
