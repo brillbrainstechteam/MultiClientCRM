@@ -71,6 +71,7 @@ export async function GET() {
       branchId: DEFAULT_BRANCH_ID,
       permittedWhatsAppNumberIds: numberIds,
       availability: 'available',
+      teamFunction: u.teamFunction ?? null,
     };
   });
 

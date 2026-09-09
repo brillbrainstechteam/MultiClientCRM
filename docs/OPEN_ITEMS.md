@@ -37,23 +37,23 @@ _All schema for Campaigns / Automation / Calling is migrated to prod._
 
 ---
 
-## 🛠️ REMAINING BUILD — no input needed (my queue, in order)
+## ✅ UI WIRING PASS (2026-09-09) — now real, saving to DB, no mock
 
-These need no answer from you — just build time. Backends above are ready; most of
-this is wiring the (rich) prototype UIs to the live APIs, which I can't runtime-verify
-without logging in, so I build them behind the deploy build-check.
+1. **Campaigns builder** — Review step creates + sends (or schedules) a real campaign; event-based path creates real trigger campaigns.
+2. **Automation** — real rules manager (list/create/enable/delete) at the module landing, executing on the webhook.
+3. **Calling** — real Call Desk (call log + log-call + BYOT telephony connect); real dialing awaits provider creds.
+4. **Catalogue & Orders** — real Commerce screen (Catalogue + Orders tabs): add items, create enquiry/quotation/order, change status.
+5. **Team & Access** — People (real team), **Audit** (live trail from `/api/crm/audit`), **Performance** (per-agent assignments/calls/actions from `/api/crm/team/performance`). `teamFunction` surfaced.
+6. **Dashboard** — real KPIs + funnel + needs-attention + connection banner.
+7. **Settings** — hub + Business profile + Integrations; **WhatsApp numbers** now show the real connected accounts.
+8. **Billing** — real plan management (switch persists to tenant, owner-only).
+9. **Roles & permissions** — capability matrix enforced **server-side** on the high-impact actions (assign, reassign, campaign send, automation write, catalogue manage, plan change, profile edit, audit view).
 
-1. **Campaigns builder → API wiring.** The multi-step builder UI isn't yet posting to the create/send API. (Backend done.)
-2. **Automation rules UI.** A simple create/enable/edit rules screen mapped to the API (the prototype's screen is the heavier flow-builder = Option A; deferred).
-3. **Calling dialer UI wiring.** Hydrate the calling workspace (tasks/attempts/lists) from `/api/crm/calls`; model call tasks/lists if we want the full dialer (mostly meaningful once a provider is connected).
-4. **Team & Access — Structure / Performance / Work-distribution / Audit UI.** The tracking layer is now built (assignment + audit log + APIs). Remaining is wiring the UI screens: Audit screen to `/api/crm/audit` (its event-type enum is HR-focused and needs a small mapping/broadening), Performance/Work-distribution to per-agent assignment counts, Structure to real branches/teams (single-branch today).
-5. **Dashboard Overview / Alerts** — real KPIs (same source as Reports) + the alert set above.
-5b. **Settings sub-screens** — WhatsApp Number Registry (real numbers: needs mapping the rich onboarding record, or a simpler real numbers view), Contact settings, Team/Routing settings, Import history. (Settings hub + Business profile + Integrations are done.)
-6. **Catalogue & Orders V1** (lean, per decision #4) — new schema (catalogue items + enquiry→quotation→order), no Razorpay.
-7. **Roles & permissions** — add the Admin role + Team/Function field; apply the decided capability matrix across modules.
-8. **Billing** — plan tiers UI/gating (decision #2).
-9. **Automation Option A** (visual flow builder + node execution) — later, if you want it beyond Option B.
-10. **Collections** — once spec'd (#1 above).
+## 🛠️ Still-thin (refinements, no input needed)
+- **Roles matrix** — server-enforced on key actions; per-module *client-side* button hiding is partial, and there's no in-app **Admin-invite / role-edit UI** yet (roles are set on the user record).
+- **Team & Access → Structure / Work-distribution** — single-branch today; richer views want multi-branch (#3 above) + more tracking.
+- **Dashboard Alerts** page + **Settings** Contact/Routing sub-screens + **Automation Option A** (visual flow builder) — later.
+- The heavy prototype sub-surfaces (catalogue selections/returns/sync/media, calling queues/lists) are intentionally out of V1 scope.
 
 ---
 
