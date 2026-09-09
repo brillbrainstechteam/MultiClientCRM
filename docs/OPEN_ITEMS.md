@@ -21,7 +21,8 @@ _Auto-decided in your absence (change anytime):_ **Automation = Option B** (lean
 
 - **Contacts** (full requirement set) + **Imports** (CSV, OCR, VCF, Maps prospecting) + **Google Contacts/Sheets/VCF sync**.
 - **Inbox** — real conversations + real sending.
-- **Reports** — real analytics + **dormancy** (stale >30d / dormant >90d).
+- **Reports** — real analytics + **dormancy** (stale >30d / dormant >90d) + **sales funnel** (users called -> enquiries -> orders, from real call log + orders, `/api/crm/reports/funnel`).
+- **Kundli (pre-call dossier)** — AI-researched company brief + tailored call script per contact (new prospect vs existing customer). `/api/crm/contacts/[id]/kundli` (get cached / generate); surfaced as a "Pre-call brief" tab in Customer 360. Gemini + Google Search grounding for live web (needs Gemini credits — currently depleted, 429), OpenAI fallback for knowledge-only. Cached on the contact + regenerable.
 - **Templates** — real approved templates from the connected WABA (Meta Graph).
 - **Onboarding / Embedded Signup**, **Auth + Landing**.
 - **Team & Access → People** — real team from auth users.

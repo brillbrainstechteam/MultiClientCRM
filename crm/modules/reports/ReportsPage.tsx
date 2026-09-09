@@ -1,5 +1,5 @@
-import { useMemo, type ReactNode } from 'react';
-import { Contact as ContactIcon, MessageSquare, Phone, UserCheck, Users, Send } from 'lucide-react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Contact as ContactIcon, MessageSquare, Phone, PhoneCall, UserCheck, Users, Send, FileText, ShoppingBag } from 'lucide-react';
 import { PageHeader } from '@crm/components';
 import { KpiCard, Badge, type BadgeTone } from '@crm/design-system';
 import { useWorkspace } from '@crm/app/workspace-context';
@@ -19,6 +19,12 @@ export default function ReportsPage() {
   const stats = useMemo(() => computeStats(contacts, allConversations, conversationMessages), []);
   const connectedNumbers = availableWhatsAppNumbers.filter((n) => n.connectionStatus === 'connected').length;
 
+  const [funnel, setFunnel] = useState<{ usersCalled: number; totalCalls: number; enquiries: number; quotations: number; orders: number } | null>(null);
+  useEffect(() => {
+    fetch('/api/crm/reports/funnel', { credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.json() : null)).then(setFunnel).catch(() => setFunnel(null));
+  }, []);
+
   return (
     <div style={sx.page}>
       <PageHeader
@@ -34,6 +40,19 @@ export default function ReportsPage() {
         <KpiCard label="Team members" value={users.length} icon={<Users size={16} />} />
         <KpiCard label="Connected numbers" value={connectedNumbers} icon={<Phone size={16} />} meta={`${availableWhatsAppNumbers.length} total`} />
       </div>
+
+      <section style={sx.panel}>
+        <h2 style={sx.panelTitle}>Sales funnel</h2>
+        {funnel ? (
+          <div style={sx.funnel}>
+            <FunnelStage icon={<PhoneCall size={18} />} label="Users called" value={funnel.usersCalled} sub={`${funnel.totalCalls} calls`} tone="brand" />
+            <FunnelArrow from={funnel.usersCalled} to={funnel.enquiries} />
+            <FunnelStage icon={<FileText size={18} />} label="Enquiries received" value={funnel.enquiries} sub={funnel.quotations ? `${funnel.quotations} quotations` : undefined} tone="info" />
+            <FunnelArrow from={funnel.enquiries} to={funnel.orders} />
+            <FunnelStage icon={<ShoppingBag size={18} />} label="Orders received" value={funnel.orders} tone="success" />
+          </div>
+        ) : <Empty />}
+      </section>
 
       <div style={sx.grid}>
         <Panel title="Needs attention">
@@ -201,6 +220,31 @@ function Empty() {
   return <p style={sx.empty}>No data yet.</p>;
 }
 
+const TONE_COLOR: Record<string, string> = {
+  brand: 'var(--crm-text-brand, #2f6bff)', info: '#2f8fbf', success: '#1f9d55',
+};
+
+function FunnelStage({ icon, label, value, sub, tone }: { icon: ReactNode; label: string; value: number; sub?: string; tone: string }) {
+  return (
+    <div style={sx.stage}>
+      <span style={{ ...sx.stageIcon, color: TONE_COLOR[tone] }} aria-hidden="true">{icon}</span>
+      <span style={{ ...sx.stageValue, color: TONE_COLOR[tone] }}>{value}</span>
+      <span style={sx.stageLabel}>{label}</span>
+      {sub ? <span style={sx.pct}>{sub}</span> : null}
+    </div>
+  );
+}
+
+function FunnelArrow({ from, to }: { from: number; to: number }) {
+  const pct = from > 0 ? Math.round((to / from) * 100) : null;
+  return (
+    <div style={sx.arrow}>
+      <span style={sx.arrowGlyph} aria-hidden="true">→</span>
+      {pct !== null ? <span style={sx.pct}>{pct}%</span> : null}
+    </div>
+  );
+}
+
 const sx: Record<string, React.CSSProperties> = {
   page: { display: 'flex', flexDirection: 'column', gap: 20, padding: 24 },
   kpiRow: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 },
@@ -216,4 +260,12 @@ const sx: Record<string, React.CSSProperties> = {
   barValue: { display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 72, justifyContent: 'flex-end' },
   pct: { fontSize: 12, color: 'var(--crm-text-muted, #6b7a88)' },
   empty: { fontSize: 13, color: 'var(--crm-text-muted, #6b7a88)', margin: 0 },
+  funnel: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  stage: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '12px 20px', borderRadius: 12,
+    background: 'var(--crm-bg-subtle, #f6f8fa)', border: '1px solid var(--crm-border, #e5e9ee)', minWidth: 120 },
+  stageIcon: {},
+  stageValue: { fontSize: 26, fontWeight: 700, lineHeight: 1.1 },
+  stageLabel: { fontSize: 12, color: 'var(--crm-text-primary, #2b3948)', textAlign: 'center' },
+  arrow: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, color: 'var(--crm-text-muted, #6b7a88)' },
+  arrowGlyph: { fontSize: 20 },
 };
