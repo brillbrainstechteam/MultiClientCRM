@@ -610,6 +610,38 @@ model CrmOrderItem {
   @@index([orderId])
 }
 
+// ---- Selections / Carts (curated item sets shared with a customer) ---------
+
+model CrmSelection {
+  id              String   @id @default(cuid())
+  tenantId        String
+  name            String
+  contactId       String?
+  status          String   @default("draft") // draft | shared | confirmed | converted | closed
+  note            String?
+  createdByUserId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  items           CrmSelectionItem[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+model CrmSelectionItem {
+  id              String       @id @default(cuid())
+  selectionId     String
+  selection       CrmSelection @relation(fields: [selectionId], references: [id], onDelete: Cascade)
+  tenantId        String
+  catalogueItemId String?
+  title           String
+  quantity        Int          @default(1)
+  note            String?
+
+  @@index([selectionId])
+}
+
 // ---- Audit log (Team & Access -> Audit; workspace-wide activity trail) -----
 
 model CrmAuditLog {

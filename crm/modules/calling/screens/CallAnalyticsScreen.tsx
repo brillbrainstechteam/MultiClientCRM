@@ -1,233 +1,63 @@
-import { useMemo } from 'react';
-import {
-  CalendarCheck,
-  CheckCircle2,
-  Percent,
-  PhoneCall,
-  PhoneMissed,
-  ThumbsUp,
-  Timer,
-  Trophy,
-} from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@crm/components';
-import { useScopedHref } from '@crm/app/use-scoped-href';
-import { useWorkspace } from '@crm/app/workspace-context';
-import { Button, KpiCard, PermissionRestricted, Select } from '@crm/design-system';
-import { teams, users } from '@crm/mock-data';
-import { useCallingData } from '../calling-data-context';
-import { analyticsSummary, applyBranchScope } from '../calling-selectors';
-import { callingNumbers, findCallList } from '../data';
-import { referenceNow, type CallAttempt, type CallTask } from '../domain';
-import { can } from '../permissions';
+import { Badge, KpiCard, LoadingSkeleton, type BadgeTone } from '@crm/design-system';
 
-const dateRanges = [
-  { value: 'all', label: 'All time' },
-  { value: '7', label: 'Last 7 days' },
-  { value: '30', label: 'Last 30 days' },
-];
+/**
+ * Calling analytics — computed from the real call log (/api/crm/calls).
+ * No mock: counts, outcomes and reach come straight from logged calls.
+ */
+interface Call { id: string; mobile: string; direction: string; status: string; durationSec: number | null; createdAt: string }
 
-/** CALL-S14 — Calling Analytics: lightweight operational metrics, not a BI page. */
+const OUTCOME_TONE: Record<string, BadgeTone> = { completed: 'success', answered: 'success', no_answer: 'warning', busy: 'warning', failed: 'danger' };
+
 export default function CallAnalyticsScreen() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const scopedHref = useScopedHref();
-  const { role, currentUser, branchId } = useWorkspace();
-  const { tasks, attempts } = useCallingData();
+  const [calls, setCalls] = useState<Call[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!can(role, 'calling.view_analytics')) {
-    return (
-      <div className="crm-analytics">
-        <PageHeader title="Calling Analytics" description="Operational calling metrics." />
-        <PermissionRestricted
-          title="You don't have access to Calling Analytics"
-          description="Ask a manager or owner if you need visibility into team-level calling metrics."
-        />
-      </div>
-    );
-  }
+  useEffect(() => {
+    fetch('/api/crm/calls', { credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.json() : { calls: [] })).then((d) => setCalls(d.calls ?? [])).catch(() => setCalls([])).finally(() => setLoading(false));
+  }, []);
 
-  const agentFilter = searchParams.get('agentId');
-  const teamFilter = searchParams.get('teamId');
-  const sourceFilter = searchParams.get('source');
-  const range = searchParams.get('range') ?? 'all';
-  const listId = searchParams.get('listId');
-  const list = listId ? findCallList(listId) : undefined;
+  const s = useMemo(() => {
+    const total = calls.length;
+    const reach = new Set(calls.map((c) => c.mobile)).size;
+    const connected = calls.filter((c) => c.status === 'completed' || c.status === 'answered').length;
+    const totalDur = calls.reduce((a, c) => a + (c.durationSec ?? 0), 0);
+    const byOutcome: Record<string, number> = {};
+    for (const c of calls) byOutcome[c.status] = (byOutcome[c.status] ?? 0) + 1;
+    const week = Date.now() - 7 * 86_400_000;
+    const last7 = calls.filter((c) => new Date(c.createdAt).getTime() >= week).length;
+    return { total, reach, connected, connectRate: total ? Math.round((connected / total) * 100) : 0, avgDur: total ? Math.round(totalDur / total) : 0, byOutcome, last7 };
+  }, [calls]);
 
-  const setParam = (key: string, value: string | null) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (value === null || value === '') next.delete(key);
-      else next.set(key, value);
-      return next;
-    });
-  };
-
-  const scopedTasks = applyBranchScope(tasks, branchId === 'all' ? null : branchId);
-  const roleScopedTasks =
-    role === 'agent' ? scopedTasks.filter((t) => t.assigneeId === currentUser.id) : scopedTasks;
-
-  let filteredTasks: CallTask[] = list ? roleScopedTasks.filter((t) => t.listId === list.id) : roleScopedTasks;
-  if (agentFilter) filteredTasks = filteredTasks.filter((t) => t.assigneeId === agentFilter);
-  if (teamFilter) filteredTasks = filteredTasks.filter((t) => t.teamId === teamFilter);
-  if (sourceFilter) filteredTasks = filteredTasks.filter((t) => t.source === sourceFilter);
-
-  const filteredTaskIds = new Set(filteredTasks.map((t) => t.id));
-  let filteredAttempts: CallAttempt[] = attempts.filter((a) => filteredTaskIds.has(a.taskId));
-  if (range !== 'all') {
-    const cutoff = referenceNow().getTime() - Number(range) * 24 * 60 * 60 * 1000;
-    filteredAttempts = filteredAttempts.filter((a) => new Date(a.startedAt).getTime() >= cutoff);
-  }
-
-  const summary = analyticsSummary(filteredTasks, filteredAttempts);
-
-  const bySource = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const task of filteredTasks) counts.set(task.source, (counts.get(task.source) ?? 0) + 1);
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
-  }, [filteredTasks]);
-
-  const agentOptions = [
-    { value: '', label: 'All agents' },
-    ...users.filter((u) => u.role !== 'owner').map((u) => ({ value: u.id, label: u.name })),
-  ];
-  const teamOptions = [{ value: '', label: 'All teams' }, ...teams.map((t) => ({ value: t.id, label: t.name }))];
-  const distinctSources = [...new Set(scopedTasks.map((t) => t.source))].sort();
-  const sourceOptions = [{ value: '', label: 'All sources' }, ...distinctSources.map((s) => ({ value: s, label: s }))];
-
-  const scopedNumbers = callingNumbers.filter((n) => branchId === 'all' || n.branchId === branchId);
+  if (loading) return <div style={{ padding: 24 }}><LoadingSkeleton height={80} /></div>;
 
   return (
-    <div className="crm-analytics">
-      <PageHeader
-        title="Calling Analytics"
-        description={
-          list
-            ? `Scoped to "${list.name}". Clear the list filter to see the full picture.`
-            : 'Operational signals for the calling team — attempted, connected, follow-ups and conversion first.'
-        }
-        actions={
-          <>
-            {list ? (
-              <Button variant="ghost" onClick={() => setParam('listId', null)}>
-                Clear list filter
-              </Button>
-            ) : null}
-            {can(role, 'calling.export') ? (
-              <Button variant="secondary" onClick={() => setParam('exported', String(Date.now()))}>
-                Export
-              </Button>
-            ) : null}
-            <Button
-              variant="ghost"
-              onClick={() =>
-                navigate(scopedHref('/reports', { sourceModule: 'calling', returnTo: '/calling/analytics' }))
-              }
-            >
-              Open in Reports
-            </Button>
-          </>
-        }
-      />
-
-      <div className="crm-analytics__toolbar">
-        {can(role, 'calling.view_team') ? (
-          <Select label="Agent" hideLabel size="sm" options={agentOptions} value={agentFilter ?? ''} onChange={(e) => setParam('agentId', e.target.value)} />
-        ) : null}
-        {can(role, 'calling.view_team') ? (
-          <Select label="Team" hideLabel size="sm" options={teamOptions} value={teamFilter ?? ''} onChange={(e) => setParam('teamId', e.target.value)} />
-        ) : null}
-        <Select label="Source" hideLabel size="sm" options={sourceOptions} value={sourceFilter ?? ''} onChange={(e) => setParam('source', e.target.value)} />
-        <Select label="Date range" hideLabel size="sm" options={dateRanges} value={range} onChange={(e) => setParam('range', e.target.value)} />
-        {can(role, 'calling.view_team') ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              navigate(scopedHref('/team-access', { sourceModule: 'calling', returnTo: '/calling/analytics' }))
-            }
-          >
-            Manage team access
-          </Button>
-        ) : null}
+    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <PageHeader title="Call analytics" description="Calling activity and outcomes, from your real call log." />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
+        <KpiCard label="Total calls" value={s.total} emphasis="gold" meta={`${s.last7} in last 7 days`} />
+        <KpiCard label="People reached" value={s.reach} />
+        <KpiCard label="Connect rate" value={`${s.connectRate}%`} meta={`${s.connected} connected`} />
+        <KpiCard label="Avg duration" value={`${Math.floor(s.avgDur / 60)}m ${s.avgDur % 60}s`} />
       </div>
-
-      <div className="crm-analytics__primary">
-        <KpiCard label="Attempted" value={summary.attempted} icon={<PhoneCall />} />
-        <KpiCard label="Connected" value={summary.connected} icon={<CheckCircle2 />} />
-        <KpiCard label="Completed" value={summary.completed} icon={<CalendarCheck />} />
-        <KpiCard label="Connection rate" value={`${summary.connectionRate}%`} icon={<Percent />} emphasis="gold" />
-        <KpiCard label="Follow-ups created" value={summary.followUpsCreated} icon={<Timer />} />
-        <KpiCard label="Follow-ups completed" value={summary.followUpsCompleted} icon={<CalendarCheck />} />
-        <KpiCard label="Interested" value={summary.interested} icon={<ThumbsUp />} />
-        <KpiCard label="Converted" value={summary.converted} icon={<Trophy />} />
-      </div>
-
-      <div className="crm-analytics__secondary">
-        <section className="crm-analytics__panel">
-          <h2>Secondary</h2>
-          <dl className="crm-analytics__facts">
-            <div>
-              <dt>Unanswered</dt>
-              <dd>{summary.unanswered}</dd>
-            </div>
-            <div>
-              <dt>Average call duration</dt>
-              <dd>{summary.avgDurationSeconds > 0 ? formatDuration(summary.avgDurationSeconds) : '—'}</dd>
-            </div>
-          </dl>
-        </section>
-
-        <section className="crm-analytics__panel">
-          <h2>By source</h2>
-          {bySource.length === 0 ? (
-            <p className="crm-analytics__muted">No call tasks in this scope yet.</p>
-          ) : (
-            <ul className="crm-analytics__bars">
-              {bySource.map(([source, count]) => (
-                <li key={source}>
-                  <span className="crm-analytics__bar-label">{source}</span>
-                  <span className="crm-analytics__bar-value">{count}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        {can(role, 'calling.view_cost') ? (
-          <section className="crm-analytics__panel">
-            <h2>
-              <PhoneMissed size={14} /> Provider usage
-            </h2>
-            {scopedNumbers.length === 0 ? (
-              <p className="crm-analytics__muted">No calling numbers in this scope.</p>
-            ) : (
-              <ul className="crm-analytics__usage">
-                {scopedNumbers.map((number) => (
-                  <li key={number.id}>
-                    <span>{number.label}</span>
-                    <span className="crm-analytics__muted">
-                      {number.providerConnected
-                        ? (number.costLabel ?? 'Not provided by telephony provider')
-                        : 'No provider connected'}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className="crm-analytics__hint">
-              Cost is calculated by the telephony provider, never estimated locally. Full Cost &amp; Usage reporting is a
-              future capability once a provider is connected.
-            </p>
-          </section>
-        ) : null}
-      </div>
+      <section style={{ background: 'var(--crm-surface,#fff)', border: '1px solid var(--crm-border,#e5e9ee)', borderRadius: 12, padding: 16 }}>
+        <h2 style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.3, color: 'var(--crm-text-muted,#6b7a88)', margin: '0 0 12px' }}>Outcomes</h2>
+        {Object.keys(s.byOutcome).length === 0 ? <p style={{ margin: 0, fontSize: 13, color: 'var(--crm-text-muted,#6b7a88)' }}>No calls logged yet.</p> : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {Object.entries(s.byOutcome).sort((a, b) => b[1] - a[1]).map(([outcome, n]) => (
+              <div key={outcome} style={{ display: 'grid', gridTemplateColumns: '140px 1fr auto', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 13, textTransform: 'capitalize' }}>{outcome.replace(/_/g, ' ')}</span>
+                <div style={{ height: 8, background: 'var(--crm-border,#eef1f4)', borderRadius: 999, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.round((n / s.total) * 100)}%`, background: 'var(--crm-text-brand,#2f6bff)', borderRadius: 999 }} />
+                </div>
+                <Badge tone={OUTCOME_TONE[outcome] ?? 'neutral'}>{n}</Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
-}
-
-function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
 }
