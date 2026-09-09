@@ -509,3 +509,90 @@ model CrmCallLog {
   @@index([tenantId])
   @@index([tenantId, contactId])
 }
+
+// ---- Catalogue & Orders (V1 lightweight; Razorpay = Phase 2) ---------------
+
+model CrmCatalogueItem {
+  id           String   @id @default(cuid())
+  tenantId     String
+  title        String
+  sku          String?
+  category     String?
+  subCategory  String?
+  description  String?
+  images       String[] @default([])
+  videoUrl     String?
+  variants     Json?                              // [{name, options[]}]
+  size         String?
+  weight       String?
+  material     String?
+  purity       String?
+  colour       String?
+  attributes   Json?                              // custom attributes {k: v}
+  // Jewellery-specific (optional)
+  grossWeight  String?
+  netWeight    String?
+  stoneWeight  String?
+  stoneDetails String?
+  karat        String?                            // 18K | 22K | ...
+  // Commerce
+  pricingMode  String   @default("fixed")         // fixed | indicative | on_request
+  price        Float?
+  currency     String   @default("INR")
+  stockStatus  String   @default("available")     // available | made_to_order
+  moq          Int?
+  // CRM
+  tags         String[] @default([])
+  collection   String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, active])
+}
+
+model CrmOrder {
+  id                 String   @id @default(cuid())
+  tenantId           String
+  orderNo            String                             // human-readable, unique per tenant
+  type               String   @default("order")         // enquiry | quotation | order
+  status             String   @default("draft")         // draft | enquiry | quotation | confirmed | payment_pending | part_paid | paid | processing | ready_dispatch | shipped | delivered | cancelled | returned
+  contactId          String?
+  company            String?
+  contactPerson      String?
+  discount           Float?
+  tax                Float?
+  total              Float?
+  currency           String   @default("INR")
+  paymentStatus      String   @default("unpaid")        // unpaid | part_paid | paid
+  salesOwnerId       String?
+  deliveryDetails    String?
+  notes              String?
+  expectedDeliveryAt DateTime?
+  source             String   @default("crm")           // whatsapp | website | sales | crm | other
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  items              CrmOrderItem[]
+
+  @@unique([tenantId, orderNo])
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, contactId])
+}
+
+model CrmOrderItem {
+  id              String   @id @default(cuid())
+  orderId         String
+  order           CrmOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  tenantId        String
+  catalogueItemId String?
+  title           String
+  quantity        Int      @default(1)
+  variant         String?
+  unitPrice       Float?
+  lineTotal       Float?
+
+  @@index([orderId])
+}
