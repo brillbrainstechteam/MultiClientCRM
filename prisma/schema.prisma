@@ -406,3 +406,106 @@ model CrmStageTransition {
 
   @@index([tenantId, contactId])
 }
+
+// ---- Campaigns (V1 broadcast) ---------------------------------------------
+
+model CrmCampaign {
+  id                String   @id @default(cuid())
+  tenantId          String
+  name              String
+  type              String   @default("broadcast") // broadcast | drip (V2)
+  status            String   @default("draft")      // draft | scheduled | sending | completed | failed
+  templateId        String?                          // Meta template id
+  templateName      String?
+  templateLocale    String?
+  whatsappNumberId  String?                          // WhatsAppAccount id used to send
+  segmentId         String?                          // optional CRM segment
+  audienceFilter    Json?                            // structured audience filter snapshot
+  scheduledAt       DateTime?
+  createdByUserId   String?
+  totalRecipients   Int      @default(0)
+  sentCount         Int      @default(0)
+  deliveredCount    Int      @default(0)
+  readCount         Int      @default(0)
+  failedCount       Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  recipients        CrmCampaignRecipient[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+model CrmCampaignRecipient {
+  id           String   @id @default(cuid())
+  campaignId   String
+  campaign     CrmCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  tenantId     String
+  contactId    String?
+  mobile       String
+  status       String   @default("queued") // queued | sent | delivered | read | failed
+  waMessageId  String?
+  error        String?
+  at           DateTime @default(now())
+
+  @@index([campaignId])
+  @@index([tenantId, mobile])
+}
+
+// ---- Automation (Trigger -> Conditions -> Actions) ------------------------
+
+model CrmAutomationRule {
+  id               String   @id @default(cuid())
+  tenantId         String
+  name             String
+  enabled          Boolean  @default(false)
+  trigger          String                            // e.g. first_message | keyword | stage_changed | dormant_reached ...
+  conditions       Json?                             // [{field, op, value}]
+  actions          Json                              // [{type, ...params}]
+  createdByUserId  String?
+  lastRunAt        DateTime?
+  runCount         Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, trigger])
+}
+
+// ---- Calling (BYOT — provider-agnostic) -----------------------------------
+
+// Per-tenant telephony connection. Config (provider creds) is encrypted at rest
+// and supplied once the client is onboarded to their telephony platform.
+model CrmTelephonyConnection {
+  id               String   @id @default(cuid())
+  tenantId         String   @unique
+  provider         String                            // exotel | knowlarity | ...
+  config           Json?                             // encrypted provider config
+  status           String   @default("pending")      // pending | connected | error
+  connectedByUserId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model CrmCallLog {
+  id             String   @id @default(cuid())
+  tenantId       String
+  contactId      String?
+  mobile         String
+  direction      String   @default("outbound")       // outbound | inbound
+  provider       String?
+  providerCallId String?
+  status         String   @default("queued")          // queued | ringing | answered | no_answer | busy | failed | completed
+  startedAt      DateTime?
+  durationSec    Int?
+  recordingUrl   String?
+  transcript     String?
+  summary        String?
+  disposition    String?
+  byUserId       String?
+  createdAt      DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([tenantId, contactId])
+}
