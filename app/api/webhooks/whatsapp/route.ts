@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { metaConfig } from '@/lib/meta/config';
 import { prisma } from '@/lib/db';
+import { runInboundAutomations } from '@/lib/crm/automation';
 
 /**
  * WhatsApp webhook — ONE endpoint for all tenants.
@@ -84,6 +85,17 @@ export async function POST(req: Request) {
               },
             })
             .catch(() => undefined); // ignore duplicate waMessageId on webhook retries
+
+          // Run automation rules for this inbound message (best-effort).
+          const inboundCount = await prisma.message.count({ where: { conversationId: convo.id, direction: 'inbound' } });
+          await runInboundAutomations({
+            tenantId,
+            phoneNumberId,
+            from,
+            text,
+            isFirstMessage: inboundCount <= 1,
+            accessToken: account?.accessToken ?? null,
+          }).catch(() => undefined);
         }
 
         // Outbound delivery/read status updates.
