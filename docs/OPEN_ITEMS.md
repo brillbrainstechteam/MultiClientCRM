@@ -28,6 +28,7 @@ _Auto-decided in your absence (change anytime):_ **Automation = Option B** (lean
 - **Campaigns V1 — backend**: list/create/send APIs (real audience, opt-out suppression, dedupe + cap, template send via Cloud API, per-recipient results). Tables live in prod.
 - **Automation — engine + API (Option B)**: rules API (`/api/crm/automations`) + webhook execution (first_message / keyword / inbound triggers → send_message / add_tag / set_lead_status). Rules are disabled by default.
 - **Calling — backend (BYOT)**: telephony connection (`/api/crm/telephony`) + call log (`/api/crm/calls`, list + log/click-to-call entry). Provider-agnostic; ready for creds.
+- **Settings** — real hub with **Business profile** (edit business name/model/GST/CIN/entity, `/api/crm/settings/profile`, owner/admin-gated) and **Integrations** (live Google + telephony + WhatsApp connection status). Hub links to every settings area.
 
 _All schema for Campaigns / Automation / Calling is migrated to prod._
 
@@ -44,6 +45,7 @@ without logging in, so I build them behind the deploy build-check.
 3. **Calling dialer UI wiring.** Hydrate the calling workspace (tasks/attempts/lists) from `/api/crm/calls`; model call tasks/lists if we want the full dialer (mostly meaningful once a provider is connected).
 4. **Team & Access — Structure / Performance / Work-distribution / Audit.** Needs a foundational **assignment + activity/audit tracking layer** (conversations/contacts have no assignee or activity log yet). I'll build that tracking, then these screens become real.
 5. **Dashboard Overview / Alerts** — real KPIs (same source as Reports) + the alert set above.
+5b. **Settings sub-screens** — WhatsApp Number Registry (real numbers: needs mapping the rich onboarding record, or a simpler real numbers view), Contact settings, Team/Routing settings, Import history. (Settings hub + Business profile + Integrations are done.)
 6. **Catalogue & Orders V1** (lean, per decision #4) — new schema (catalogue items + enquiry→quotation→order), no Razorpay.
 7. **Roles & permissions** — add the Admin role + Team/Function field; apply the decided capability matrix across modules.
 8. **Billing** — plan tiers UI/gating (decision #2).
