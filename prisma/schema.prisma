@@ -388,6 +388,11 @@ model CrmContact {
 
   createdSource            String?  // Req 16: original source / import source (audit)
 
+  // Kundli: AI-generated pre-call dossier (company research + call scripts),
+  // cached so it is ready before calling. Regenerable.
+  kundli                   Json?
+  kundliGeneratedAt        DateTime?
+
   @@unique([tenantId, mobile])
   @@index([tenantId])
   @@index([tenantId, stage])

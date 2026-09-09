@@ -34,6 +34,7 @@ import {
 } from '../components';
 import { consentLabel, salesTierLabel, leadStatusLabel, lifecycleLabel } from '../contact-labels';
 import { can, canViewField, dealValueFor } from '../permissions';
+import { KundliPanel } from '../components/KundliPanel';
 
 const tabs: TabItem[] = [
   { id: 'profile', label: 'Profile' },
@@ -42,6 +43,7 @@ const tabs: TabItem[] = [
   { id: 'consent', label: 'Consent & Privacy' },
   { id: 'source', label: 'Source' },
   { id: 'communication', label: 'Communication' },
+  { id: 'kundli', label: 'Pre-call brief' },
   { id: 'timeline', label: 'Timeline' },
   { id: 'audit', label: 'Audit' },
   { id: 'related', label: 'Related' },
@@ -283,6 +285,10 @@ export default function Customer360Screen() {
               ['Last activity', formatDateTime(contact.lastActivityAt)],
             ]}
           />
+        ) : null}
+
+        {activeTab === 'kundli' ? (
+          <KundliPanel contactId={contact.id} />
         ) : null}
 
         {activeTab === 'timeline' ? (
