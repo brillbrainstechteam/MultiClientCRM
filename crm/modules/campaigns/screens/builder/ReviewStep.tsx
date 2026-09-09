@@ -112,21 +112,48 @@ export function ReviewStep({
   const canConfirmSend = capabilities.canSend && blockers.length === 0;
   const canConfirmSchedule = capabilities.canSchedule && blockers.filter((b) => b.id !== 'schedule-time').length === 0;
 
-  const confirmSend = () => {
+  // Create the campaign for real via the API. Returns the new id, or null on error.
+  const createCampaign = async (scheduledAt: string | null): Promise<string | null> => {
+    const res = await fetch('/api/crm/campaigns', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+      body: JSON.stringify({
+        name: draft.name,
+        templateId: template?.metaTemplateId ?? draft.templateId,
+        templateName: template?.name,
+        templateLocale: template?.locale,
+        whatsappNumberId: draft.whatsappNumberId,
+        scheduledAt,
+      }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) { setConfirmError(String((d as { error?: string }).error ?? 'Could not create the campaign.')); return null; }
+    return (d as { id?: string }).id ?? null;
+  };
+
+  const confirmSend = async () => {
     if (blockers.length > 0) {
       setConfirmError('This campaign can no longer be sent as configured — resolve the blocking issues and try again.');
       return;
     }
-    setDraft((d) => ({ ...d, status: 'live', updatedAt: new Date().toISOString() }));
-    navigate(scopedHref('/campaigns', { view: 'live', flash: `"${draft.name}" is now sending.` }));
+    const id = await createCampaign(null);
+    if (!id) return;
+    // Send to eligible contacts (opt-out suppressed, deduped and capped server-side).
+    const sendRes = await fetch(`/api/crm/campaigns/${id}/send`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+      body: JSON.stringify({ nameAsFirstParam: true }),
+    });
+    const sd = await sendRes.json().catch(() => ({}));
+    if (!sendRes.ok) { setConfirmError(String((sd as { error?: string }).error ?? 'The campaign was created but sending failed.')); return; }
+    navigate(scopedHref('/campaigns', { view: 'live', flash: `"${draft.name}" sent to ${(sd as { sent?: number }).sent ?? 0} recipient(s).` }));
   };
 
-  const confirmSchedule = () => {
+  const confirmSchedule = async () => {
     if (!draft.scheduledAt || blockers.filter((b) => b.id !== 'schedule-time').length > 0) {
       setConfirmError('This campaign can no longer be scheduled as configured — resolve the blocking issues and try again.');
       return;
     }
-    setDraft((d) => ({ ...d, status: 'scheduled', audienceSnapshotAt: new Date().toISOString(), updatedAt: new Date().toISOString() }));
+    const id = await createCampaign(draft.scheduledAt);
+    if (!id) return;
     navigate(
       scopedHref('/campaigns', {
         view: 'scheduled',

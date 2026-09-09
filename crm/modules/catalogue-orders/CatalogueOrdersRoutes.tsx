@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { CatalogueOrdersLayout } from './CatalogueOrdersLayout';
-import CommerceOverviewScreen from './screens/CommerceOverviewScreen';
+import CommerceRealScreen from './screens/CommerceRealScreen';
 import CatalogueListScreen from './screens/CatalogueListScreen';
 import CatalogueFormScreen from './screens/CatalogueFormScreen';
 import CatalogueExplorerScreen from './screens/CatalogueExplorerScreen';
@@ -38,7 +38,8 @@ export function CatalogueOrdersRoutes() {
     <Routes>
       <Route element={<CatalogueOrdersLayout />}>
         <Route index element={<IndexRedirect />} />
-        <Route path="overview" element={<CommerceOverviewScreen />} />
+        <Route path="overview" element={<CommerceRealScreen />} />
+        <Route path="commerce" element={<CommerceRealScreen />} />
         <Route path="catalogues" element={<CatalogueListScreen />} />
         <Route path="catalogues/new" element={<CatalogueFormScreen />} />
         <Route path="catalogues/:catalogueId/edit" element={<CatalogueFormScreen />} />

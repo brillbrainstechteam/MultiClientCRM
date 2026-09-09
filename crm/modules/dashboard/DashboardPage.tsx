@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { DashboardLayout } from './DashboardLayout';
-import OverviewScreen from './screens/OverviewScreen';
+import DashboardHome from './screens/DashboardHome';
 import AlertsScreen from './screens/AlertsScreen';
 
 /**
@@ -12,7 +12,7 @@ export default function DashboardPage() {
   return (
     <Routes>
       <Route element={<DashboardLayout />}>
-        <Route index element={<OverviewScreen />} />
+        <Route index element={<DashboardHome />} />
         <Route path="alerts" element={<AlertsScreen />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
