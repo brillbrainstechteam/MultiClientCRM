@@ -24,18 +24,81 @@
   border-right: 1px solid var(--crm-border-subtle);
 }
 
+.crm-topbar__account {
+  position: relative;
+}
+
 .crm-topbar__user {
   display: flex;
   align-items: center;
   gap: var(--crm-space-2);
-  padding-left: var(--crm-space-1);
+  padding: 4px 8px 4px 4px;
+  border: 1px solid transparent;
+  border-radius: var(--crm-radius-md, 10px);
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+.crm-topbar__user:hover {
+  background: var(--crm-surface-band, rgba(14, 36, 56, 0.04));
+  border-color: var(--crm-border-subtle);
 }
 
 .crm-topbar__user-text {
   display: flex;
   flex-direction: column;
   line-height: var(--crm-line-tight);
+  text-align: left;
 }
+
+.crm-topbar__user-caret {
+  color: var(--crm-text-muted);
+  flex: none;
+}
+
+.crm-topbar__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  min-width: 220px;
+  background: var(--crm-surface-raised, #fff);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-lg, 12px);
+  box-shadow: 0 18px 44px -18px rgba(14, 36, 56, 0.4);
+  padding: 6px;
+}
+
+.crm-topbar__menu-head {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--crm-border-subtle);
+  margin-bottom: 6px;
+}
+.crm-topbar__menu-name { font-weight: var(--crm-weight-semibold, 600); }
+.crm-topbar__menu-role { font-size: var(--crm-font-size-xs); color: var(--crm-text-muted); }
+
+.crm-topbar__menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  border-radius: var(--crm-radius-md, 8px);
+  font: inherit;
+  font-weight: var(--crm-weight-medium, 500);
+  color: var(--crm-text-primary, #0e2438);
+  cursor: pointer;
+  text-align: left;
+}
+.crm-topbar__menu-item:hover { background: var(--crm-surface-band, rgba(14, 36, 56, 0.05)); }
+.crm-topbar__menu-item:disabled { opacity: 0.6; cursor: default; }
+.crm-topbar__menu-item svg { color: var(--crm-text-muted); }
 
 .crm-topbar__user-name {
   font-weight: var(--crm-weight-medium);

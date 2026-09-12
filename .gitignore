@@ -34,3 +34,6 @@ tsconfig.tsbuildinfo
 
 # local admin helper (not for repo)
 reset-password.mjs
+
+# Meta submission reference (holds token + demo password)
+META_SUBMISSION.md
