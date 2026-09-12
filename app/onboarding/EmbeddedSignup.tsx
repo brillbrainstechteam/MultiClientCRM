@@ -10,12 +10,6 @@ type Path = 'coexistence' | 'new' | 'existing';
 
 const PATHS: { id: Path; title: string; blurb: string; icon: typeof Phone }[] = [
   {
-    id: 'coexistence',
-    title: 'Keep my WhatsApp Business app',
-    blurb: 'Coexistence — your number keeps working in the app and on TalkTrack. Recent chats sync in.',
-    icon: RefreshCw,
-  },
-  {
     id: 'existing',
     title: 'Connect an existing WhatsApp Business Account',
     blurb: 'You already have a WABA / Cloud API number — link it to TalkTrack.',
@@ -26,6 +20,12 @@ const PATHS: { id: Path; title: string; blurb: string; icon: typeof Phone }[] = 
     title: 'Set up a new number',
     blurb: 'Register a fresh number on the WhatsApp Cloud API through TalkTrack.',
     icon: Phone,
+  },
+  {
+    id: 'coexistence',
+    title: 'Keep my WhatsApp Business app (coexistence)',
+    blurb: 'Advanced — keeps your number working in the app AND on TalkTrack. Requires Meta Tech Provider approval; use the options above until that is granted.',
+    icon: RefreshCw,
   },
 ];
 
@@ -46,7 +46,7 @@ interface Props {
 }
 
 export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeature }: Props) {
-  const [path, setPath] = useState<Path>('coexistence');
+  const [path, setPath] = useState<Path>('existing');
   const [status, setStatus] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const sdkReady = useRef(false);
