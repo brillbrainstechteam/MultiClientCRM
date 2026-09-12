@@ -20,42 +20,29 @@ export interface TokenResponse {
  * different redirect_uri is safe.
  */
 export async function exchangeCodeForToken(code: string): Promise<TokenResponse> {
-  // Meta rejects the exchange (OAuthException 100 / subcode 36008) unless the
-  // redirect_uri matches the one the JS SDK bound the code to — but the SDK does
-  // not surface it. The canonical Facebook-Login-for-Business exchange uses NO
-  // redirect_uri; some SDK/app configurations instead bind it to the page origin.
-  // A REJECTED code is not consumed, so we can safely try the candidates in order
-  // and use whichever Meta accepts. Codes expire ~30s after the dialog closes, so
-  // this runs immediately in the exchange route.
-  const base = (metaConfig.appUrl || '').replace(/\/+$/, '');
-  const candidates: Array<Record<string, string>> = [
-    {}, // canonical: no redirect_uri
-    ...(base ? [{ redirect_uri: `${base}/` }, { redirect_uri: base }] : []),
-  ];
+  // Facebook Login for Business / Embedded Signup: exchange the single-use code
+  // (30s TTL) for a business integration system user access token. The canonical
+  // exchange sends client_id + client_secret + code and NO redirect_uri — the
+  // JS-SDK code is not bound to one. Codes are SINGLE-USE, so this must call the
+  // endpoint EXACTLY ONCE (an earlier multi-candidate loop consumed the code and
+  // produced a misleading "redirect_uri" error).
+  const url = new URL(`${graphBase()}/oauth/access_token`);
+  url.searchParams.set('client_id', metaConfig.appId);
+  url.searchParams.set('client_secret', metaConfig.appSecret);
+  url.searchParams.set('code', code);
 
-  let lastText = '';
-  let lastStatus = 0;
-  for (const extra of candidates) {
-    const url = new URL(`${graphBase()}/oauth/access_token`);
-    url.searchParams.set('client_id', metaConfig.appId);
-    url.searchParams.set('client_secret', metaConfig.appSecret);
-    url.searchParams.set('code', code);
-    for (const [k, v] of Object.entries(extra)) url.searchParams.set(k, v);
-
-    const res = await fetch(url, { method: 'GET' });
-    if (res.ok) return (await res.json()) as TokenResponse;
-    lastStatus = res.status;
-    lastText = await res.text();
-  }
+  const res = await fetch(url, { method: 'GET' });
+  const text = await res.text();
+  if (res.ok) return JSON.parse(text) as TokenResponse;
 
   let hint = '';
   try {
-    const e = JSON.parse(lastText).error;
+    const e = JSON.parse(text).error;
     if (e?.error_subcode === 36008) {
-      hint = ' — the authorization code was rejected. Either it expired (these codes are valid ~30s, so finish the WhatsApp dialog and let it connect without delay), or the redirect_uri did not match. Try Connect again; if it persists, confirm the app\'s Valid OAuth Redirect URI matches APP_URL exactly.';
+      hint = ' — Meta could not validate the authorization code. It is single-use and expires 30s after the popup closes, so complete the WhatsApp dialog and let it connect immediately (do not linger on the "previously linked" screen), then retry. If it still fails, this onboarding flow likely needs Tech Provider / Advanced Access on the Meta app.';
     }
-  } catch { /* keep raw */ }
-  throw new Error(`Token exchange failed (${lastStatus}): ${lastText}${hint}`);
+  } catch { /* keep raw error body */ }
+  throw new Error(`Token exchange failed (${res.status}): ${text}${hint}`);
 }
 
 /** Subscribe THIS app to a client's WABA so its webhooks flow to our endpoint. */
