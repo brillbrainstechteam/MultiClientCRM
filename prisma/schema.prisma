@@ -74,7 +74,10 @@ model WhatsAppAccount {
   verifiedName      String?
   // Long-lived / system-user access token (encrypt at rest before production).
   accessToken       String?
-  status            String   @default("pending") // pending | connected | disconnected | error
+  status            String   @default("pending") // pending | connected | reconnect_required | disconnected | error
+  // Why the connection stopped working (e.g. the client revoked our Business
+  // Integration on Facebook) — shown on the onboarding screen.
+  statusReason      String?
   connectedAt       DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

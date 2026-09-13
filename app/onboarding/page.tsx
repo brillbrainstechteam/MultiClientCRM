@@ -16,6 +16,15 @@ export default async function OnboardingPage() {
     orderBy: { connectedAt: 'desc' },
   });
 
+  // Access revoked on Facebook's side: say so plainly rather than showing a
+  // bare connect screen that looks like nothing was ever set up.
+  const needsReconnect = connected
+    ? null
+    : await prisma.whatsAppAccount.findFirst({
+        where: { tenantId: user.tenantId, status: 'reconnect_required' },
+        orderBy: { connectedAt: 'desc' },
+      });
+
   return (
     <AuthShell>
       <div className="crm-authform__brand-mobile">
@@ -50,6 +59,15 @@ export default async function OnboardingPage() {
               {connected.verifiedName ? ` as “${connected.verifiedName}”` : ''}.{' '}
               <Link href="/crm/dashboard" className="crm-authform__link">Go to dashboard →</Link>
               {' · '}Connect another number below.
+            </div>
+          ) : null}
+
+          {needsReconnect ? (
+            <div className="tt-onb__notice" style={{ marginBottom: 18 }}>
+              <strong>Reconnect needed.</strong>{' '}
+              {needsReconnect.displayPhone ?? 'Your WhatsApp number'} is no longer authorised
+              {needsReconnect.statusReason ? ` (${needsReconnect.statusReason})` : ''}. Connect again below —
+              your conversations and contacts are safe.
             </div>
           ) : null}
 

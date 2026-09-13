@@ -3,6 +3,7 @@ import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { decrypt } from '@/lib/crypto';
 import { graphBase } from '@/lib/meta/config';
+import { isAuthError, markTokenInvalid, type GraphErrorBody } from '@/lib/meta/account';
 
 /**
  * The connected WABA's message templates, straight from Meta Graph. Returned
@@ -33,8 +34,14 @@ export async function GET() {
     const token = decrypt(account.accessToken);
     const url = `${graphBase()}/${account.wabaId}/message_templates?limit=200&fields=name,language,status,category,components,id`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    const json = (await res.json().catch(() => ({}))) as { data?: unknown[]; error?: { message?: string } };
+    const json = (await res.json().catch(() => ({}))) as { data?: unknown[] } & GraphErrorBody;
     if (!res.ok) {
+      // A revoked Business Integration shows up here first — repair the row so
+      // the next sign-in routes back through Embedded Signup.
+      if (isAuthError(json)) {
+        await markTokenInvalid(account.id, json.error?.message ?? 'Meta rejected the stored token.');
+        return NextResponse.json({ connected: false, wabaId: null, account: null, templates: [], reconnectRequired: true });
+      }
       return NextResponse.json({ error: json?.error?.message ?? 'Could not load templates from Meta.' }, { status: 502 });
     }
     return NextResponse.json({ connected: true, wabaId: account.wabaId, account: summary, templates: json.data ?? [] });

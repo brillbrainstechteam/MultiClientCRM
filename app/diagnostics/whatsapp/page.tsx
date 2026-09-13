@@ -8,6 +8,7 @@ import {
   resubscribeWaba,
   replayStoredEvents,
   removeStaleAccounts,
+  resetConnection,
   type CheckStatus,
 } from '@/lib/meta/diagnostics';
 import './diagnostics.css';
@@ -54,6 +55,11 @@ export default async function WhatsAppDiagnosticsPage({
   async function removeStale() {
     'use server';
     await run(removeStaleAccounts);
+  }
+
+  async function reset() {
+    'use server';
+    await run(resetConnection);
   }
 
   const failing = checks.filter((c) => c.status === 'fail');
@@ -106,7 +112,15 @@ export default async function WhatsAppDiagnosticsPage({
           <form action={resubscribe}>
             <button type="submit" className="tt-diag__btn tt-diag__btn--ghost">Re-subscribe webhooks</button>
           </form>
+          <form action={reset}>
+            <button type="submit" className="tt-diag__btn tt-diag__btn--ghost">Reset connection (replay onboarding)</button>
+          </form>
         </div>
+        <p className="tt-diag__hint">
+          <strong>Reset connection</strong> puts this workspace back to the connect screen, so signing in runs
+          Embedded Signup from the start — use it to rehearse or record a first-time client onboarding. Your
+          conversations and messages are untouched.
+        </p>
         <p className="tt-diag__hint">
           <strong>Replay</strong> re-runs routing over the raw events already stored and reports the error the
           live webhook had to swallow (it must always answer 200, or Meta retries). Safe to repeat — conversations

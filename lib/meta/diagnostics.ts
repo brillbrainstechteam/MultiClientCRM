@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { decrypt } from '@/lib/crypto';
 import { graphBase, metaConfig } from './config';
 import { ingestWebhookPayload } from '@/lib/whatsapp/ingest';
+import { markTokenInvalid } from './account';
 
 /**
  * End-to-end health check for a tenant's WhatsApp connection.
@@ -107,12 +108,15 @@ export async function runWhatsAppDiagnostics(tenantId: string, origin: string): 
 
   const tokenData = debugJson.data;
   if (!debugRes.ok || !tokenData?.is_valid) {
+    // Repair the row here too, so simply opening this page un-sticks a
+    // workspace whose integration was revoked on Facebook.
+    await markTokenInvalid(account.id, debugRes.ok ? 'Meta reports the token is no longer valid.' : graphError(debugJson));
     checks.push({
       id: 'token',
       label: 'Access token valid',
       status: 'fail',
-      detail: debugRes.ok ? 'Meta reports this token is no longer valid.' : graphError(debugJson),
-      fix: 'Reconnect from /onboarding — the Business Integration may have been removed or the token expired.',
+      detail: `${debugRes.ok ? 'Meta reports this token is no longer valid.' : graphError(debugJson)} Marked this number as needing a reconnect.`,
+      fix: 'Reconnect from /onboarding — sign-in will now take you through Embedded Signup again.',
     });
   } else {
     const expiry = tokenData.expires_at ? new Date(tokenData.expires_at * 1000) : null;
@@ -332,6 +336,20 @@ export async function replayStoredEvents(tenantId: string): Promise<string> {
 
   const summary = `Replayed ${events.length} event(s): ${inbound} inbound message(s) seen, ${stored} newly stored.`;
   return errors.length ? `${summary} Errors: ${errors.slice(0, 5).join(' | ')}` : summary;
+}
+
+/**
+ * Force this workspace back to the connect screen. Used when the integration
+ * was revoked on Facebook — or to rehearse a first-time client onboarding.
+ */
+export async function resetConnection(tenantId: string): Promise<string> {
+  const { count } = await prisma.whatsAppAccount.updateMany({
+    where: { tenantId, status: 'connected' },
+    data: { status: 'reconnect_required', accessToken: null, statusReason: 'Reset from diagnostics.' },
+  });
+  return count
+    ? `Reset ${count} connection(s). Sign in again (or open /onboarding) to run Embedded Signup from the start.`
+    : 'No connected number to reset.';
 }
 
 /** Drop account rows for this number that are not the live one. */
