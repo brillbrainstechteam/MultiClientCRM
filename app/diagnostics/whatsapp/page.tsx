@@ -3,12 +3,27 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { getSessionUser } from '@/lib/auth/session';
-import { runWhatsAppDiagnostics, resubscribeWaba, type CheckStatus } from '@/lib/meta/diagnostics';
+import {
+  runWhatsAppDiagnostics,
+  resubscribeWaba,
+  replayStoredEvents,
+  removeStaleAccounts,
+  type CheckStatus,
+} from '@/lib/meta/diagnostics';
 import './diagnostics.css';
 
 export const dynamic = 'force-dynamic';
 
 const ICON: Record<CheckStatus, string> = { ok: '✓', warn: '!', fail: '✕', skip: '–' };
+
+/** Run a maintenance action as the signed-in tenant and report back in the URL. */
+async function run(action: (tenantId: string) => Promise<string>): Promise<never> {
+  const me = await getSessionUser();
+  if (!me) redirect('/login');
+  const message = await action(me.tenantId);
+  revalidatePath('/diagnostics/whatsapp');
+  redirect(`/diagnostics/whatsapp?result=${encodeURIComponent(message)}`);
+}
 
 export default async function WhatsAppDiagnosticsPage({
   searchParams,
@@ -28,11 +43,17 @@ export default async function WhatsAppDiagnosticsPage({
 
   async function resubscribe() {
     'use server';
-    const me = await getSessionUser();
-    if (!me) redirect('/login');
-    const message = await resubscribeWaba(me.tenantId);
-    revalidatePath('/diagnostics/whatsapp');
-    redirect(`/diagnostics/whatsapp?result=${encodeURIComponent(message)}`);
+    await run(resubscribeWaba);
+  }
+
+  async function replay() {
+    'use server';
+    await run(replayStoredEvents);
+  }
+
+  async function removeStale() {
+    'use server';
+    await run(removeStaleAccounts);
   }
 
   const failing = checks.filter((c) => c.status === 'fail');
@@ -75,12 +96,25 @@ export default async function WhatsAppDiagnosticsPage({
 
       <section className="tt-diag__panel">
         <h2>Actions</h2>
-        <form action={resubscribe}>
-          <button type="submit" className="tt-diag__btn">Re-subscribe webhooks to this WABA</button>
-        </form>
+        <div className="tt-diag__actions">
+          <form action={replay}>
+            <button type="submit" className="tt-diag__btn">Replay stored webhook events</button>
+          </form>
+          <form action={removeStale}>
+            <button type="submit" className="tt-diag__btn tt-diag__btn--ghost">Remove stale account rows</button>
+          </form>
+          <form action={resubscribe}>
+            <button type="submit" className="tt-diag__btn tt-diag__btn--ghost">Re-subscribe webhooks</button>
+          </form>
+        </div>
         <p className="tt-diag__hint">
-          Runs <code>POST /{'{waba-id}'}/subscribed_apps</code> — the step that runs at connect time but is
-          allowed to fail silently there.
+          <strong>Replay</strong> re-runs routing over the raw events already stored and reports the error the
+          live webhook had to swallow (it must always answer 200, or Meta retries). Safe to repeat — conversations
+          upsert and messages dedupe on the WhatsApp message id.
+        </p>
+        <p className="tt-diag__hint">
+          <strong>Re-subscribe</strong> runs <code>POST /{'{waba-id}'}/subscribed_apps</code>, the step that runs at
+          connect time but is allowed to fail silently there.
         </p>
         <p className="tt-diag__hint">
           <Link href="/onboarding">Reconnect the number →</Link> {' · '}

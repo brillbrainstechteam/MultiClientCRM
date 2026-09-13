@@ -1,14 +1,17 @@
 import { NextResponse } from 'next/server';
 import { metaConfig } from '@/lib/meta/config';
 import { prisma } from '@/lib/db';
-import { runInboundAutomations } from '@/lib/crm/automation';
+import { ingestWebhookPayload } from '@/lib/whatsapp/ingest';
 
 /**
  * WhatsApp webhook — ONE endpoint for all tenants.
  * GET  = Meta's verification handshake.
  * POST = inbound events (messages, statuses). Raw event is persisted first,
- *        then messages are routed to the owning tenant by phone_number_id and
- *        stored as Conversation + Message.
+ *        then routed to the owning tenant by phone_number_id.
+ *
+ * Routing lives in lib/whatsapp/ingest so the diagnostics page can replay a
+ * stored event and see the real error — this handler must always answer 200
+ * (Meta retries aggressively on anything else), which hides failures.
  */
 
 export async function GET(req: Request) {
@@ -29,85 +32,23 @@ export async function POST(req: Request) {
   try {
     const entry = payload?.entry?.[0];
     const change = entry?.changes?.[0];
-    const value = change?.value;
-    const phoneNumberId: string | undefined = value?.metadata?.phone_number_id;
 
-    // Always keep the raw event (reliable, replayable).
+    // Always keep the raw event first (reliable, replayable).
     await prisma.webhookEvent.create({
       data: {
-        phoneNumberId: phoneNumberId ?? null,
+        phoneNumberId: change?.value?.metadata?.phone_number_id ?? null,
         wabaId: entry?.id ?? null,
         field: change?.field ?? null,
         payload: (payload ?? {}) as object,
       },
     });
 
-    if (phoneNumberId) {
-      // Which tenant owns this number?
-      const account = await prisma.whatsAppAccount.findFirst({ where: { phoneNumberId } });
-      const tenantId = account?.tenantId;
-
-      if (tenantId) {
-        // Names from the contacts block.
-        const nameByWaId: Record<string, string> = {};
-        for (const c of value?.contacts ?? []) {
-          if (c?.wa_id) nameByWaId[c.wa_id] = c?.profile?.name ?? '';
-        }
-
-        // Inbound messages → upsert conversation + message.
-        for (const m of value?.messages ?? []) {
-          const from: string = m.from;
-          const text: string = m.text?.body ?? `[${m.type ?? 'message'}]`;
-          const at = m.timestamp ? new Date(Number(m.timestamp) * 1000) : new Date();
-
-          const convo = await prisma.conversation.upsert({
-            where: { tenantId_phoneNumberId_contactPhone: { tenantId, phoneNumberId, contactPhone: from } },
-            update: { lastMessageAt: at, contactName: nameByWaId[from] || undefined },
-            create: { tenantId, phoneNumberId, contactPhone: from, contactName: nameByWaId[from] || null, lastMessageAt: at },
-          });
-
-          // Keep a Contact record in sync (the Customer-360 source).
-          await prisma.contact.upsert({
-            where: { tenantId_phone: { tenantId, phone: from } },
-            update: { lastMessageAt: at, name: nameByWaId[from] || undefined },
-            create: { tenantId, phone: from, name: nameByWaId[from] || null, lastMessageAt: at },
-          });
-
-          await prisma.message
-            .create({
-              data: {
-                conversationId: convo.id,
-                waMessageId: m.id ?? null,
-                direction: 'inbound',
-                type: m.type ?? 'text',
-                text,
-                at,
-              },
-            })
-            .catch(() => undefined); // ignore duplicate waMessageId on webhook retries
-
-          // Run automation rules for this inbound message (best-effort).
-          const inboundCount = await prisma.message.count({ where: { conversationId: convo.id, direction: 'inbound' } });
-          await runInboundAutomations({
-            tenantId,
-            phoneNumberId,
-            from,
-            text,
-            isFirstMessage: inboundCount <= 1,
-            accessToken: account?.accessToken ?? null,
-          }).catch(() => undefined);
-        }
-
-        // Outbound delivery/read status updates.
-        for (const s of value?.statuses ?? []) {
-          if (s?.id && s?.status) {
-            await prisma.message.updateMany({ where: { waMessageId: s.id }, data: { status: s.status } }).catch(() => undefined);
-          }
-        }
-      }
+    const result = await ingestWebhookPayload(payload);
+    if (result.errors.length) {
+      console.error('[whatsapp-webhook] routing errors', result.errors);
     }
-  } catch {
-    // Never fail the webhook — Meta retries aggressively on non-200.
+  } catch (err) {
+    console.error('[whatsapp-webhook] fatal', err);
   }
 
   return NextResponse.json({ received: true });

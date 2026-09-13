@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { decrypt } from '@/lib/crypto';
 import { graphBase, metaConfig } from './config';
+import { ingestWebhookPayload } from '@/lib/whatsapp/ingest';
 
 /**
  * End-to-end health check for a tenant's WhatsApp connection.
@@ -224,6 +225,55 @@ export async function runWhatsAppDiagnostics(tenantId: string, origin: string): 
       : 'In Meta → WhatsApp → Configuration, set the Callback URL and Verify token shown below and tick the "messages" field.',
   });
 
+  // 5b. Several rows for one number send events to whichever tenant wins the
+  // lookup — the classic cause of "webhook arrived but the Inbox is empty".
+  if (account.phoneNumberId) {
+    const rows = await prisma.whatsAppAccount.findMany({
+      where: { phoneNumberId: account.phoneNumberId },
+      select: { id: true, tenantId: true, status: true, connectedAt: true },
+      orderBy: { connectedAt: 'desc' },
+    });
+    const otherTenants = rows.filter((r) => r.tenantId !== tenantId);
+    checks.push({
+      id: 'duplicate_accounts',
+      label: 'One owner row for this number',
+      status: rows.length === 1 ? 'ok' : otherTenants.length ? 'fail' : 'warn',
+      detail:
+        rows.length === 1
+          ? 'Exactly one account row owns this phone number id.'
+          : `${rows.length} rows own this number` +
+            (otherTenants.length
+              ? ` — ${otherTenants.length} belong to a DIFFERENT workspace, so events may be filed there.`
+              : ' (all in this workspace).'),
+      fix: rows.length === 1 ? undefined : 'Use "Remove stale account rows" below to keep only the live one.',
+    });
+  }
+
+  // 5c. What did those events actually contain? A template send from Meta's
+  // "Try it out" produces status events only — no conversation is created.
+  const recentPayloads = await prisma.webhookEvent.findMany({
+    where: { phoneNumberId: account.phoneNumberId },
+    orderBy: { receivedAt: 'desc' },
+    take: 10,
+    select: { payload: true },
+  });
+  let inboundMsgs = 0;
+  let statusOnly = 0;
+  for (const row of recentPayloads) {
+    const v = (row.payload as any)?.entry?.[0]?.changes?.[0]?.value;
+    inboundMsgs += (v?.messages ?? []).length;
+    if (!(v?.messages ?? []).length && (v?.statuses ?? []).length) statusOnly += 1;
+  }
+  checks.push({
+    id: 'event_contents',
+    label: 'Inbound messages inside those events',
+    status: inboundMsgs ? 'ok' : 'warn',
+    detail: `${inboundMsgs} inbound message(s) across the last ${recentPayloads.length} event(s); ${statusOnly} were delivery-status only.`,
+    fix: inboundMsgs
+      ? undefined
+      : 'Send a message TO the business number from a registered phone (a template send from Meta only produces status events).',
+  });
+
   // 6. Did routed messages land as conversations?
   const [convos, msgs] = await Promise.all([
     prisma.conversation.count({ where: { tenantId } }),
@@ -249,6 +299,57 @@ export async function runWhatsAppDiagnostics(tenantId: string, origin: string): 
   });
 
   return { checks, callbackUrl, verifyToken: metaConfig.webhookVerifyToken, wabaId: account.wabaId };
+}
+
+/**
+ * Re-run routing over the stored raw events, surfacing whatever the live
+ * webhook handler had to swallow. Safe to repeat: conversations upsert and
+ * messages dedupe on waMessageId.
+ */
+export async function replayStoredEvents(tenantId: string): Promise<string> {
+  const account = await prisma.whatsAppAccount.findFirst({
+    where: { tenantId, status: 'connected' },
+    orderBy: { connectedAt: 'desc' },
+  });
+  if (!account?.phoneNumberId) return 'No connected number to replay for.';
+
+  const events = await prisma.webhookEvent.findMany({
+    where: { phoneNumberId: account.phoneNumberId },
+    orderBy: { receivedAt: 'asc' },
+    take: 50,
+  });
+  if (!events.length) return 'No stored webhook events to replay.';
+
+  let stored = 0;
+  let inbound = 0;
+  const errors: string[] = [];
+  for (const event of events) {
+    const r = await ingestWebhookPayload(event.payload);
+    stored += r.messagesStored;
+    inbound += r.inboundSeen;
+    errors.push(...r.errors);
+  }
+
+  const summary = `Replayed ${events.length} event(s): ${inbound} inbound message(s) seen, ${stored} newly stored.`;
+  return errors.length ? `${summary} Errors: ${errors.slice(0, 5).join(' | ')}` : summary;
+}
+
+/** Drop account rows for this number that are not the live one. */
+export async function removeStaleAccounts(tenantId: string): Promise<string> {
+  const live = await prisma.whatsAppAccount.findFirst({
+    where: { tenantId, status: 'connected' },
+    orderBy: { connectedAt: 'desc' },
+  });
+  if (!live?.phoneNumberId) return 'No connected number.';
+
+  const stale = await prisma.whatsAppAccount.findMany({
+    where: { phoneNumberId: live.phoneNumberId, id: { not: live.id } },
+    select: { id: true, tenantId: true },
+  });
+  if (!stale.length) return 'No stale rows — nothing to remove.';
+
+  await prisma.whatsAppAccount.deleteMany({ where: { id: { in: stale.map((s) => s.id) } } });
+  return `Removed ${stale.length} stale account row(s) for this number.`;
 }
 
 /** Re-run the WABA webhook subscription (the step that silently fails at connect time). */

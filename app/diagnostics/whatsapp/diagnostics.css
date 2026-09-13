@@ -101,6 +101,14 @@
   cursor: pointer;
 }
 .tt-diag__btn:hover { filter: brightness(0.95); }
+.tt-diag__btn--ghost {
+  background: transparent;
+  color: var(--crm-text-title, #14181f);
+  border-color: var(--crm-border-strong, #d7dde5);
+}
+.tt-diag__btn--ghost:hover { background: rgba(0, 0, 0, 0.04); filter: none; }
+
+.tt-diag__actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 .tt-diag__hint { margin: 10px 0 0; font-size: 13px; color: var(--crm-text-secondary, #63707f); }
 .tt-diag__hint a { color: var(--crm-green-dark, #16794180); }
