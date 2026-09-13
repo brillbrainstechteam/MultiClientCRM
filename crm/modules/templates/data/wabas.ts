@@ -6,7 +6,7 @@ import type { WhatsAppBusinessAccount } from '../domain/types';
  * level. Templates are WABA-level Meta assets (spec §WABA scope vs
  * phone-number scope), so this is a new, Templates-local fixture set.
  */
-export const wabas: WhatsAppBusinessAccount[] = [
+export let wabas: WhatsAppBusinessAccount[] = [
   {
     id: 'waba_main',
     name: 'Northline Retail',
@@ -33,4 +33,13 @@ export const wabas: WhatsAppBusinessAccount[] = [
 
 export function findWaba(wabaId: string): WhatsAppBusinessAccount | undefined {
   return wabas.find((waba) => waba.id === wabaId);
+}
+
+/**
+ * Replace the fixtures with the tenant's real connected WABA (hydrated from
+ * /api/crm/templates at startup). Templates carry the real WABA id, so the
+ * scope selector has to as well or every template falls out of scope.
+ */
+export function setWabas(next: WhatsAppBusinessAccount[]): void {
+  if (next.length) wabas = next;
 }

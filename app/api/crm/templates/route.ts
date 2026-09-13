@@ -18,8 +18,16 @@ export async function GET() {
     orderBy: { connectedAt: 'desc' },
   });
   if (!account?.wabaId || !account.accessToken) {
-    return NextResponse.json({ connected: false, wabaId: null, templates: [] });
+    return NextResponse.json({ connected: false, wabaId: null, account: null, templates: [] });
   }
+
+  // The module's WABA scope selector is built from this, so the real account
+  // replaces the fixture WABAs rather than sitting alongside them.
+  const summary = {
+    wabaId: account.wabaId,
+    name: account.verifiedName ?? account.displayPhone ?? 'WhatsApp Business Account',
+    displayPhone: account.displayPhone,
+  };
 
   try {
     const token = decrypt(account.accessToken);
@@ -29,7 +37,7 @@ export async function GET() {
     if (!res.ok) {
       return NextResponse.json({ error: json?.error?.message ?? 'Could not load templates from Meta.' }, { status: 502 });
     }
-    return NextResponse.json({ connected: true, wabaId: account.wabaId, templates: json.data ?? [] });
+    return NextResponse.json({ connected: true, wabaId: account.wabaId, account: summary, templates: json.data ?? [] });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Could not load templates.' }, { status: 502 });
   }

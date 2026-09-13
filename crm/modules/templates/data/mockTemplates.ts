@@ -8,6 +8,7 @@ import type {
   MetaCategory,
   MetaTemplateStatus,
 } from '../domain/types';
+import { setWabas } from './wabas';
 
 /**
  * Deterministic template fixtures (BATCHES.md Batch 0 "Required fixtures").
@@ -764,7 +765,30 @@ export function setTemplates(next: Template[]): void {
 export async function hydrateTemplates(): Promise<void> {
   const res = await fetch('/api/crm/templates', { credentials: 'same-origin' });
   if (!res.ok) { setTemplates([]); return; }
-  const data = (await res.json()) as { wabaId?: string; templates?: RawGraphTemplate[] };
+  const data = (await res.json()) as {
+    wabaId?: string;
+    account?: { wabaId: string; name: string; displayPhone?: string | null } | null;
+    templates?: RawGraphTemplate[];
+  };
   const wabaId = data.wabaId ?? 'waba_main';
+
+  // Point the module's WABA scope at the real account, otherwise the selector
+  // still holds fixture ids and filters every real template out.
+  if (data.account) {
+    setWabas([
+      {
+        id: data.account.wabaId,
+        name: data.account.name,
+        wabaMetaId: data.account.wabaId,
+        country: '',
+        commerceConnected: false,
+        catalogueConnected: false,
+        flowAvailable: false,
+        paymentAvailable: false,
+        permittedRoles: ['owner', 'manager', 'agent'],
+      },
+    ]);
+  }
+
   setTemplates((data.templates ?? []).map((t) => mapRawTemplate(t, wabaId)));
 }
