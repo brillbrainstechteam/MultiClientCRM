@@ -84,6 +84,74 @@
   text-align: center;
 }
 
+/* Fallback path — folded away so it never competes with Embedded Signup. */
+.tt-onb__manual {
+  border-top: 1px solid var(--crm-border, #e6eaef);
+  padding-top: var(--crm-space-3);
+}
+.tt-onb__manual > summary {
+  cursor: pointer;
+  font-size: var(--crm-font-size-md);
+  color: var(--crm-text-secondary);
+  list-style: none;
+}
+.tt-onb__manual > summary::-webkit-details-marker { display: none; }
+.tt-onb__manual > summary::before { content: '▸ '; }
+.tt-onb__manual[open] > summary::before { content: '▾ '; }
+.tt-onb__manual > summary:hover { color: var(--crm-text-title); }
+
+.tt-onb__manual-help {
+  margin: var(--crm-space-3) 0;
+  font-size: var(--crm-font-size-sm, 13px);
+  color: var(--crm-text-secondary);
+  line-height: 1.5;
+}
+.tt-onb__manual-help code {
+  font-family: var(--crm-font-mono, monospace);
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.tt-onb__manual-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+}
+.tt-onb__manual-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--crm-font-size-sm, 13px);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+.tt-onb__manual-form label span { font-weight: 400; color: var(--crm-text-secondary); }
+.tt-onb__manual-form input {
+  padding: 9px 12px;
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-md);
+  font-size: var(--crm-font-size-md);
+  font-family: var(--crm-font-mono, monospace);
+}
+.tt-onb__manual-form input:focus {
+  outline: none;
+  border-color: var(--crm-green);
+  box-shadow: var(--crm-focus-ring);
+}
+.tt-onb__manual-form button {
+  align-self: flex-start;
+  padding: 9px 18px;
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-card);
+  font-size: var(--crm-font-size-md);
+  font-weight: var(--crm-weight-semibold);
+  cursor: pointer;
+}
+.tt-onb__manual-form button:hover:not(:disabled) { border-color: var(--crm-green); }
+.tt-onb__manual-form button:disabled { opacity: 0.5; cursor: default; }
+
 .tt-onb__notice {
   padding: var(--crm-space-4);
   border: 1px solid var(--crm-warn-border);

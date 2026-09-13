@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { isMetaConfigured, metaConfig } from '@/lib/meta/config';
 import { AuthShell } from '@/lib/ui/AuthShell';
 import { EmbeddedSignup } from './EmbeddedSignup';
+import { ManualConnect } from './ManualConnect';
 import './onboarding.css';
 
 export default async function OnboardingPage() {
@@ -82,6 +83,7 @@ export default async function OnboardingPage() {
             graphVersion={metaConfig.graphVersion}
             coexistenceFeature={metaConfig.coexistenceFeature}
           />
+          <ManualConnect />
         </>
       )}
     </AuthShell>
