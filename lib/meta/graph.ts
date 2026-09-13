@@ -76,3 +76,45 @@ export async function getPhoneNumbers(wabaId: string, token: string): Promise<Ph
   const json = (await res.json()) as { data?: PhoneNumber[] };
   return json.data ?? [];
 }
+
+// ---- Server-side (redirect) Embedded Signup -------------------------------
+// The JS-SDK popup binds the code to Facebook's dynamic xd_arbiter URL, which we
+// can never reproduce server-side — every exchange then fails with subcode 36008.
+// Running the dialog as a plain redirect lets US choose the redirect_uri and send
+// the identical string back in the exchange, so a mismatch is impossible.
+
+/** Exchange an authorization code using an explicit, known redirect_uri. */
+export async function exchangeCodeWithRedirect(code: string, redirectUri: string): Promise<TokenResponse> {
+  const url = new URL(`${graphBase()}/oauth/access_token`);
+  url.searchParams.set('client_id', metaConfig.appId);
+  url.searchParams.set('client_secret', metaConfig.appSecret);
+  url.searchParams.set('redirect_uri', redirectUri);
+  url.searchParams.set('code', code);
+
+  const res = await fetch(url, { method: 'GET' });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Token exchange failed (${res.status}) using redirect_uri="${redirectUri}": ${text}`);
+  return JSON.parse(text) as TokenResponse;
+}
+
+/**
+ * Which WhatsApp Business Accounts this token was granted, read from the token's
+ * granular scopes. Used by the redirect flow, which has no WA_EMBEDDED_SIGNUP
+ * postMessage to supply the WABA id.
+ */
+export async function wabaIdsFromToken(token: string): Promise<string[]> {
+  const url = new URL(`${graphBase()}/debug_token`);
+  url.searchParams.set('input_token', token);
+  url.searchParams.set('access_token', `${metaConfig.appId}|${metaConfig.appSecret}`);
+
+  const res = await fetch(url, { method: 'GET' });
+  if (!res.ok) return [];
+  const json = (await res.json()) as {
+    data?: { granular_scopes?: Array<{ scope?: string; target_ids?: string[] }> };
+  };
+  const scopes = json.data?.granular_scopes ?? [];
+  const wa =
+    scopes.find((s) => s.scope === 'whatsapp_business_management') ??
+    scopes.find((s) => s.scope === 'whatsapp_business_messaging');
+  return wa?.target_ids ?? [];
+}

@@ -69,13 +69,30 @@ export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeatu
     return () => window.removeEventListener('message', onMessage);
   }, []);
 
+  // Surface a failure handed back by the redirect callback.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('connect') === 'error') {
+      setStatus(`Could not connect: ${q.get('reason') ?? 'Unknown error.'}`);
+    }
+  }, []);
+
   function initSdk() {
     if (sdkReady.current || !window.FB) return;
     window.FB.init({ appId, autoLogAppEvents: true, xfbml: false, version: graphVersion });
     sdkReady.current = true;
   }
 
+  // Server-side redirect flow: we own the redirect_uri end-to-end, so the code
+  // exchange can never hit a redirect_uri mismatch (the JS-SDK popup bound codes
+  // to Facebook's dynamic xd_arbiter URL, which is unreproducible server-side).
   function launch() {
+    setBusy(true);
+    setStatus('Opening WhatsApp onboarding…');
+    window.location.href = `/api/auth/meta/start?path=${encodeURIComponent(path)}`;
+  }
+
+  function launchViaSdk() {
     if (!window.FB) {
       setStatus('WhatsApp onboarding is still loading — try again in a moment.');
       return;
@@ -151,6 +168,10 @@ export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeatu
       <Button variant="primary" size="lg" fullWidth disabled={busy} onClick={launch}>
         {busy ? 'Connecting…' : 'Connect WhatsApp'}
       </Button>
+
+      <button type="button" className="tt-onb__alt" disabled={busy} onClick={launchViaSdk}>
+        Having trouble? Try the popup method
+      </button>
 
       {status ? <p className="tt-onb__status">{status}</p> : null}
     </div>
