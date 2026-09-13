@@ -26,23 +26,29 @@ export async function exchangeCodeForToken(code: string): Promise<TokenResponse>
   // JS-SDK code is not bound to one. Codes are SINGLE-USE, so this must call the
   // endpoint EXACTLY ONCE (an earlier multi-candidate loop consumed the code and
   // produced a misleading "redirect_uri" error).
+  // Which redirect_uri the code is bound to depends on how the SDK logged the
+  // user in. With FedCM (Chrome) the dialog binds to the app's Valid OAuth
+  // Redirect URI (APP_URL with a trailing slash), so that is the default.
+  // META_EXCHANGE_REDIRECT_URI overrides it; set it to an empty string to send
+  // no redirect_uri at all (the classic Business-Login behaviour).
+  const override = process.env.META_EXCHANGE_REDIRECT_URI;
+  const redirectUri =
+    override !== undefined ? override : `${(metaConfig.appUrl || '').replace(/\/+$/, '')}/`;
+
   const url = new URL(`${graphBase()}/oauth/access_token`);
   url.searchParams.set('client_id', metaConfig.appId);
   url.searchParams.set('client_secret', metaConfig.appSecret);
   url.searchParams.set('code', code);
+  if (redirectUri) url.searchParams.set('redirect_uri', redirectUri);
 
   const res = await fetch(url, { method: 'GET' });
   const text = await res.text();
   if (res.ok) return JSON.parse(text) as TokenResponse;
 
-  let hint = '';
-  try {
-    const e = JSON.parse(text).error;
-    if (e?.error_subcode === 36008) {
-      hint = ' — Meta could not validate the authorization code. It is single-use and expires 30s after the popup closes, so complete the WhatsApp dialog and let it connect immediately (do not linger on the "previously linked" screen), then retry. If it still fails, this onboarding flow likely needs Tech Provider / Advanced Access on the Meta app.';
-    }
-  } catch { /* keep raw error body */ }
-  throw new Error(`Token exchange failed (${res.status}): ${text}${hint}`);
+  // The code is single-use, so we get exactly one attempt — surface precisely
+  // what we sent so a failure is diagnosable without guessing.
+  const used = redirectUri ? `redirect_uri="${redirectUri}"` : 'no redirect_uri';
+  throw new Error(`Token exchange failed (${res.status}) using ${used}: ${text}`);
 }
 
 /** Subscribe THIS app to a client's WABA so its webhooks flow to our endpoint. */
