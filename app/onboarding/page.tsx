@@ -25,10 +25,7 @@ export default async function OnboardingPage() {
 
       <div className="crm-authform__header">
         <h1 className="crm-authform__title">{connected ? 'Connect another number' : 'Connect WhatsApp'}</h1>
-        <p className="crm-authform__sub">
-          Welcome, {user.tenant.businessName}. Link a WhatsApp Business number to start messaging — keep
-          your WhatsApp Business app (coexistence), connect an existing account, or set up a new number.
-        </p>
+        <p className="crm-authform__sub">Choose how you want to link your number.</p>
       </div>
 
       {!isMetaConfigured() ? (
