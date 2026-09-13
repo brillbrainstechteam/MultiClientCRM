@@ -57,6 +57,39 @@ _All schema for Campaigns / Automation / Calling is migrated to prod._
 
 ---
 
+## 🟡 Meta — Embedded Signup for customers (updated 2026-09-13)
+
+**Symptom:** Connect WhatsApp → Meta shows *"BrillBrains Brand Development can't onboard
+customers right now"* and spins forever. This is Meta's gate, not our code — it fires until
+**all three** are true:
+
+| # | Requirement | Status |
+|---|---|---|
+| 1 | Business Verification | ✅ done |
+| 2 | App Review → **Advanced Access** for `whatsapp_business_messaging` + `whatsapp_business_management` | ❌ submit the screencast (below) |
+| 3 | **Tech Provider onboarding wizard** actually completed (verified ≠ registered) | ❌ ~2 min of clicks |
+
+**Step 3 path:** App dashboard → Use cases → *Connect with customers on WhatsApp* → Customize →
+*Become a Tech Provider* → Continue onboarding → **Independent Tech Provider** → Start onboarding.
+Done when the dashboard reads *"You are now a Tech Provider — 2 of 2 steps complete"* and
+Embedded Signup Builder / Partner Tools appear in the left nav.
+
+Also per Meta docs: the **test number's WABA was created via the developer app, so it can never
+be onboarded through Embedded Signup** — use a real number once 1–3 are done. Limits: 10 new
+customers per rolling 7 days; 200 after Business Verification + App Review + Access Verification.
+
+**App Review screencast — does NOT need Embedded Signup** (the permissions are what's reviewed):
+- `whatsapp_business_messaging`: send from TalkTrack Inbox → **show it arriving on the phone** →
+  reply from the phone → it appears in the Inbox.
+- `whatsapp_business_management`: scroll `/crm/templates` (templates read live from the WABA).
+- Audio muted, clean Chrome profile (no personal tabs), no idle stretches, reviewer login
+  (`reviewer@talktrackcrm.com`) at the start.
+
+**Connection for recording:** Onboarding → *Connect manually with an access token*, using a
+**System User** token (Business Settings → Users → System users → Generate new token → app
+TalkTrackCRM → expiry Never → both WhatsApp permissions). The token pasted on 2026-09-13 was
+revoked by Meta (*"session was invalidated explicitly using an API call"*), so generate a fresh one.
+`/diagnostics/whatsapp` confirms every link is green before you hit record.
+
 ## External / async (not code)
-- **Meta Business Verification** — for live WhatsApp at volume + other-business onboarding. Own account works in dev now.
 - **Google OAuth verification** — only for external users of sensitive scopes; owner account works in Testing mode.

@@ -65,10 +65,11 @@ export default async function OnboardingPage() {
 
           {needsReconnect ? (
             <div className="tt-onb__notice" style={{ marginBottom: 18 }}>
+              {/* Raw Graph errors stay in statusReason for /diagnostics/whatsapp —
+                  a client should never be shown Meta's token internals. */}
               <strong>Reconnect needed.</strong>{' '}
-              {needsReconnect.displayPhone ?? 'Your WhatsApp number'} is no longer authorised
-              {needsReconnect.statusReason ? ` (${needsReconnect.statusReason})` : ''}. Connect again below —
-              your conversations and contacts are safe.
+              The connection to {needsReconnect.displayPhone ?? 'your WhatsApp number'} was removed or has
+              expired. Connect again below — your conversations and contacts are safe.
             </div>
           ) : null}
 
