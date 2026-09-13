@@ -12,9 +12,9 @@
 
 .tt-onb__path {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--crm-space-3);
-  padding: var(--crm-space-4);
+  padding: var(--crm-space-3) var(--crm-space-4);
   border: 1px solid var(--crm-border-strong);
   border-radius: var(--crm-radius-lg);
   background: var(--crm-card);
@@ -43,20 +43,40 @@
 }
 .tt-onb__path-icon svg { width: 19px; height: 19px; }
 
-.tt-onb__path-text { display: flex; flex-direction: column; gap: 2px; }
 .tt-onb__path-title {
+  flex: 1;
   font-weight: var(--crm-weight-semibold);
   color: var(--crm-text-title);
 }
-.tt-onb__path-blurb {
-  font-size: var(--crm-font-size-md);
-  color: var(--crm-text-secondary);
+/* Hover/focus reveals the full explanation via the native tooltip. */
+.tt-onb__path-info {
+  display: inline-flex;
+  flex: none;
+  color: var(--crm-text-muted, var(--crm-text-secondary));
+  cursor: help;
 }
+.tt-onb__path-info svg { width: 16px; height: 16px; }
+.tt-onb__path-info:hover { color: var(--crm-green-dark); }
+
 .tt-onb__path-check {
   width: 18px; height: 18px; flex: none;
   color: var(--crm-green);
-  margin-left: auto;
 }
+
+/* Secondary fallback action under the main button. */
+.tt-onb__alt {
+  display: block;
+  margin: 0 auto;
+  padding: var(--crm-space-2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--crm-font-size-md);
+  color: var(--crm-text-secondary);
+  text-decoration: underline;
+}
+.tt-onb__alt:hover { color: var(--crm-text-title); }
+.tt-onb__alt:disabled { opacity: 0.5; cursor: default; }
 
 .tt-onb__status {
   font-size: var(--crm-font-size-md);

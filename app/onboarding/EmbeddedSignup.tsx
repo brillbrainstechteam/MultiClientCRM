@@ -2,29 +2,29 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
-import { Check, MessageCircle, Phone, RefreshCw } from 'lucide-react';
+import { Check, Info, MessageCircle, Phone, RefreshCw } from 'lucide-react';
 import { Button } from '@/lib/ui/Button';
 import './onboarding.css';
 
 type Path = 'coexistence' | 'new' | 'existing';
 
-const PATHS: { id: Path; title: string; blurb: string; icon: typeof Phone }[] = [
+const PATHS: { id: Path; title: string; tip: string; icon: typeof Phone }[] = [
   {
     id: 'existing',
-    title: 'Connect an existing WhatsApp Business Account',
-    blurb: 'You already have a WABA / Cloud API number — link it to TalkTrack.',
+    title: 'Use my existing account',
+    tip: 'You already have a WhatsApp Business Account (WABA) on the Cloud API. Links it to TalkTrack. Use this if your number is already on the API.',
     icon: MessageCircle,
   },
   {
     id: 'new',
     title: 'Set up a new number',
-    blurb: 'Register a fresh number on the WhatsApp Cloud API through TalkTrack.',
+    tip: 'Registers a brand-new number on the WhatsApp Cloud API through TalkTrack. Use this if the number has never been on WhatsApp Business API.',
     icon: Phone,
   },
   {
     id: 'coexistence',
-    title: 'Keep my WhatsApp Business app (coexistence)',
-    blurb: 'Advanced — keeps your number working in the app AND on TalkTrack. Requires Meta Tech Provider approval; use the options above until that is granted.',
+    title: 'Keep the WhatsApp Business app',
+    tip: 'Coexistence: your number keeps working in the WhatsApp Business app and on TalkTrack at the same time. Requires Meta Tech Provider approval — use the other options until it is granted.',
     icon: RefreshCw,
   },
 ];
@@ -155,9 +155,9 @@ export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeatu
               aria-pressed={active}
             >
               <span className="tt-onb__path-icon"><Icon /></span>
-              <span className="tt-onb__path-text">
-                <span className="tt-onb__path-title">{p.title}</span>
-                <span className="tt-onb__path-blurb">{p.blurb}</span>
+              <span className="tt-onb__path-title">{p.title}</span>
+              <span className="tt-onb__path-info" title={p.tip} aria-label={p.tip} role="img">
+                <Info />
               </span>
               {active ? <Check className="tt-onb__path-check" /> : null}
             </button>
