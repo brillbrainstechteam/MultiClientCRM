@@ -9,6 +9,16 @@ import { encrypt } from '@/lib/crypto';
  * Lets you exercise the inbox + sending before Embedded Signup is approved.
  */
 export async function POST() {
+  // Seeds the connection from server env — a local-dev convenience only. In
+  // production it would overwrite a client's stored token with whatever the env
+  // holds (e.g. an old, revoked one). Production re-keys via /onboarding.
+  if (process.env.VERCEL_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'Not available in production — use "Connect manually with an access token" on /onboarding.' },
+      { status: 404 },
+    );
+  }
+
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
 

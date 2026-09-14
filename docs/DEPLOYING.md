@@ -25,11 +25,10 @@ npx prisma migrate deploy   # applies pending migrations to Neon (prod)
 ```
 (This reads the Neon URL from the owner's `.env`.) Additive migrations are safe; one migration in flight at a time (see WORK_SPLIT.md).
 
-## Refreshing the WhatsApp token in prod (test/permanent number)
-The number's token is stored **in the database** (encrypted on `WhatsAppAccount`), seeded from `WHATSAPP_TEST_TOKEN` by the dev connect route. When you rotate the token:
-1. Update `WHATSAPP_TEST_TOKEN` in Vercel (Production) → **redeploy**.
-2. Signed into prod, POST **`/api/dev/connect-test`** once to re-store the new token in the DB. Quickest: browser console on the prod site:
-   ```js
-   fetch('/api/dev/connect-test', { method: 'POST' }).then(r => r.json()).then(console.log)
-   ```
-   `{ ok: true }` means the connected number now uses the new token. Sending (inbox, campaigns) reads this stored token.
+## Refreshing the WhatsApp token in prod
+The number's token lives **in the database** (encrypted on `WhatsAppAccount`) — **not in env**. Sending, templates and webhooks all read the stored token. To rotate it:
+1. Generate a new **System User** token: Business Settings → Users → System users → Generate new token → app **TalkTrackCRM** → expiry **Never** → `whatsapp_business_management` + `whatsapp_business_messaging`. (The system user must have the WhatsApp account assigned under *Assign assets*.)
+2. Signed into prod: `/onboarding` → **Connect manually with an access token** → paste → Connect.
+3. Confirm every check is green at `/diagnostics/whatsapp`.
+
+No env change and no redeploy. `WHATSAPP_TEST_TOKEN` is read only by `/api/dev/connect-test`, a local-dev shortcut that is **disabled in production** (it would overwrite the stored token with whatever the env holds).
