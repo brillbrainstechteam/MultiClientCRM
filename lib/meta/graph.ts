@@ -118,3 +118,50 @@ export async function wabaIdsFromToken(token: string): Promise<string[]> {
     scopes.find((s) => s.scope === 'whatsapp_business_messaging');
   return wa?.target_ids ?? [];
 }
+
+export interface TokenInfo {
+  isValid: boolean;
+  /** SYSTEM_USER tokens survive Facebook logouts and integration removals; USER tokens do not. */
+  type: string | null;
+  /** Epoch seconds; null means the token never expires. */
+  expiresAt: number | null;
+  /** WABAs this token was granted, from its granular scopes. */
+  wabaIds: string[];
+  /** Meta's reason when the token is invalid. */
+  error: string | null;
+}
+
+/** What Meta knows about a token: validity, kind, expiry and granted WABAs. */
+export async function inspectToken(token: string): Promise<TokenInfo> {
+  const url = new URL(`${graphBase()}/debug_token`);
+  url.searchParams.set('input_token', token);
+  url.searchParams.set('access_token', `${metaConfig.appId}|${metaConfig.appSecret}`);
+
+  const res = await fetch(url, { method: 'GET', cache: 'no-store' });
+  const json = (await res.json().catch(() => ({}))) as {
+    data?: {
+      is_valid?: boolean;
+      type?: string;
+      expires_at?: number;
+      error?: { message?: string };
+      granular_scopes?: Array<{ scope?: string; target_ids?: string[] }>;
+    };
+    error?: { message?: string };
+  };
+
+  const d = json.data;
+  if (!res.ok || !d) {
+    return { isValid: false, type: null, expiresAt: null, wabaIds: [], error: json.error?.message ?? `debug_token failed (${res.status})` };
+  }
+  const scopes = d.granular_scopes ?? [];
+  const wa =
+    scopes.find((s) => s.scope === 'whatsapp_business_management') ??
+    scopes.find((s) => s.scope === 'whatsapp_business_messaging');
+  return {
+    isValid: Boolean(d.is_valid),
+    type: d.type ?? null,
+    expiresAt: d.expires_at || null,
+    wabaIds: wa?.target_ids ?? [],
+    error: d.error?.message ?? null,
+  };
+}

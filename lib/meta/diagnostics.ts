@@ -360,14 +360,14 @@ export async function removeStaleAccounts(tenantId: string): Promise<string> {
   });
   if (!live?.phoneNumberId) return 'No connected number.';
 
-  const stale = await prisma.whatsAppAccount.findMany({
-    where: { phoneNumberId: live.phoneNumberId, id: { not: live.id } },
-    select: { id: true, tenantId: true },
+  // Scoped to this workspace (one tenant never edits another's rows), and
+  // retired rather than deleted — account ids can still be referenced as a
+  // contact's WhatsApp number, so deleting would leave dangling references.
+  const { count } = await prisma.whatsAppAccount.updateMany({
+    where: { tenantId, phoneNumberId: live.phoneNumberId, id: { not: live.id }, status: { not: 'disconnected' } },
+    data: { status: 'disconnected', accessToken: null, statusReason: 'Superseded by a newer connection.' },
   });
-  if (!stale.length) return 'No stale rows — nothing to remove.';
-
-  await prisma.whatsAppAccount.deleteMany({ where: { id: { in: stale.map((s) => s.id) } } });
-  return `Removed ${stale.length} stale account row(s) for this number.`;
+  return count ? `Retired ${count} stale account row(s) for this number.` : 'No stale rows — nothing to remove.';
 }
 
 /** Re-run the WABA webhook subscription (the step that silently fails at connect time). */

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { encrypt } from '@/lib/crypto';
-import { getPhoneNumbers, subscribeAppToWaba, wabaIdsFromToken } from '@/lib/meta/graph';
+import { getPhoneNumbers, inspectToken, subscribeAppToWaba } from '@/lib/meta/graph';
 
 /**
  * Connect a WhatsApp Business Account with a token the client supplies
@@ -14,6 +14,9 @@ import { getPhoneNumbers, subscribeAppToWaba, wabaIdsFromToken } from '@/lib/met
  * token is validated against Graph before anything is written, so a typo fails
  * loudly here rather than silently later.
  */
+
+const day = (epochSeconds: number) => new Date(epochSeconds * 1000).toISOString().slice(0, 10);
+
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
@@ -22,12 +25,30 @@ export async function POST(req: Request) {
   const token = body.token?.trim();
   if (!token) return NextResponse.json({ error: 'Paste a System User access token.' }, { status: 400 });
 
-  // Resolve the WABA: the caller's value wins, else read it off the token.
-  let wabaId = body.wabaId?.trim() || null;
-  if (!wabaId) {
-    const ids = await wabaIdsFromToken(token).catch(() => []);
-    wabaId = ids[0] ?? null;
+  // Ask Meta about the token first. A dead token fails here with Meta's reason;
+  // a personal (USER) token is flagged, because it dies whenever its owner logs
+  // out of Facebook or removes the integration — a System User token does not.
+  const info = await inspectToken(token);
+  if (!info.isValid) {
+    return NextResponse.json(
+      {
+        error:
+          `Meta says this token is no longer valid${info.error ? ` (${info.error})` : ''}. ` +
+          'Generate a new System User token and paste that instead.',
+      },
+      { status: 400 },
+    );
   }
+  const permanent = info.type === 'SYSTEM_USER' && !info.expiresAt;
+  const tokenWarning = permanent
+    ? null
+    : info.type === 'SYSTEM_USER'
+      ? `This System User token expires on ${day(info.expiresAt!)}. Generate one with expiry "Never" for a permanent connection.`
+      : `This is a personal ${info.type ? `(${info.type}) ` : ''}token${info.expiresAt ? ` that expires on ${day(info.expiresAt)}` : ''}. ` +
+        'It stops working if you log out of Facebook or remove the TalkTrackCRM integration — use a System User token for a permanent connection.';
+
+  // Resolve the WABA: the caller's value wins, else read it off the token.
+  const wabaId = body.wabaId?.trim() || info.wabaIds[0] || null;
   if (!wabaId) {
     return NextResponse.json(
       { error: 'Could not work out the WhatsApp Business Account from this token. Enter the WABA ID as well.' },
@@ -81,11 +102,20 @@ export async function POST(req: Request) {
     connectedAt: new Date(),
   };
 
+  // Re-key the newest row for this number (deterministically), then retire any
+  // older rows so a stale token can never win a lookup again. Rows are retired,
+  // not deleted — their ids may still be referenced as a contact's number.
   const existing = await prisma.whatsAppAccount.findFirst({
     where: { tenantId: user.tenantId, phoneNumberId: chosen.id },
+    orderBy: { connectedAt: 'desc' },
   });
-  if (existing) await prisma.whatsAppAccount.update({ where: { id: existing.id }, data });
-  else await prisma.whatsAppAccount.create({ data: { tenantId: user.tenantId, ...data } });
+  const saved = existing
+    ? await prisma.whatsAppAccount.update({ where: { id: existing.id }, data })
+    : await prisma.whatsAppAccount.create({ data: { tenantId: user.tenantId, ...data } });
+  await prisma.whatsAppAccount.updateMany({
+    where: { tenantId: user.tenantId, phoneNumberId: chosen.id, id: { not: saved.id } },
+    data: { status: 'disconnected', accessToken: null, statusReason: 'Superseded by a newer connection.' },
+  });
 
   return NextResponse.json({
     ok: true,
@@ -94,6 +124,9 @@ export async function POST(req: Request) {
     displayPhone: chosen.display_phone_number,
     verifiedName: chosen.verified_name,
     subscribeWarning,
+    tokenType: info.type,
+    tokenExpiresAt: info.expiresAt,
+    tokenWarning,
     numbersAvailable: phones.map((p) => ({ id: p.id, display: p.display_phone_number })),
   });
 }

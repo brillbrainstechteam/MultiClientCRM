@@ -12,10 +12,13 @@ export function ManualConnect() {
   const [wabaId, setWabaId] = useState('');
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string>('');
+  // Set when the token works but is not permanent — shown instead of redirecting.
+  const [tokenWarning, setTokenWarning] = useState<string>('');
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
+    setTokenWarning('');
     setStatus('Checking the token with Meta…');
     try {
       const res = await fetch('/api/crm/whatsapp/manual-connect', {
@@ -29,11 +32,16 @@ export function ManualConnect() {
         setBusy(false);
         return;
       }
-      setStatus(
-        `Connected ${data.displayPhone} (${data.verifiedName}).` +
-          (data.subscribeWarning ? ' Webhook subscription needs a retry — open the diagnostics page.' : '') +
-          ' Redirecting…',
-      );
+      const connected = `Connected ${data.displayPhone} (${data.verifiedName}).`;
+      const webhook = data.subscribeWarning ? ' Webhook subscription needs a retry — open the diagnostics page.' : '';
+      if (data.tokenWarning) {
+        // Working now, but it will break later — make sure that is read.
+        setStatus(connected + webhook);
+        setTokenWarning(data.tokenWarning);
+        setBusy(false);
+        return;
+      }
+      setStatus(`${connected} Permanent System User token confirmed.${webhook} Redirecting…`);
       window.location.href = '/crm/dashboard';
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Could not connect.');
@@ -76,6 +84,12 @@ export function ManualConnect() {
         </button>
       </form>
       {status ? <p className="tt-onb__status">{status}</p> : null}
+      {tokenWarning ? (
+        <div className="tt-onb__notice">
+          <strong>Heads up:</strong> {tokenWarning}{' '}
+          <a href="/crm/dashboard" className="crm-authform__link">Continue to dashboard →</a>
+        </div>
+      ) : null}
     </details>
   );
 }
