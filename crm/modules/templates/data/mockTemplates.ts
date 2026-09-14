@@ -792,3 +792,41 @@ export async function hydrateTemplates(): Promise<void> {
 
   setTemplates((data.templates ?? []).map((t) => mapRawTemplate(t, wabaId)));
 }
+
+export type TemplateSubmitResult =
+  | { ok: true; metaTemplateId: string; status: string }
+  | { ok: false; error: string };
+
+/**
+ * Submit a composer draft to Meta for review (or push an edit to an existing
+ * Meta template), then re-hydrate so the repository shows Meta's real status.
+ * Never throws — failures come back as `{ ok: false, error }` for the outcome modal.
+ */
+export async function submitTemplateToMeta(
+  draft: Pick<Template, 'name' | 'locale' | 'metaCategory' | 'format' | 'components'> & { editingTemplateId?: string },
+): Promise<TemplateSubmitResult> {
+  const metaTemplateId = draft.editingTemplateId ? findTemplate(draft.editingTemplateId)?.metaTemplateId : undefined;
+  try {
+    const res = await fetch('/api/crm/templates/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        draft: {
+          name: draft.name,
+          locale: draft.locale,
+          metaCategory: draft.metaCategory,
+          format: draft.format,
+          components: draft.components,
+        },
+        metaTemplateId,
+      }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { error?: string; metaTemplateId?: string; status?: string };
+    if (!res.ok) return { ok: false, error: data.error ?? `Submission failed (${res.status}).` };
+    await hydrateTemplates().catch(() => undefined);
+    return { ok: true, metaTemplateId: data.metaTemplateId ?? '', status: data.status ?? 'PENDING' };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Could not reach TalkTrack — check your connection.' };
+  }
+}

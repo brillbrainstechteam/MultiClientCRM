@@ -1,13 +1,22 @@
-import { useState } from 'react';
 import { CircleCheck, CircleX } from 'lucide-react';
 import { Button, Modal } from '@crm/design-system';
 
-/** TPL-S08 — Submission Outcome. Result modal/system state, not a permanent page. */
+const STATUS_LABEL: Record<string, string> = {
+  PENDING: 'Pending Meta review',
+  APPROVED: 'Approved',
+  REJECTED: 'Rejected',
+  PAUSED: 'Paused',
+  DISABLED: 'Disabled',
+};
+
+/** TPL-S08 — Submission Outcome. Shows Meta's real response, not a simulation. */
 export function SubmissionOutcomeModal({
   open,
   result,
   templateName,
   metaReference,
+  metaStatus,
+  errorDetail,
   onViewTemplate,
   onBackToTemplates,
   onRetry,
@@ -17,16 +26,17 @@ export function SubmissionOutcomeModal({
   result: 'success' | 'failure';
   templateName: string;
   metaReference: string;
+  metaStatus?: string;
+  errorDetail?: string;
   onViewTemplate: () => void;
   onBackToTemplates: () => void;
   onRetry: () => void;
   onEditTemplate: () => void;
 }) {
-  const [showDetails, setShowDetails] = useState(false);
-
   if (!open) return null;
 
   if (result === 'success') {
+    const statusLabel = STATUS_LABEL[(metaStatus ?? 'PENDING').toUpperCase()] ?? metaStatus ?? 'Pending Meta review';
     return (
       <Modal
         open
@@ -42,11 +52,11 @@ export function SubmissionOutcomeModal({
         <div className="crm-submission-outcome">
           <CircleCheck aria-hidden="true" className="crm-submission-outcome__icon crm-submission-outcome__icon--success" />
           <p>
-            <strong>{templateName}</strong> was submitted successfully and is now <strong>Pending</strong> Meta review.
+            <strong>{templateName}</strong> was submitted to Meta. Status: <strong>{statusLabel}</strong>.
           </p>
           <dl className="crm-submission-outcome__meta">
             <div><dt>Submitted</dt><dd>{new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</dd></div>
-            <div><dt>Meta reference</dt><dd>{metaReference}</dd></div>
+            <div><dt>Meta template ID</dt><dd>{metaReference || '—'}</dd></div>
           </dl>
         </div>
       </Modal>
@@ -68,13 +78,10 @@ export function SubmissionOutcomeModal({
       <div className="crm-submission-outcome">
         <CircleX aria-hidden="true" className="crm-submission-outcome__icon crm-submission-outcome__icon--failure" />
         <p>We could not submit <strong>{templateName}</strong> to Meta. Your draft is kept — nothing was lost.</p>
-        <button className="crm-submission-outcome__details-toggle" onClick={() => setShowDetails((v) => !v)}>
-          {showDetails ? 'Hide technical details' : 'Show technical details'}
-        </button>
-        {showDetails ? (
-          <pre className="crm-submission-outcome__details">
-            {`error: meta_api_timeout\nrequest_id: req_${Date.now()}\nmessage: The Meta Graph API did not respond within the expected window.`}
-          </pre>
+        {errorDetail ? (
+          <p>
+            <strong>Reason:</strong> {errorDetail}
+          </p>
         ) : null}
       </div>
     </Modal>

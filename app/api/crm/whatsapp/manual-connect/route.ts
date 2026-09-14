@@ -40,8 +40,17 @@ export async function POST(req: Request) {
   try {
     phones = await getPhoneNumbers(wabaId, token);
   } catch (e) {
+    // The usual cause is setup, not a typo: spell out the two Business Settings
+    // steps that make a System User token work for a WABA.
+    const detail = e instanceof Error ? e.message.slice(0, 200) : '';
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : 'Meta rejected this token for that WABA.' },
+      {
+        error:
+          `Meta rejected this token for WhatsApp account ${wabaId}. Check that (1) the system user has this ` +
+          `WhatsApp account assigned — Business Settings → Users → System users → Assign assets — and (2) the ` +
+          `token was generated for the TalkTrackCRM app with both WhatsApp permissions.` +
+          (detail ? ` Details: ${detail}` : ''),
+      },
       { status: 400 },
     );
   }

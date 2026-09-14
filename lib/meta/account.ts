@@ -11,17 +11,34 @@ import { prisma } from '@/lib/db';
  */
 
 export interface GraphErrorBody {
-  error?: { message?: string; type?: string; code?: number; error_subcode?: number };
+  error?: {
+    message?: string;
+    type?: string;
+    code?: number;
+    error_subcode?: number;
+    error_user_title?: string;
+    error_user_msg?: string;
+  };
 }
 
-/** True when Meta is rejecting the token itself, rather than the request. */
+/**
+ * True only when Meta is rejecting the token itself — 190 (invalid, expired or
+ * revoked) and 102 (session). Permission errors (10, 200–299) and invalid
+ * parameters (100, which Meta also types as OAuthException — e.g. a template
+ * that fails validation) arrive on a perfectly good token, so treating them as
+ * fatal would wipe a healthy connection over one bad request.
+ */
 export function isAuthError(body: GraphErrorBody | undefined): boolean {
+  const code = body?.error?.code;
+  return code === 190 || code === 102;
+}
+
+/** Readable Graph error, preferring the user-facing text Meta provides. */
+export function graphErrorMessage(body: GraphErrorBody | undefined, fallback: string): string {
   const err = body?.error;
-  if (!err) return false;
-  // 190 expired/invalid, 102 session, 10 + 200-299 permission errors.
-  if (err.code === 190 || err.code === 102 || err.code === 10) return true;
-  if (typeof err.code === 'number' && err.code >= 200 && err.code < 300) return true;
-  return err.type === 'OAuthException';
+  if (!err) return fallback;
+  if (err.error_user_msg) return err.error_user_title ? `${err.error_user_title}: ${err.error_user_msg}` : err.error_user_msg;
+  return err.message ?? fallback;
 }
 
 /**

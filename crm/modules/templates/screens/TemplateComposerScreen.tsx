@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useScopedHref } from '@crm/app/use-scoped-href';
 import { useWorkspace } from '@crm/app/workspace-context';
 import { Button, ConfirmDialog, WizardShell, type StepperItem } from '@crm/design-system';
-import { existingTemplateNames } from '../data/mockTemplates';
+import { existingTemplateNames, submitTemplateToMeta } from '../data/mockTemplates';
 import { can } from '../permissions';
 import { useTargetWaba, useWabaScope } from '../use-waba-scope';
 import { basicsValid, BasicsStep } from './composer/BasicsStep';
@@ -39,6 +39,13 @@ export default function TemplateComposerScreen() {
   return <ComposerInner key={draftKey} defaultWabaId={targetWaba.id} />;
 }
 
+/** Meta's answer to the last submission — shown by the outcome modal. */
+interface SubmissionOutcome {
+  metaTemplateId: string;
+  status: string;
+  error: string;
+}
+
 function ComposerInner({ defaultWabaId }: { defaultWabaId: string }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -59,7 +66,8 @@ function ComposerInner({ defaultWabaId }: { defaultWabaId: string }) {
   );
 
   const [confirmExit, setConfirmExit] = useState(false);
-  const [outcomeReference, setOutcomeReference] = useState<string>('');
+  const [submitting, setSubmitting] = useState(false);
+  const [outcome, setOutcome] = useState<SubmissionOutcome>({ metaTemplateId: '', status: '', error: '' });
 
   const step = searchParams.get('step') ?? 'basics';
   const forcedComposeState = searchParams.get('state');
@@ -94,15 +102,13 @@ function ComposerInner({ defaultWabaId }: { defaultWabaId: string }) {
 
   const exitWithoutSaving = () => navigate(scopedHref(returnTo));
 
-  const openSubmissionOutcome = (outcome: 'success' | 'failure') => {
-    setOutcomeReference(`meta_tpl_${Math.floor(1000000 + Math.random() * 8999999)}`);
+  const openSubmissionOutcome = (kind: 'success' | 'failure') =>
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('modal', 'submission-outcome');
-      next.set('result', outcome);
+      next.set('result', kind);
       return next;
     });
-  };
 
   const closeOutcomeModal = () =>
     setSearchParams((prev) => {
@@ -112,12 +118,27 @@ function ComposerInner({ defaultWabaId }: { defaultWabaId: string }) {
       return next;
     });
 
+  // Real submission: Meta validates the template and answers with its id and
+  // status (or a reason it was refused), which the outcome modal shows verbatim.
+  const submitToMeta = async () => {
+    setSubmitting(true);
+    const r = await submitTemplateToMeta(draft);
+    setSubmitting(false);
+    if (r.ok) {
+      setOutcome({ metaTemplateId: r.metaTemplateId, status: r.status, error: '' });
+      openSubmissionOutcome('success');
+    } else {
+      setOutcome({ metaTemplateId: '', status: '', error: r.error });
+      openSubmissionOutcome('failure');
+    }
+  };
+
   const submit = () => {
     if (approvalMode === 'required' && !canApproveDirectly) {
       navigate(scopedHref('/templates/approvals', { view: 'awaiting-review' }));
       return;
     }
-    openSubmissionOutcome('success');
+    void submitToMeta();
   };
 
   const primaryReviewLabel =
@@ -142,11 +163,12 @@ function ComposerInner({ defaultWabaId }: { defaultWabaId: string }) {
                     else if (step === 'preview') setStep('compose');
                     else if (step === 'review') setStep('preview');
                   }}
+                  disabled={submitting}
                 >
                   Back
                 </Button>
               ) : null}
-              <Button variant="ghost" onClick={saveDraft}>Save Draft</Button>
+              <Button variant="ghost" onClick={saveDraft} disabled={submitting}>Save Draft</Button>
             </div>
             <div className="crm-tpl-composer__footer-right">
               {step === 'basics' ? (
@@ -161,10 +183,9 @@ function ComposerInner({ defaultWabaId }: { defaultWabaId: string }) {
                 </Button>
               ) : null}
               {step === 'review' ? (
-                <>
-                  <Button variant="ghost" onClick={() => openSubmissionOutcome('failure')}>Simulate failure</Button>
-                  <Button variant="primary" onClick={submit}>{primaryReviewLabel}</Button>
-                </>
+                <Button variant="primary" onClick={submit} disabled={submitting}>
+                  {submitting ? 'Submitting to Meta…' : primaryReviewLabel}
+                </Button>
               ) : null}
             </div>
           </div>
@@ -208,7 +229,9 @@ function ComposerInner({ defaultWabaId }: { defaultWabaId: string }) {
         open={modal === 'submission-outcome'}
         result={result}
         templateName={draft.name}
-        metaReference={outcomeReference || `meta_tpl_${draft.name}`}
+        metaReference={outcome.metaTemplateId}
+        metaStatus={outcome.status}
+        errorDetail={outcome.error}
         onViewTemplate={() =>
           navigate(
             draft.editingTemplateId
@@ -217,7 +240,10 @@ function ComposerInner({ defaultWabaId }: { defaultWabaId: string }) {
           )
         }
         onBackToTemplates={() => navigate(scopedHref('/templates'))}
-        onRetry={() => openSubmissionOutcome('success')}
+        onRetry={() => {
+          closeOutcomeModal();
+          void submitToMeta();
+        }}
         onEditTemplate={closeOutcomeModal}
       />
 
