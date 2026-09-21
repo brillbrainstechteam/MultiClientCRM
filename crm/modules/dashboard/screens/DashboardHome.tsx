@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowRight, ArrowUpRight, Check, CircleDashed, Contact, Gauge, Layers, Megaphone,
-  MessageSquare, PhoneCall, Plus, Radio, RotateCcw, ShieldCheck, ShoppingBag, Signal, Sparkles,
-  TrendingUp, Users, Zap,
+  ArrowRight, ArrowUpRight, BarChart3, Check, CircleDashed, Contact, FileText, Gauge, Layers,
+  LifeBuoy, Megaphone, MessageCircle, MessageSquare, PhoneCall, Play, Plus, Send,
+  ShieldCheck, ShoppingBag, Signal, Tag, TrendingUp, Upload, UserPlus, Users, X,
 } from 'lucide-react';
 import '../DashboardHome.css';
 
@@ -24,12 +24,14 @@ interface DashData {
 }
 
 const goOnboard = () => { window.location.href = '/onboarding'; };
+const SUPPORT_EMAIL = 'support@brillbrainsconsultants.com';
 const STRATEGY_LABEL: Record<string, string> = { existing: 'existing WhatsApp Business account', new: 'a new number', coexistence: 'coexistence' };
-const JOURNEY = [
-  { icon: Radio, t: 'Connect', d: 'Link your WhatsApp number' },
-  { icon: Contact, t: 'Import', d: 'Bring in your customers' },
-  { icon: MessageSquare, t: 'Engage', d: 'Reply, campaign, automate' },
-  { icon: ShoppingBag, t: 'Sell', d: 'Catalogue, orders, repeat' },
+
+const EXPLORE = [
+  { tone: 'green', icon: MessageSquare, title: 'Manage conversations', desc: 'Reply, assign and track customer chats.', to: '/inbox' },
+  { tone: 'blue', icon: Send, title: 'Run campaigns', desc: 'Send offers, updates and reminders at scale.', to: '/campaigns' },
+  { tone: 'purple', icon: Tag, title: 'Share your catalogue', desc: 'Show products, take orders and grow sales.', to: '/catalogue-orders/inventory' },
+  { tone: 'peach', icon: BarChart3, title: 'Track performance', desc: 'See what’s working with simple analytics.', to: '/reports' },
 ];
 
 export default function DashboardHome() {
@@ -50,111 +52,192 @@ export default function DashboardHome() {
     <div className="dh">
       {data.state === 'connected'
         ? <Connected data={data} nav={navigate} />
-        : <Launchpad data={data} />}
+        : <Launchpad data={data} nav={navigate} />}
     </div>
   );
 }
 
 /* ---------------- Not-connected + In-progress (the launchpad) ---------------- */
-function Launchpad({ data }: { data: DashData }) {
+function Launchpad({ data, nav }: { data: DashData; nav: (to: string) => void }) {
   const inProgress = data.state === 'in_progress';
   const s = data.onboarding;
-  const activeStep = inProgress ? 1 : 0;
+  const [video, setVideo] = useState(false);
+
+  const steps = [
+    {
+      icon: MessageCircle, title: 'Connect WhatsApp number',
+      desc: 'Link your Business number to start using TalkTrack.',
+      cta: inProgress ? 'Resume Setup' : 'Connect Now', onClick: goOnboard,
+      done: data.setup.numberConnected, primary: true,
+    },
+    {
+      icon: Upload, title: 'Import your customers',
+      desc: 'Bring in your contacts from Excel, Google Contacts or other sources.',
+      cta: 'Import Contacts', onClick: () => nav('/contacts'),
+      done: data.setup.hasContacts, primary: false,
+    },
+    {
+      icon: FileText, title: 'Create a message template',
+      desc: 'Get approved templates so you can start messaging customers.',
+      cta: 'Create Template', onClick: () => nav('/templates'),
+      done: false, primary: false,
+    },
+    {
+      icon: UserPlus, title: 'Invite your team',
+      desc: 'Add team members and manage access.',
+      cta: 'Invite Team', onClick: () => nav('/team-access'),
+      done: data.setup.hasTeam, primary: false,
+    },
+  ];
+  const completed = steps.filter((x) => x.done).length;
+  const pct = Math.round((completed / steps.length) * 100);
 
   return (
-    <>
-      <section className={`dh-hero${inProgress ? ' dh-hero--progress' : ''}`}>
-        <div className="dh-hero__glow" aria-hidden="true" />
-        <div className="dh-hero__in">
-          <span className="dh-hero__eyebrow">
-            {inProgress ? <><CircleDashed size={14} /> Connection in progress</> : <><Sparkles size={14} /> Welcome to TalkTrack</>}
+    <div className="lp">
+      {/* ---- Hero ---- */}
+      <section className="lp-hero">
+        <div className="lp-hero__text">
+          <span className="lp-eyebrow">
+            {inProgress ? <><CircleDashed size={15} /> Connection in progress</> : <>Welcome to TalkTrack <span aria-hidden>👋</span></>}
           </span>
-          <h1 className="dh-hero__title">
-            {inProgress ? 'You’re almost connected.' : 'Let’s get your WhatsApp working.'}
+          <h1 className="lp-title">
+            {inProgress ? <>You’re almost <span className="lp-title__hl">connected</span></> : <>Set up your <span className="lp-title__hl">WhatsApp CRM</span> in minutes</>}
           </h1>
-          <p className="dh-hero__sub">
+          <p className="lp-sub">
             {inProgress
-              ? <>You started connecting via <strong>{STRATEGY_LABEL[s?.strategy ?? ''] ?? 'WhatsApp'}</strong>{s?.lastStep ? <> · last step: {s.lastStep.replace(/_/g, ' ')}</> : ''}. Pick up where you left off — nothing is lost.</>
-              : <>Connect your WhatsApp Business number to unlock the shared inbox, contacts, campaigns, catalogue and everything else. It takes a few minutes.</>}
+              ? <>You started connecting via <strong>{STRATEGY_LABEL[s?.strategy ?? ''] ?? 'WhatsApp'}</strong>. Pick up right where you left off — nothing is lost.</>
+              : <>Connect your WhatsApp Business number and start managing your customers, campaigns and sales — all in one place.</>}
           </p>
-          <div className="dh-hero__cta">
-            <button className="dh-btn dh-btn--gold" onClick={goOnboard}>
-              {inProgress ? <><RotateCcw size={17} /> Resume connecting</> : <><Zap size={17} /> Connect your WhatsApp number</>}
-              <ArrowRight size={16} />
+          <div className="lp-cta">
+            <button className="lp-btn lp-btn--primary" onClick={goOnboard}>
+              <MessageCircle size={18} />{inProgress ? 'Resume Connecting' : 'Connect WhatsApp Number'}<ArrowRight size={16} />
             </button>
-            {inProgress && s?.status === 'error' && s.errorMessage
-              ? <span className="dh-hero__err">{s.errorMessage}</span> : null}
+            <button className="lp-btn lp-btn--ghost" onClick={() => setVideo(true)}>
+              <Play size={16} /> Watch How It Works
+            </button>
           </div>
-
-          <ol className="dh-journey">
-            {JOURNEY.map((j, i) => {
-              const Icon = j.icon;
-              const state = i < activeStep ? 'done' : i === activeStep ? 'current' : 'todo';
-              return (
-                <li key={j.t} className={`dh-journey__step dh-journey__step--${state}`}>
-                  <span className="dh-journey__dot">{state === 'done' ? <Check size={13} /> : <Icon size={15} />}</span>
-                  <span className="dh-journey__t">{j.t}</span>
-                  <span className="dh-journey__d">{j.d}</span>
-                </li>
-              );
-            })}
-          </ol>
+          {inProgress && s?.status === 'error' && s.errorMessage ? <p className="lp-err">{s.errorMessage}</p> : null}
+          <ul className="lp-trust">
+            {['No coding needed', 'Official WhatsApp API', 'Secure & reliable', 'Get started in 2 minutes'].map((t) => (
+              <li key={t}><Check size={15} /> {t}</li>
+            ))}
+          </ul>
         </div>
+        <HeroArt />
       </section>
 
-      <section className="dh-setup">
-        <h2 className="dh-h2">Your setup checklist</h2>
-        <div className="dh-setup__grid">
-          <SetupItem done={data.setup.numberConnected} primary title="Connect your WhatsApp number"
-            desc="Keep your Business app (coexistence), migrate, or start a new number." onClick={goOnboard} cta={inProgress ? 'Resume' : 'Connect'} />
-          <SetupItem done={data.setup.hasContacts} locked={!data.setup.numberConnected} title="Import your customers"
-            desc="From Excel, Google Contacts, business cards and more." />
-          <SetupItem done={false} locked={!data.setup.numberConnected} title="Create a message template"
-            desc="Get an approved template so you can re-engage anytime." />
-          <SetupItem done={data.setup.hasTeam} optional title="Invite your team"
-            desc="Add agents and managers to your shared inbox." />
+      {/* ---- Setup checklist ---- */}
+      <section className="lp-card">
+        <div className="lp-card__head">
+          <div>
+            <h2 className="lp-h2">Your setup checklist</h2>
+            <p className="lp-muted">Follow these simple steps to get started. You’re just a few clicks away!</p>
+          </div>
+          <div className="lp-progress">
+            <span className="lp-progress__label">{completed} / {steps.length} completed</span>
+            <div className="lp-progress__track"><i style={{ width: `${pct}%` }} /></div>
+          </div>
         </div>
+        <ol className="lp-steps">
+          {steps.map((st, i) => {
+            const Icon = st.icon;
+            const active = i === completed && !st.done; // first not-done step is the focus
+            return (
+              <li key={st.title} className={`lp-step${st.done ? ' lp-step--done' : ''}${active ? ' lp-step--active' : ''}`}>
+                <span className="lp-step__badge">{st.done ? <Check size={16} /> : <Icon size={18} />}<em>{i + 1}</em></span>
+                <strong className="lp-step__title">{st.title}</strong>
+                <p className="lp-step__desc">{st.desc}</p>
+                {st.done
+                  ? <span className="lp-step__done"><Check size={14} /> Done</span>
+                  : <button className={`lp-sbtn${st.primary ? ' lp-sbtn--primary' : ''}`} onClick={st.onClick}>{st.cta} <ArrowRight size={14} /></button>}
+              </li>
+            );
+          })}
+        </ol>
       </section>
 
-      <section className="dh-preview">
-        <h2 className="dh-h2">What lights up once you’re connected</h2>
-        <div className="dh-grid">
-          {PREVIEW_TILES.map((t) => {
+      {/* ---- Explore ---- */}
+      <section>
+        <h2 className="lp-h2">Explore what you can do with TalkTrack</h2>
+        <p className="lp-muted lp-muted--mb">Once connected, you’ll unlock the full power of WhatsApp for your business.</p>
+        <div className="lp-explore">
+          {EXPLORE.map((t) => {
             const Icon = t.icon;
             return (
-              <article key={t.label} className="dh-tile dh-tile--locked">
-                <span className="dh-tile__ic"><Icon size={18} /></span>
-                <span className="dh-tile__val">—</span>
-                <span className="dh-tile__label">{t.label}</span>
-              </article>
+              <button key={t.title} className={`lp-xt lp-xt--${t.tone}`} onClick={() => nav(t.to)}>
+                <span className="lp-xt__ic"><Icon size={20} /></span>
+                <strong className="lp-xt__title">{t.title}</strong>
+                <p className="lp-xt__desc">{t.desc}</p>
+                <span className="lp-xt__go"><ArrowRight size={16} /></span>
+              </button>
             );
           })}
         </div>
       </section>
-    </>
+
+      {/* ---- Help ---- */}
+      <section className="lp-help">
+        <div className="lp-help__l">
+          <span className="lp-help__ic"><Play size={20} /></span>
+          <div>
+            <strong>Need help getting started?</strong>
+            <p>Watch our 5-minute setup guide or speak to our team.</p>
+          </div>
+        </div>
+        <div className="lp-help__actions">
+          <button className="lp-btn lp-btn--ghost lp-btn--sm" onClick={() => setVideo(true)}><Play size={15} /> Watch Setup Video</button>
+          <a className="lp-btn lp-btn--ghost lp-btn--sm" href={`mailto:${SUPPORT_EMAIL}?subject=TalkTrack%20setup%20help`}><LifeBuoy size={15} /> Contact Support</a>
+        </div>
+      </section>
+
+      {video ? (
+        <div className="lp-modal" role="dialog" aria-modal="true" onClick={() => setVideo(false)}>
+          <div className="lp-modal__box" onClick={(e) => e.stopPropagation()}>
+            <button className="lp-modal__x" aria-label="Close" onClick={() => setVideo(false)}><X size={18} /></button>
+            <div className="lp-modal__video">
+              <Play size={40} />
+              <p>Setup walkthrough</p>
+              <span>A short guide to connecting your number and sending your first message.</span>
+            </div>
+            <div className="lp-modal__foot">
+              <button className="lp-btn lp-btn--primary" onClick={goOnboard}><MessageCircle size={17} /> Connect your number <ArrowRight size={15} /></button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
-const PREVIEW_TILES = [
-  { icon: MessageSquare, label: 'Conversations' },
-  { icon: Contact, label: 'Contacts & leads' },
-  { icon: Megaphone, label: 'Campaigns' },
-  { icon: ShoppingBag, label: 'Orders' },
-  { icon: PhoneCall, label: 'Calls' },
-];
-
-function SetupItem({ done, locked, primary, optional, title, desc, onClick, cta }: {
-  done: boolean; locked?: boolean; primary?: boolean; optional?: boolean; title: string; desc: string; onClick?: () => void; cta?: string;
-}) {
+/* Friendly inline hero illustration (evokes the marketing art without raster assets). */
+function HeroArt() {
   return (
-    <div className={`dh-setup__item${done ? ' dh-setup__item--done' : ''}${locked ? ' dh-setup__item--locked' : ''}`}>
-      <span className="dh-setup__check">{done ? <Check size={15} /> : <CircleDashed size={15} />}</span>
-      <div className="dh-setup__body">
-        <strong>{title}{optional ? <em> · optional</em> : ''}</strong>
-        <p>{desc}</p>
-      </div>
-      {!done && !locked && onClick ? <button className={`dh-btn dh-btn--sm ${primary ? 'dh-btn--gold' : 'dh-btn--ghost'}`} onClick={onClick}>{cta ?? 'Start'}</button> : null}
-      {locked ? <span className="dh-setup__lock">Locked</span> : null}
+    <div className="lp-hero__art" aria-hidden="true">
+      <svg viewBox="0 0 320 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="168" cy="232" rx="120" ry="16" fill="#e8f4ee" />
+        {/* phone */}
+        <rect x="96" y="34" width="112" height="188" rx="20" fill="#0f5f47" />
+        <rect x="104" y="42" width="96" height="172" rx="14" fill="#f4fbf7" />
+        {/* chat bubbles */}
+        <rect x="116" y="62" width="58" height="20" rx="10" fill="#d8efe4" />
+        <rect x="132" y="90" width="56" height="20" rx="10" fill="#25a37a" />
+        <rect x="116" y="118" width="46" height="20" rx="10" fill="#d8efe4" />
+        {/* whatsapp mark */}
+        <circle cx="176" cy="182" r="22" fill="#25D366" />
+        <path d="M176 170a12 12 0 0 0-10.3 18.1L164 196l8.2-1.6A12 12 0 1 0 176 170Z" fill="#fff" />
+        <path d="M170.5 175.5c.4-.9 1.6-.9 2 0l1 2.3c.2.5 0 1-.4 1.3l-1 .7c.9 1.7 2 2.8 3.7 3.7l.7-1c.3-.4.8-.6 1.3-.4l2.3 1c.9.4.9 1.6 0 2-1.9 1.5-4.3.9-6.6-.7-1.6-1.2-3-2.6-4.2-4.2-1.6-2.3-2.2-4.7-.5-6.7Z" fill="#25D366" />
+        {/* growth arrow */}
+        <path d="M232 150l18-30 14 16 20-40" stroke="#c9a227" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M284 96l-2 18-16-8Z" fill="#c9a227" />
+        {/* sparkles */}
+        <path d="M60 70l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#2ba58f" opacity=".8" />
+        <circle cx="250" cy="60" r="5" fill="#e2c15a" />
+        <circle cx="52" cy="150" r="4" fill="#25a37a" opacity=".7" />
+        {/* badge blob */}
+        <path d="M244 176c26-6 52 6 54 26s-20 34-46 34-44-14-42-32 8-22 34-28Z" fill="#d7f0e4" />
+        <text x="271" y="205" textAnchor="middle" fontSize="11" fontWeight="700" fill="#0f5f47">All on</text>
+        <text x="271" y="219" textAnchor="middle" fontSize="11" fontWeight="700" fill="#0f5f47">WhatsApp</text>
+      </svg>
     </div>
   );
 }
