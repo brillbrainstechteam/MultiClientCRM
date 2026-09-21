@@ -121,6 +121,26 @@ export interface Contact {
   businessValue?: string | null;
   consentOptInSource?: string | null;
   consentOptInAt?: string | null;
+  // --- Jewellery B2B enrichment (formalised from the marketing/sales Excels) ---
+  businessSegment?: string | null; // chain_stores | corporate | boutique | exports | standalone | small_store
+  grade?: string | null;           // A | B | C | D
+  preferredLanguage?: string | null;
+  website?: string | null;
+  dateOfBirth?: string | null;
+  companyAnniversary?: string | null;
+  nextFollowUpAt?: string | null;
+  interestedIn?: string | null;
+  lastFeedback?: string | null;
+  lastConnectAt?: string | null;
+  clientCode?: string | null;
+  pan?: string | null;
+  kamUserId?: string | null;
+  dataVerified?: boolean;
+  introCallDone?: boolean;
+  officeVisitDone?: boolean;
+  inBroadcastList?: boolean;
+  inCommunity?: boolean;
+  jewelleryProfile?: Record<string, unknown> | null;
 }
 
 /* ------------------------------------------------------------------------- */

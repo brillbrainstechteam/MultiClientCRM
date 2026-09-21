@@ -36,9 +36,17 @@ import { consentLabel, salesTierLabel, leadStatusLabel, lifecycleLabel } from '.
 import { can, canViewField, dealValueFor } from '../permissions';
 import { KundliPanel } from '../components/KundliPanel';
 
+const SEGMENT_LABEL: Record<string, string> = {
+  chain_stores: 'Chain of stores', corporate: 'Corporate', boutique: 'Boutique store',
+  exports: 'Exports', standalone: 'Single standalone store', small_store: 'Single small store',
+};
+const fmtDay = (d?: string | null) => (d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '—');
+const yn = (v?: boolean) => (v ? 'Yes' : 'No');
+
 const tabs: TabItem[] = [
   { id: 'profile', label: 'Profile' },
   { id: 'sales', label: 'Sales' },
+  { id: 'jewellery', label: 'Jewellery' },
   { id: 'classification', label: 'Classification' },
   { id: 'consent', label: 'Consent & Privacy' },
   { id: 'source', label: 'Source' },
@@ -238,6 +246,37 @@ export default function Customer360Screen() {
               ['Next follow-up', <span className="crm-fieldgrid__empty">Set via Follow-up</span>],
             ]}
           />
+        ) : null}
+
+        {activeTab === 'jewellery' ? (
+          <>
+            <FieldGrid
+              fields={[
+                ['Segment', SEGMENT_LABEL[contact.businessSegment ?? ''] ?? notSet()],
+                ['Grade (ABCD)', contact.grade ?? notSet()],
+                ['Preferred language', contact.preferredLanguage ?? notSet()],
+                ['Key account manager', contact.kamUserId ? (findUser(contact.kamUserId)?.name ?? contact.kamUserId) : notSet()],
+                ['Client code', contact.clientCode ?? notSet()],
+                ['PAN', contact.pan ?? notSet()],
+                ['Website', contact.website ?? notSet()],
+                ['Birthday', contact.dateOfBirth ? fmtDay(contact.dateOfBirth) : notSet()],
+                ['Company anniversary', contact.companyAnniversary ? fmtDay(contact.companyAnniversary) : notSet()],
+                ['Next follow-up', contact.nextFollowUpAt ? new Date(contact.nextFollowUpAt).toLocaleDateString('en-IN') : notSet()],
+                ['Interested in', contact.interestedIn ?? notSet()],
+                ['Last feedback', contact.lastFeedback ?? notSet()],
+              ]}
+            />
+            <p className="crm-c360__scope-note">Prospect checkpoints &amp; reach</p>
+            <FieldGrid
+              fields={[
+                ['Data verified', yn(contact.dataVerified)],
+                ['Intro call done', yn(contact.introCallDone)],
+                ['Office visit done', yn(contact.officeVisitDone)],
+                ['In broadcast list', yn(contact.inBroadcastList)],
+                ['In community', yn(contact.inCommunity)],
+              ]}
+            />
+          </>
         ) : null}
 
         {activeTab === 'classification' ? (
