@@ -1,8 +1,10 @@
 import { useWorkspace } from '@crm/app/workspace-context';
 
 const planLabel: Record<string, string> = {
+  trial: 'Trial',
   starter: 'Starter',
   growth: 'Growth',
+  advanced: 'Advanced',
   enterprise: 'Enterprise',
 };
 

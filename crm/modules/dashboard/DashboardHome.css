@@ -160,8 +160,8 @@
 .lp-trust { list-style: none; display: flex; flex-wrap: wrap; gap: 10px 22px; padding: 0; margin: 22px 0 0; }
 .lp-trust li { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--lp-muted); font-weight: 500; }
 .lp-trust svg { color: var(--lp-green); }
-.lp-hero__art { display: flex; justify-content: center; }
-.lp-hero__art svg { width: 100%; max-width: 320px; height: auto; }
+.lp-hero__art { display: flex; justify-content: center; align-items: center; }
+.lp-hero__art img { width: 100%; max-width: 480px; height: auto; border-radius: 18px; box-shadow: 0 26px 60px -34px rgba(15,95,71,.55); }
 
 /* ---- buttons ---- */
 .lp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; font: inherit; font-size: 15px; font-weight: 700; border-radius: 12px; padding: 13px 22px; border: 1px solid transparent; cursor: pointer; text-decoration: none; transition: transform .15s, box-shadow .15s, border-color .15s, background .15s; }

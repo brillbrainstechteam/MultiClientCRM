@@ -52,7 +52,7 @@ export interface Workspace {
   id: string;
   name: string;
   legalName: string;
-  plan: 'starter' | 'growth' | 'enterprise';
+  plan: 'trial' | 'starter' | 'growth' | 'advanced' | 'enterprise';
   enabledModules: ModuleKey[];
   branchIds: string[];
   whatsappNumberIds: string[];

@@ -92,6 +92,7 @@ export async function GET() {
 
   return NextResponse.json({
     name: businessName,
+    plan: sessionUser.tenant.plan ?? 'trial',
     branches,
     teams,
     whatsappNumbers,

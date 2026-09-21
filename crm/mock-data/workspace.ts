@@ -202,7 +202,7 @@ export function findTeam(teamId: string): Team | undefined {
 /** Replace workspace reference data with real DB rows (hydration). */
 export function setWorkspaceData(next: {
   branches?: Branch[]; whatsappNumbers?: WhatsAppNumber[]; teams?: Team[]; users?: User[];
-  name?: string; branchIds?: string[]; whatsappNumberIds?: string[];
+  name?: string; branchIds?: string[]; whatsappNumberIds?: string[]; plan?: Workspace['plan'];
 }): void {
   if (next.branches) branches = next.branches;
   if (next.whatsappNumbers) whatsappNumbers = next.whatsappNumbers;
@@ -211,4 +211,5 @@ export function setWorkspaceData(next: {
   if (next.name) workspace = { ...workspace, name: next.name, legalName: next.name };
   if (next.branchIds) workspace = { ...workspace, branchIds: next.branchIds };
   if (next.whatsappNumberIds) workspace = { ...workspace, whatsappNumberIds: next.whatsappNumberIds };
+  if (next.plan) workspace = { ...workspace, plan: next.plan };
 }

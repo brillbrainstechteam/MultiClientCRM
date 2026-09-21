@@ -46,18 +46,31 @@ const EXPLORE = [
   { tone: 'peach', icon: BarChart3, title: 'Track performance', desc: 'See what’s working with simple analytics.', to: '/reports' },
 ];
 
+// Module-level cache: the CRM shell remounts the whole route subtree on every
+// data change (AppRoutes key={dataVersion}), which would otherwise re-flash the
+// full-screen "Loading…" on each remount. Seeding state from the last payload
+// makes the dashboard render instantly and refresh in the background.
+let cachedDash: DashData | null = null;
+
 export default function DashboardHome() {
-  const [data, setData] = useState<DashData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<DashData | null>(cachedDash);
+  const [loading, setLoading] = useState(!cachedDash);
   const navigate = useNavigate();
 
   useEffect(() => {
+    let cancelled = false;
     fetch('/api/crm/dashboard', { credentials: 'same-origin' })
-      .then((r) => r.json()).then((d) => { setData(d.error ? null : d); setLoading(false); })
-      .catch(() => setLoading(false));
+      .then((r) => r.json())
+      .then((d) => {
+        if (cancelled) return;
+        if (!d.error) { cachedDash = d; setData(d); }
+        setLoading(false);
+      })
+      .catch(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
-  if (loading) return <div className="dh"><p className="dh__muted">Loading your workspace…</p></div>;
+  if (loading && !data) return <div className="dh"><p className="dh__muted">Loading your workspace…</p></div>;
   if (!data) return <div className="dh"><p className="dh__muted">Couldn’t load the dashboard. Please refresh.</p></div>;
 
   return (
@@ -221,35 +234,11 @@ function Launchpad({ data, nav }: { data: DashData; nav: (to: string) => void })
   );
 }
 
-/* Friendly inline hero illustration (evokes the marketing art without raster assets). */
+/* Hero illustration (marketing raster art served from /public). */
 function HeroArt() {
   return (
     <div className="lp-hero__art" aria-hidden="true">
-      <svg viewBox="0 0 320 260" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <ellipse cx="168" cy="232" rx="120" ry="16" fill="#e8f4ee" />
-        {/* phone */}
-        <rect x="96" y="34" width="112" height="188" rx="20" fill="#0f5f47" />
-        <rect x="104" y="42" width="96" height="172" rx="14" fill="#f4fbf7" />
-        {/* chat bubbles */}
-        <rect x="116" y="62" width="58" height="20" rx="10" fill="#d8efe4" />
-        <rect x="132" y="90" width="56" height="20" rx="10" fill="#25a37a" />
-        <rect x="116" y="118" width="46" height="20" rx="10" fill="#d8efe4" />
-        {/* whatsapp mark */}
-        <circle cx="176" cy="182" r="22" fill="#25D366" />
-        <path d="M176 170a12 12 0 0 0-10.3 18.1L164 196l8.2-1.6A12 12 0 1 0 176 170Z" fill="#fff" />
-        <path d="M170.5 175.5c.4-.9 1.6-.9 2 0l1 2.3c.2.5 0 1-.4 1.3l-1 .7c.9 1.7 2 2.8 3.7 3.7l.7-1c.3-.4.8-.6 1.3-.4l2.3 1c.9.4.9 1.6 0 2-1.9 1.5-4.3.9-6.6-.7-1.6-1.2-3-2.6-4.2-4.2-1.6-2.3-2.2-4.7-.5-6.7Z" fill="#25D366" />
-        {/* growth arrow */}
-        <path d="M232 150l18-30 14 16 20-40" stroke="#c9a227" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M284 96l-2 18-16-8Z" fill="#c9a227" />
-        {/* sparkles */}
-        <path d="M60 70l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#2ba58f" opacity=".8" />
-        <circle cx="250" cy="60" r="5" fill="#e2c15a" />
-        <circle cx="52" cy="150" r="4" fill="#25a37a" opacity=".7" />
-        {/* badge blob */}
-        <path d="M244 176c26-6 52 6 54 26s-20 34-46 34-44-14-42-32 8-22 34-28Z" fill="#d7f0e4" />
-        <text x="271" y="205" textAnchor="middle" fontSize="11" fontWeight="700" fill="#0f5f47">All on</text>
-        <text x="271" y="219" textAnchor="middle" fontSize="11" fontWeight="700" fill="#0f5f47">WhatsApp</text>
-      </svg>
+      <img src="/dashboard-hero.webp" alt="" loading="eager" decoding="async" width={520} height={347} />
     </div>
   );
 }

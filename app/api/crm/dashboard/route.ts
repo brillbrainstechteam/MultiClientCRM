@@ -20,9 +20,15 @@ export async function GET() {
   const tenantId = user.tenantId;
   const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
 
+  // Everything the dashboard needs, in ONE parallel round-trip to Neon
+  // (Singapore latency makes sequential awaits the main cost). Billing
+  // getOrCreate calls run alongside the counts; plan name is mapped locally
+  // (no extra query).
+  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const [
     accounts, contacts, prospects, customers,
     conversations, openConversations, messagesToday, teamCount, onboarding,
+    subscription, wallet, usage, proactive24h,
   ] = await Promise.all([
     prisma.whatsAppAccount.findMany({ where: { tenantId }, orderBy: { connectedAt: 'desc' } }),
     prisma.crmContact.count({ where: { tenantId } }),
@@ -33,6 +39,13 @@ export async function GET() {
     prisma.message.count({ where: { conversation: { tenantId }, direction: 'inbound', at: { gte: startOfDay } } }),
     prisma.user.count({ where: { tenantId } }),
     prisma.onboardingSession.findUnique({ where: { tenantId } }),
+    getOrCreateSubscription(tenantId),
+    getOrCreateWallet(tenantId),
+    currentMonthUsage(tenantId),
+    prisma.messageBillingRecord.findMany({
+      where: { tenantId, category: { not: 'service' }, at: { gte: dayAgo } },
+      select: { recipient: true },
+    }),
   ]);
 
   // ---- WhatsApp number health (drives the account-overview cards) ----
@@ -66,17 +79,7 @@ export async function GET() {
   const state = connected ? 'connected' : inProgress ? 'in_progress' : 'not_connected';
 
   // ---- Billing snapshot (§1: Subscription, WhatsApp balance, usage, capacity) ----
-  const [subscription, wallet, usage, proactive24h] = await Promise.all([
-    getOrCreateSubscription(tenantId),
-    getOrCreateWallet(tenantId),
-    currentMonthUsage(tenantId),
-    // unique customers proactively contacted in the last 24h (drives "used")
-    prisma.messageBillingRecord.findMany({
-      where: { tenantId, category: { not: 'service' }, at: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
-      select: { recipient: true },
-    }),
-  ]);
-  const plan = await prisma.subscriptionPlan.findUnique({ where: { code: subscription.planCode } }).catch(() => null);
+  const PLAN_NAME: Record<string, string> = { trial: 'Trial', starter: 'Starter', growth: 'Growth', advanced: 'Advanced' };
 
   // Portfolio messaging capacity = the highest tier across connected numbers.
   let capacityLimit: number | null = 0;
@@ -95,7 +98,7 @@ export async function GET() {
 
   const billing = {
     subscription: {
-      plan: plan?.name ?? subscription.planCode,
+      plan: PLAN_NAME[subscription.planCode] ?? subscription.planCode,
       planCode: subscription.planCode,
       status: effectiveStatus(subscription),
       cycle: subscription.cycle,

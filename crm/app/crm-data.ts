@@ -30,6 +30,7 @@ export async function hydrateCrmData(): Promise<void> {
   const data = await res.json();
   setWorkspaceData({
     name: data.name,
+    plan: data.plan,
     branches: data.branches,
     whatsappNumbers: data.whatsappNumbers,
     teams: data.teams,
