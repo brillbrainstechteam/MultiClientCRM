@@ -464,7 +464,16 @@ model CrmCampaign {
   tenantId          String
   name              String
   type              String   @default("broadcast") // broadcast | drip (V2)
-  status            String   @default("draft")      // draft | scheduled | sending | completed | failed
+  // draft | scheduled | processing | sending | completed | partially_sent
+  // | paused_low_balance | paused_meta_limit | failed | cancelled  (§14)
+  status            String   @default("draft")
+  // Billing snapshot for the campaign (§7, §14). estimatedCost is labelled
+  // "estimated" in UI; actualCost accrues from real billable sends.
+  estimatedCost     Decimal? @db.Decimal(14, 4)
+  actualCost        Decimal  @default(0) @db.Decimal(14, 4)
+  costBreakdown     Json?                            // per-market estimate snapshot [{market,recipients,rate,subtotal}]
+  pausedReason      String?                          // low_balance | meta_limit
+  templateCategory  String?                          // latest Meta-recognised category (§31)
   templateId        String?                          // Meta template id
   templateName      String?
   templateLocale    String?
@@ -498,12 +507,18 @@ model CrmCampaignRecipient {
   tenantId     String
   contactId    String?
   mobile       String
-  status       String   @default("queued") // queued | sent | delivered | read | failed
+  // queued | submitted | sent | delivered | read | failed | skipped | pending (§11/§14)
+  status       String   @default("queued")
   waMessageId  String?
   error        String?
+  errorCode    String?                         // Meta error code (§11)
+  market       String?                          // recipient market used for pricing (§30)
+  cost         Decimal? @db.Decimal(12, 4)      // actual billed cost for this recipient
+  billed       Boolean  @default(false)
   at           DateTime @default(now())
 
   @@index([campaignId])
+  @@index([campaignId, status])
   @@index([tenantId, mobile])
 }
 
@@ -697,4 +712,189 @@ model CrmAuditLog {
 
   @@index([tenantId, at])
   @@index([tenantId, actorId])
+}
+
+// ===========================================================================
+// BILLING, SUBSCRIPTION, WALLET & WHATSAPP USAGE
+//
+// Four strictly-separate concerns (billing requirements doc, Rules 1-12):
+//   1. Subscription  - what the customer pays TalkTrack for the CRM platform.
+//   2. WhatsApp usage cost - Meta base rate + TalkTrack markup, per message.
+//   3. Wallet        - prepaid money that WhatsApp usage is DEBITED from.
+//   4. Meta messaging limit - throughput cap from Meta; NEVER raised by money.
+//
+// Money is stored as Decimal (never float). Rates use 4 dp because per-message
+// prices can be sub-rupee (e.g. utility ~ Rs 0.115). tenantId is a plain indexed
+// column (same convention as the Crm* models above), not a FK relation.
+// ===========================================================================
+
+// Admin-managed catalogue of plans. Never hard-delete (historical invoices);
+// deactivate instead. Seeded now; Admin UI to manage is deferred.
+model SubscriptionPlan {
+  id             String   @id @default(cuid())
+  code           String   @unique              // trial | starter | growth | advanced
+  name           String
+  monthlyPrice   Decimal  @default(0) @db.Decimal(12, 2)
+  quarterlyPrice Decimal  @default(0) @db.Decimal(12, 2)
+  annualPrice    Decimal  @default(0) @db.Decimal(12, 2)
+  currency       String   @default("INR")
+  features       Json?                          // [{key,label,included}]
+  limits         Json?                          // {users,numbers,contacts,campaigns,messages,storage,calling,ai}
+  active         Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// One per tenant. Independent of wallet (Rule 1) and of Meta limit (Rule 2).
+model Subscription {
+  id            String    @id @default(cuid())
+  tenantId      String    @unique
+  planId        String
+  planCode      String                          // snapshot of plan at assignment
+  cycle         String    @default("monthly")   // monthly | quarterly | annual
+  status        String    @default("trial")     // trial | active | payment_due | expired | cancelled
+  priceSnapshot Decimal   @default(0) @db.Decimal(12, 2)
+  currency      String    @default("INR")
+  startedAt     DateTime  @default(now())
+  renewalAt     DateTime?
+  cancelledAt   DateTime?
+  graceUntil    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status])
+}
+
+// Prepaid WhatsApp wallet. billingMode = 'direct' means the customer pays Meta
+// directly and TalkTrack shows "Paid directly to Meta" (no wallet debits).
+model Wallet {
+  id                  String   @id @default(cuid())
+  tenantId            String   @unique
+  billingMode         String   @default("wallet") // wallet | direct
+  balance             Decimal  @default(0) @db.Decimal(14, 4)
+  currency            String   @default("INR")
+  lowBalanceThreshold Decimal? @db.Decimal(14, 2)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+// Append-only ledger. Every balance change is an entry (Rule 12). idempotencyKey
+// guards double-credit (recharge webhook) and double-debit (message events).
+model WalletLedger {
+  id              String   @id @default(cuid())
+  tenantId        String
+  walletId        String
+  type            String                          // recharge | message_debit | adjustment | refund | correction
+  amount          Decimal  @db.Decimal(14, 4)     // signed: +credit / -debit
+  balanceAfter    Decimal  @db.Decimal(14, 4)
+  description     String
+  refType         String?                          // payment | message | campaign | admin
+  refId           String?
+  idempotencyKey  String?  @unique
+  createdByUserId String?
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([walletId])
+}
+
+// Effective-dated rate card (Rules 4 & 6). Never overwrite: a new rate closes
+// the previous (effectiveTo) and starts fresh. customerRate is stored so
+// historical billing keeps the exact price applied. Admin UI deferred.
+model MessageRate {
+  id            String    @id @default(cuid())
+  market        String                            // ISO country (IN, AE, US...) or 'DEFAULT'
+  category      String                            // marketing | utility | authentication | service | marketing_lite
+  metaRate      Decimal   @db.Decimal(12, 4)
+  markup        Decimal   @default(0) @db.Decimal(12, 4)
+  customerRate  Decimal   @db.Decimal(12, 4)      // metaRate + markup (billing source of truth)
+  currency      String    @default("INR")
+  effectiveFrom DateTime
+  effectiveTo   DateTime?                          // null = currently active
+  createdAt     DateTime  @default(now())
+
+  @@index([market, category, effectiveFrom])
+}
+
+// One record per billable Meta message. waMessageId unique = never charge the
+// same message twice (Rule 7). Stores the exact rate applied (Rule 6).
+model MessageBillingRecord {
+  id            String   @id @default(cuid())
+  tenantId      String
+  wabaId        String?
+  phoneNumberId String?
+  recipient     String
+  waMessageId   String   @unique
+  campaignId    String?
+  category      String                             // Meta-recognised category at bill time
+  market        String
+  metaRate      Decimal  @db.Decimal(12, 4)
+  markup        Decimal  @db.Decimal(12, 4)
+  finalRate     Decimal  @db.Decimal(12, 4)
+  billable      Boolean  @default(true)
+  billingStatus String   @default("pending")       // pending | charged | not_billed | refunded
+  walletDebit   Decimal  @default(0) @db.Decimal(14, 4)
+  ledgerId      String?
+  rateId        String?
+  at            DateTime @default(now())
+
+  @@index([tenantId, at])
+  @@index([tenantId, category])
+  @@index([campaignId])
+}
+
+// Gateway payments. gatewayRef unique = idempotent success handling.
+model Payment {
+  id             String   @id @default(cuid())
+  tenantId       String
+  type           String                            // subscription | wallet_recharge | adjustment
+  amount         Decimal  @db.Decimal(12, 2)
+  tax            Decimal  @default(0) @db.Decimal(12, 2)
+  currency       String   @default("INR")
+  gateway        String   @default("razorpay")
+  gatewayOrderId String?
+  gatewayRef     String?  @unique                   // razorpay payment id
+  status         String   @default("initiated")     // initiated | successful | failed | refunded
+  data           Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId, createdAt])
+}
+
+// Two invoice types kept distinguishable: subscription vs wallet.
+model Invoice {
+  id          String    @id @default(cuid())
+  tenantId    String
+  type        String                              // subscription | wallet
+  number      String    @unique
+  amount      Decimal   @db.Decimal(12, 2)
+  tax         Decimal   @default(0) @db.Decimal(12, 2)
+  currency    String    @default("INR")
+  status      String    @default("paid")          // paid | due | void
+  periodStart DateTime?
+  periodEnd   DateTime?
+  lineItems   Json?
+  paymentId   String?
+  createdAt   DateTime  @default(now())
+
+  @@index([tenantId, createdAt])
+}
+
+// In-app + push notification feed.
+model NotificationEvent {
+  id        String    @id @default(cuid())
+  tenantId  String
+  category  String                                // subscription | wallet | campaign | whatsapp
+  kind      String                                // renewal_due | payment_failed | low_balance | recharge_success | campaign_paused_balance | quality_warning | ...
+  severity  String    @default("info")            // info | warning | critical
+  title     String
+  body      String?
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, readAt])
 }
