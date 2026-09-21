@@ -95,7 +95,6 @@ export function ImportWizard() {
   return (
     <WizardShell
       title="Import contacts"
-      subtitle="Bring contacts into TalkTrack. Nothing is written until you start the import."
       steps={steps}
       currentId={currentStep}
       onCancel={cancel}
