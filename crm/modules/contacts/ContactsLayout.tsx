@@ -1,5 +1,4 @@
 import { Outlet } from 'react-router-dom';
-import './contacts-theme.css';
 import { ContactsSecondaryNav } from './components';
 import { ContactDrawer } from './ContactDrawer';
 import { GoogleContactsModal } from './imports/GoogleContactsModal';

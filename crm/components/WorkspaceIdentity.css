@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: var(--crm-space-3);
   padding: var(--crm-space-4);
-  border-bottom: 1px solid var(--crm-navy-line);
+  border-bottom: 1px solid var(--crm-rule);
 }
 
 .crm-brand__lockup {
@@ -32,7 +32,7 @@
   font-family: var(--crm-font-brand);
   font-weight: var(--crm-weight-bold);
   font-size: var(--crm-font-size-xl);
-  color: var(--crm-on-dark);
+  color: var(--crm-ink);
   letter-spacing: 0.01em;
 }
 
@@ -46,7 +46,7 @@
 .crm-brand__workspace-name {
   font-size: var(--crm-font-size-sm);
   font-weight: var(--crm-weight-medium);
-  color: var(--crm-on-dark);
+  color: var(--crm-ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -56,8 +56,8 @@
   flex: none;
   padding: 1px 8px;
   border-radius: var(--crm-radius-pill);
-  background: var(--crm-navy-line);
-  color: var(--crm-on-dark-muted);
+  background: var(--crm-green-tint);
+  color: var(--crm-green-dark);
   font-size: var(--crm-font-size-xs);
   font-weight: var(--crm-weight-semibold);
   text-transform: uppercase;

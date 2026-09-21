@@ -11,49 +11,51 @@
  */
 
 :root {
-  /* ---- Raw palette ----------------------------------------------------- */
-  --crm-navy: #0e2438;
-  --crm-navy-2: #12304c;
-  --crm-navy-line: #1e3a57;
+  /* ---- Raw palette — TalkTrack UI System v1.0 (see docs/DESIGN_SYSTEM.md) --
+   * 80% calm cool-neutral, 15% soft tint, 5% strong accent. Emerald is the one
+   * interaction colour; slate for text/structure; amber accent; blue for info. */
+  --crm-navy: #0f172a;   /* now slate-900 — page titles / table-header text */
+  --crm-navy-2: #1e293b;
+  --crm-navy-line: #1e293b;
 
-  --crm-green: #1b7a6b;
-  --crm-green-dark: #14655a;
-  --crm-green-tint: #e7f3f0;
-  --crm-green-border: #a9d5cb;
+  --crm-green: #10b981;         /* Primary */
+  --crm-green-dark: #059669;
+  --crm-green-tint: #ecfdf5;    /* Primary Light / mint */
+  --crm-green-border: #a7f3d0;
 
-  --crm-gold: #c9a227;
-  --crm-gold-dark: #9c7d19;
-  --crm-gold-tint: #fbf4de;
-  --crm-gold-border: #e7d59a;
+  --crm-gold: #f59e0b;          /* Accent — amber */
+  --crm-gold-dark: #d97706;
+  --crm-gold-tint: #fef3c7;
+  --crm-gold-border: #fcd9a5;
 
-  --crm-canvas: #fcfbf9;
-  --crm-cream: #fbf8f2;
-  --crm-card: #ffffff;
-  --crm-table-header-band: #f6f3ec;
-  --crm-rule: #e7e2d6;
-  --crm-rule-soft: #efebe1;
+  --crm-canvas: #f8fafc;        /* Neutral 50 — cool page ground */
+  --crm-cream: #f1f5f9;         /* soft cool grey supporting surface */
+  --crm-card: #ffffff;          /* white work surfaces */
+  --crm-table-header-band: #f8fafc;
+  --crm-rule: #e2e8f0;          /* Neutral 200 */
+  --crm-rule-soft: #eef2f6;
 
-  --crm-ink: #12263a;
-  --crm-ink-2: #4a5d6e;
-  --crm-muted: #8c8578;
+  --crm-ink: #0f172a;           /* Neutral 900 */
+  --crm-ink-2: #475569;
+  --crm-muted: #64748b;         /* Neutral 500 — cool, readable */
   --crm-on-dark: #ffffff;
-  --crm-on-dark-muted: #93a9be;
+  --crm-on-dark-muted: #cbd5e1;
 
-  --crm-danger: #b0453f;
-  --crm-danger-tint: #fceeed;
-  --crm-danger-border: #ebb7b4;
-  --crm-warn: #b8892b;
-  --crm-warn-tint: #fcf4e4;
-  --crm-warn-border: #ebd199;
+  --crm-danger: #ef4444;
+  --crm-danger-tint: #fef2f2;
+  --crm-danger-border: #fecaca;
+  --crm-warn: #d97706;
+  --crm-warn-tint: #fef3c7;
+  --crm-warn-border: #fcd9a5;
 
   /* ---- Brand scale (mapped to GREEN — the product accent) -------------- */
   --crm-brand-50: var(--crm-green-tint);
-  --crm-brand-100: #d3e9e3;
+  --crm-brand-100: #d1fae5;
   --crm-brand-200: var(--crm-green-border);
-  --crm-brand-400: #2f9e8b;
+  --crm-brand-400: #34d399;
   --crm-brand-600: var(--crm-green);
   --crm-brand-700: var(--crm-green-dark);
-  --crm-brand-900: #0e4c43;
+  --crm-brand-900: #065f46;
 
   /* ---- Status families ------------------------------------------------- */
   --crm-success-50: var(--crm-green-tint);
@@ -68,10 +70,10 @@
   --crm-danger-200: var(--crm-danger-border);
   --crm-danger-600: var(--crm-danger);
 
-  /* Info has no dedicated hue in the palette — use navy so it stays on-brand. */
-  --crm-info-50: #e9eef3;
-  --crm-info-200: #b9c8d6;
-  --crm-info-600: var(--crm-navy-2);
+  /* Info — blue #3B82F6 (Pending / information). */
+  --crm-info-50: #eff6ff;
+  --crm-info-200: #bfdbfe;
+  --crm-info-600: #2563eb;
 
   --crm-gold-50: var(--crm-gold-tint);
   --crm-gold-200: var(--crm-gold-border);
