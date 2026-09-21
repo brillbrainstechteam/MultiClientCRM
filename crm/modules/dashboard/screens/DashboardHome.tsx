@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight, ArrowUpRight, BarChart3, Check, CircleDashed, Contact, FileText, Gauge, Layers,
   LifeBuoy, Megaphone, MessageCircle, MessageSquare, PhoneCall, Play, Plus, Send,
-  ShieldCheck, ShoppingBag, Signal, Tag, TrendingUp, Upload, UserPlus, Users, X,
+  ShieldCheck, ShoppingBag, Signal, Tag, TrendingUp, Upload, UserPlus, Users, Wallet, X,
 } from 'lucide-react';
 import '../DashboardHome.css';
 
@@ -14,14 +14,26 @@ interface NumberHealth {
   tier: string | null; tierLabel: string | null; tierIndex: number;
   tierRungs: { key: string; label: string }[];
 }
+interface Billing {
+  subscription: { plan: string; planCode: string; status: string; cycle: string; renewalAt: string | null; price: number };
+  wallet: { mode: string; balance: number; lowThreshold: number | null };
+  usage: { byCategory: { category: string; delivered: number; spend: number }[]; totalSpend: number };
+  capacity: { limit: number | null; used: number; available: number | null; quality: string };
+}
 interface DashData {
   businessName: string; businessModel: string; state: State;
   numbers: number; attention: number; numbersList: NumberHealth[];
   contacts: number; prospects: number; customers: number;
   conversations: number; openConversations: number; messagesToday: number; teamCount: number;
+  billing: Billing;
   onboarding: { status: string; strategy: string | null; lastStep: string | null; errorMessage: string | null } | null;
   setup: { numberConnected: boolean; hasContacts: boolean; hasTeam: boolean };
 }
+
+const INR = (n: number) => '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+const SUB_TONE: Record<string, string> = { active: 'ok', trial: 'ok', payment_due: 'warn', expired: 'bad', cancelled: 'bad' };
+const SUB_LABEL: Record<string, string> = { active: 'Active', trial: 'Trial', payment_due: 'Payment due', expired: 'Expired', cancelled: 'Cancelled' };
+const CAP_QUALITY: Record<string, string> = { high: 'High', medium: 'Medium', low: 'Low', unrated: 'Unknown' };
 
 const goOnboard = () => { window.location.href = '/onboarding'; };
 const SUPPORT_EMAIL = 'support@brillbrainsconsultants.com';
@@ -257,6 +269,68 @@ function greeting(): string {
   return 'Good evening';
 }
 
+/* WhatsApp & Billing dashboard section (§1). Keeps the four concerns separate:
+   subscription, wallet balance, this-month usage, and Meta messaging capacity. */
+function BillingStrip({ b, nav }: { b: Billing; nav: (to: string) => void }) {
+  const usageBy = new Map(b.usage.byCategory.map((c) => [c.category, c]));
+  const cats: [string, string][] = [['marketing', 'Marketing'], ['utility', 'Utility'], ['authentication', 'Auth'], ['service', 'Service']];
+  const renewal = b.subscription.renewalAt ? new Date(b.subscription.renewalAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+  const cap = b.capacity;
+
+  return (
+    <section>
+      <div className="dh-sec-head">
+        <h2 className="dh-h2">WhatsApp &amp; billing</h2>
+        <button className="dh-link" onClick={() => nav('/billing')}>Billing &amp; usage <ArrowUpRight size={14} /></button>
+      </div>
+      <div className="dh-bill">
+        {/* Subscription */}
+        <article className="dh-bill__card">
+          <span className="dh-bill__label">Subscription</span>
+          <strong className="dh-bill__big">{b.subscription.plan}</strong>
+          <span className={`dh-bill__pill dh-bill__pill--${SUB_TONE[b.subscription.status] ?? 'ok'}`}>{SUB_LABEL[b.subscription.status] ?? b.subscription.status}</span>
+          <span className="dh-bill__sub">Renews {renewal}</span>
+        </article>
+
+        {/* WhatsApp balance OR direct-to-Meta */}
+        <article className="dh-bill__card">
+          <span className="dh-bill__label">WhatsApp balance</span>
+          {b.wallet.mode === 'wallet' ? (
+            <>
+              <strong className="dh-bill__big">{INR(b.wallet.balance)}</strong>
+              <button className="dh-bill__btn" onClick={() => nav('/billing')}><Wallet size={14} /> Recharge</button>
+            </>
+          ) : (
+            <>
+              <strong className="dh-bill__big dh-bill__big--sm">Paid directly to Meta</strong>
+              <span className="dh-bill__sub">Meta bills this WhatsApp account directly.</span>
+            </>
+          )}
+        </article>
+
+        {/* Current-month usage */}
+        <article className="dh-bill__card">
+          <span className="dh-bill__label">This month’s usage</span>
+          <ul className="dh-bill__usage">
+            {cats.map(([key, label]) => (
+              <li key={key}><span>{label}</span><b>{usageBy.get(key)?.delivered ?? 0}</b></li>
+            ))}
+          </ul>
+          <span className="dh-bill__sub">Est. spend <b>{INR(b.usage.totalSpend)}</b></span>
+        </article>
+
+        {/* Meta messaging capacity — separate from money (Rule 2) */}
+        <article className="dh-bill__card">
+          <span className="dh-bill__label">Meta messaging capacity</span>
+          <strong className="dh-bill__big">{cap.limit === null ? 'Unlimited' : cap.limit.toLocaleString('en-IN')}</strong>
+          <span className="dh-bill__sub">{cap.limit === null ? 'per rolling 24 hours' : `${cap.used.toLocaleString('en-IN')} used · ~${(cap.available ?? 0).toLocaleString('en-IN')} available / 24h`}</span>
+          <span className={`dh-bill__pill dh-bill__pill--${cap.quality === 'high' ? 'ok' : cap.quality === 'medium' ? 'warn' : cap.quality === 'low' ? 'bad' : 'idle'}`}>Quality: {CAP_QUALITY[cap.quality] ?? 'Unknown'}</span>
+        </article>
+      </div>
+    </section>
+  );
+}
+
 function Connected({ data, nav }: { data: DashData; nav: (to: string) => void }) {
   const kpis = [
     { icon: MessageSquare, label: 'Open conversations', val: data.openConversations, sub: `${data.messagesToday} message${data.messagesToday !== 1 ? 's' : ''} in today`, to: '/inbox' },
@@ -336,6 +410,9 @@ function Connected({ data, nav }: { data: DashData; nav: (to: string) => void })
           })}
         </div>
       </section>
+
+      {/* WhatsApp & Billing (§1): subscription, wallet, usage, Meta capacity */}
+      <BillingStrip b={data.billing} nav={nav} />
 
       {/* Snapshot KPIs */}
       <section>

@@ -252,3 +252,24 @@
   .lp-progress { min-width: 100%; }
   .lp-progress__label { text-align: left; }
 }
+
+/* ---- connected: WhatsApp & billing section ---- */
+.dh-bill { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.dh-bill__card { display: flex; flex-direction: column; gap: 7px; align-items: flex-start; padding: 16px 18px; background: #fff; border: 1px solid var(--line); border-radius: 16px; }
+.dh-bill__label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); }
+.dh-bill__big { font-size: 22px; font-weight: 800; color: var(--ink); line-height: 1.1; }
+.dh-bill__big--sm { font-size: 15px; }
+.dh-bill__sub { font-size: 12px; color: var(--ink-2); }
+.dh-bill__sub b { color: var(--ink); font-weight: 700; }
+.dh-bill__pill { display: inline-flex; align-items: center; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+.dh-bill__pill--ok { color: #157061; background: rgba(27,122,107,.1); }
+.dh-bill__pill--warn { color: #9a5b12; background: rgba(201,162,39,.16); }
+.dh-bill__pill--bad { color: #c0392b; background: rgba(192,57,43,.1); }
+.dh-bill__pill--idle { color: var(--ink-2); background: rgba(74,96,118,.1); }
+.dh-bill__btn { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px; font-weight: 700; padding: 7px 13px; border-radius: 9px; border: 1px solid transparent; background: linear-gradient(180deg, var(--gold-lt), var(--gold)); color: #2a2205; cursor: pointer; transition: transform .15s; }
+.dh-bill__btn:hover { transform: translateY(-1px); }
+.dh-bill__usage { list-style: none; padding: 0; margin: 2px 0 0; width: 100%; display: flex; flex-direction: column; gap: 3px; }
+.dh-bill__usage li { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink-2); }
+.dh-bill__usage li b { color: var(--ink); font-weight: 700; }
+@media (max-width: 900px) { .dh-bill { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .dh-bill { grid-template-columns: 1fr; } }
