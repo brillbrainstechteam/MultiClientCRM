@@ -35,6 +35,7 @@ import {
 import { consentLabel, salesTierLabel, leadStatusLabel, lifecycleLabel } from '../contact-labels';
 import { can, canViewField, dealValueFor } from '../permissions';
 import { KundliPanel } from '../components/KundliPanel';
+import { EnquiriesPanel } from '../components/EnquiriesPanel';
 
 const SEGMENT_LABEL: Record<string, string> = {
   chain_stores: 'Chain of stores', corporate: 'Corporate', boutique: 'Boutique store',
@@ -47,6 +48,7 @@ const tabs: TabItem[] = [
   { id: 'profile', label: 'Profile' },
   { id: 'sales', label: 'Sales' },
   { id: 'jewellery', label: 'Jewellery' },
+  { id: 'enquiries', label: 'Enquiries' },
   { id: 'classification', label: 'Classification' },
   { id: 'consent', label: 'Consent & Privacy' },
   { id: 'source', label: 'Source' },
@@ -277,6 +279,10 @@ export default function Customer360Screen() {
               ]}
             />
           </>
+        ) : null}
+
+        {activeTab === 'enquiries' ? (
+          <EnquiriesPanel contactId={contact.id} />
         ) : null}
 
         {activeTab === 'classification' ? (

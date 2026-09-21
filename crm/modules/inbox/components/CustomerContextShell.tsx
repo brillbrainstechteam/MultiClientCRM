@@ -2,6 +2,12 @@ import { useState } from 'react';
 import { ChevronDown, UserPlus, ExternalLink, ShoppingBag } from 'lucide-react';
 import { Avatar, Button } from '@crm/design-system';
 import { contacts, findUser } from '@crm/mock-data';
+import { EnquiriesPanel } from '@crm/modules/contacts/components/EnquiriesPanel';
+
+const SEGMENT_LABEL: Record<string, string> = {
+  chain_stores: 'Chain of stores', corporate: 'Corporate', boutique: 'Boutique store',
+  exports: 'Exports', standalone: 'Standalone store', small_store: 'Small store',
+};
 
 function nameInitials(name: string): string {
   return name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase() || '?';
@@ -154,8 +160,16 @@ export function CustomerContextShell({
               <ContextField label="Email" value={contact.email} isLink />
               <ContextField label="City" value={contact.city} />
               <ContextField label="Company" value={contact.company} />
+              {contact.businessSegment ? <ContextField label="Segment" value={SEGMENT_LABEL[contact.businessSegment] ?? contact.businessSegment} /> : null}
+              {contact.grade ? <ContextField label="Grade" value={contact.grade} /> : null}
+              {contact.preferredLanguage ? <ContextField label="Language" value={contact.preferredLanguage} /> : null}
+              {contact.nextFollowUpAt ? <ContextField label="Next follow-up" value={new Date(contact.nextFollowUpAt).toLocaleDateString('en-IN')} /> : null}
               <ContextField label="Source" value={contact.source} />
               <ContextField label="Consent" value={contact.consent} />
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Enquiries" defaultOpen>
+              <EnquiriesPanel contactId={contact.id} conversationId={c.id} compact />
             </CollapsibleSection>
 
             <CollapsibleSection title="Ownership" defaultOpen={false}>
