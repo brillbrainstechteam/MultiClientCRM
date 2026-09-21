@@ -9,7 +9,7 @@ import { createSession } from '@/lib/auth/session';
 const schema = z.object({
   businessName: z.string().min(1),
   businessType: z.string().min(1),
-  businessModel: z.enum(['b2b', 'b2c', 'both']).default('both'),
+  businessModel: z.enum(['b2b', 'b2c', 'both']).default('b2b'),
   businessPhone: z.string().min(6),
   email: z.string().email(),
   gst: z.string().optional(),
@@ -47,6 +47,7 @@ export async function signupAction(_prev: SignupState, formData: FormData): Prom
   });
 
   await createSession(user.id);
-  // New account → guided onboarding to connect the WhatsApp number.
-  redirect('/onboarding');
+  // New account → dashboard, which shows the connect launchpad until a number
+  // is linked.
+  redirect('/crm/dashboard');
 }

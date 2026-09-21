@@ -22,16 +22,17 @@ model Tenant {
   cin         String?
   entityType  String   @default("proprietorship") // proprietorship | company | ...
   // Selling model — drives contact fields and business-unit structure.
-  businessModel String @default("both")           // b2b | b2c | both
+  businessModel String @default("b2b")            // b2b | b2c | both
   plan        String   @default("trial")           // trial | starter | growth | advanced
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users            User[]
-  whatsappAccounts WhatsAppAccount[]
-  conversations    Conversation[]
-  contacts         Contact[]
-  segments         Segment[]
+  users             User[]
+  whatsappAccounts  WhatsAppAccount[]
+  conversations     Conversation[]
+  contacts          Contact[]
+  segments          Segment[]
+  onboardingSession OnboardingSession?
 }
 
 model User {
@@ -79,9 +80,46 @@ model WhatsAppAccount {
   // Integration on Facebook) — shown on the onboarding screen.
   statusReason      String?
   connectedAt       DateTime?
+
+  // --- Number registry / mapping (per-number) ---
+  label             String?  // human label e.g. "Aurelia Jewellers — Sales"
+  brand             String?  // brand/business the number represents
+  department        String?  // Sales | Support | ...
+  branchId          String?  // business unit / branch mapping (default until Branches module)
+
+  // --- Health synced from Meta (GET /{phone-number-id}) ---
+  qualityRating         String?  // GREEN | YELLOW | RED | UNKNOWN
+  messagingTier         String?  // TIER_250 | TIER_1K | TIER_10K | TIER_100K | UNLIMITED
+  codeVerificationStatus String? // VERIFIED | NOT_VERIFIED | EXPIRED
+  qualitySyncedAt       DateTime?
+
+  // Two-step verification PIN we set when registering a NEW number (encrypted).
+  // Null for coexistence numbers and for existing numbers whose PIN the client owns.
+  twoStepPin        String?
+
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  @@index([tenantId])
+}
+
+// Tracks a client's Embedded Signup progress so they can resume where they left
+// off and we can show a steps/progress bar. One active session per tenant.
+model OnboardingSession {
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // started | strategy_selected | meta_launched | meta_returned | registering | ready | cancelled | error
+  status        String   @default("started")
+  strategy      String?  // coexistence | migrate | new | existing
+  lastStep      String?  // ES current_step (from CANCEL) or our own step id
+  wabaId        String?
+  phoneNumberId String?
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId])
   @@index([tenantId])
 }
 

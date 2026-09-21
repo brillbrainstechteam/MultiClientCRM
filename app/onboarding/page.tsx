@@ -6,11 +6,24 @@ import { isMetaConfigured, metaConfig } from '@/lib/meta/config';
 import { AuthShell } from '@/lib/ui/AuthShell';
 import { EmbeddedSignup } from './EmbeddedSignup';
 import { ManualConnect } from './ManualConnect';
+import { PinPrompt } from './PinPrompt';
+import { OnboardingProgress } from './OnboardingProgress';
 import './onboarding.css';
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ connect?: string }> }) {
   const user = await getSessionUser();
   if (!user) redirect('/login');
+  const { connect } = await searchParams;
+
+  const onboarding = await prisma.onboardingSession.findUnique({ where: { tenantId: user.tenantId } });
+
+  // A number that connected but still needs the client's 2-step PIN to register.
+  const pendingPin = connect === 'pin'
+    ? await prisma.whatsAppAccount.findFirst({
+        where: { tenantId: user.tenantId, statusReason: 'registration_pending_pin' },
+        orderBy: { connectedAt: 'desc' },
+      })
+    : null;
 
   const connected = await prisma.whatsAppAccount.findFirst({
     where: { tenantId: user.tenantId, status: 'connected' },
@@ -37,6 +50,10 @@ export default async function OnboardingPage() {
         <h1 className="crm-authform__title">{connected ? 'Connect another number' : 'Connect WhatsApp'}</h1>
         <p className="crm-authform__sub">Choose how you want to link your number.</p>
       </div>
+
+      {pendingPin?.phoneNumberId ? (
+        <PinPrompt phoneNumberId={pendingPin.phoneNumberId} displayPhone={pendingPin.displayPhone} />
+      ) : null}
 
       {!isMetaConfigured() ? (
         <div className="tt-onb">
@@ -78,11 +95,23 @@ export default async function OnboardingPage() {
             connected), so additional numbers can be added and the Facebook Login
             for Business flow stays reachable for demos and Meta App Review.
           */}
+          {!connected && onboarding ? (
+            <OnboardingProgress
+              session={{
+                status: onboarding.status,
+                strategy: onboarding.strategy,
+                lastStep: onboarding.lastStep,
+                errorMessage: onboarding.errorMessage,
+              }}
+            />
+          ) : null}
+
           <EmbeddedSignup
             appId={metaConfig.appId}
             configId={metaConfig.configId}
             graphVersion={metaConfig.graphVersion}
             coexistenceFeature={metaConfig.coexistenceFeature}
+            initialStrategy={onboarding?.strategy ?? undefined}
           />
           <ManualConnect />
         </>

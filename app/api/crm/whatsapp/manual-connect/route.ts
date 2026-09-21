@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
-import { encrypt } from '@/lib/crypto';
-import { getPhoneNumbers, inspectToken, subscribeAppToWaba } from '@/lib/meta/graph';
+import { getPhoneNumbers, inspectToken } from '@/lib/meta/graph';
+import { finalizeConnection } from '@/lib/meta/finalize';
 
 /**
  * Connect a WhatsApp Business Account with a token the client supplies
@@ -84,38 +84,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Phone number ${body.phoneNumberId} is not on WABA ${wabaId}.` }, { status: 400 });
   }
 
-  // Best-effort: without this Meta never delivers webhooks to us, but a failure
-  // here is recoverable from the diagnostics page.
-  let subscribeWarning: string | null = null;
-  await subscribeAppToWaba(wabaId, token).catch((e: Error) => {
-    subscribeWarning = e.message;
-  });
-
-  const data = {
+  // Same completion path as Embedded Signup: subscribe our app to the WABA, sync
+  // live health (quality/tier/verification), store, and mark onboarding Ready.
+  // skipRegister — a manually supplied token means the number is already
+  // registered for Cloud API, so we must not re-run /register.
+  await finalizeConnection({
+    tenantId: user.tenantId,
+    businessName: user.tenant.businessName,
+    token,
     wabaId,
     phoneNumberId: chosen.id,
-    displayPhone: chosen.display_phone_number,
-    verifiedName: chosen.verified_name,
-    accessToken: encrypt(token),
-    status: 'connected',
-    statusReason: null,
-    connectedAt: new Date(),
-  };
+    coexistence: false,
+    skipRegister: true,
+    strategy: 'existing',
+  });
 
-  // Re-key the newest row for this number (deterministically), then retire any
-  // older rows so a stale token can never win a lookup again. Rows are retired,
-  // not deleted — their ids may still be referenced as a contact's number.
-  const existing = await prisma.whatsAppAccount.findFirst({
-    where: { tenantId: user.tenantId, phoneNumberId: chosen.id },
+  // Retire any older rows for this number so a stale token can never win a
+  // lookup again (rows are retired, not deleted — ids may be referenced).
+  const saved = await prisma.whatsAppAccount.findFirst({
+    where: { tenantId: user.tenantId, phoneNumberId: chosen.id, status: 'connected' },
     orderBy: { connectedAt: 'desc' },
   });
-  const saved = existing
-    ? await prisma.whatsAppAccount.update({ where: { id: existing.id }, data })
-    : await prisma.whatsAppAccount.create({ data: { tenantId: user.tenantId, ...data } });
-  await prisma.whatsAppAccount.updateMany({
-    where: { tenantId: user.tenantId, phoneNumberId: chosen.id, id: { not: saved.id } },
-    data: { status: 'disconnected', accessToken: null, statusReason: 'Superseded by a newer connection.' },
-  });
+  if (saved) {
+    await prisma.whatsAppAccount.updateMany({
+      where: { tenantId: user.tenantId, phoneNumberId: chosen.id, id: { not: saved.id } },
+      data: { status: 'disconnected', accessToken: null, statusReason: 'Superseded by a newer connection.' },
+    });
+  }
 
   return NextResponse.json({
     ok: true,
@@ -123,7 +118,7 @@ export async function POST(req: Request) {
     phoneNumberId: chosen.id,
     displayPhone: chosen.display_phone_number,
     verifiedName: chosen.verified_name,
-    subscribeWarning,
+    subscribeWarning: null,
     tokenType: info.type,
     tokenExpiresAt: info.expiresAt,
     tokenWarning,

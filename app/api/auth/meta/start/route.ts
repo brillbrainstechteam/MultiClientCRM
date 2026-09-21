@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getSessionUser } from '@/lib/auth/session';
+import { prisma } from '@/lib/db';
 import { metaConfig } from '@/lib/meta/config';
 
 /** The redirect_uri we own — must be identical here and in the exchange. */
@@ -26,14 +27,21 @@ export async function GET(req: Request) {
   const path = url.searchParams.get('path') ?? 'existing';
   const state = randomBytes(16).toString('base64url');
 
+  // Record progress so the client can resume if they abandon the Meta dialog.
+  await prisma.onboardingSession
+    .upsert({
+      where: { tenantId: user.tenantId },
+      create: { tenantId: user.tenantId, status: 'meta_launched', strategy: path },
+      update: { status: 'meta_launched', strategy: path, errorMessage: null },
+    })
+    .catch(() => undefined);
+
   const store = await cookies();
-  store.set('meta_oauth_state', state, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: 600,
-  });
+  const cookieOpts = { httpOnly: true, sameSite: 'lax' as const, secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 600 };
+  store.set('meta_oauth_state', state, cookieOpts);
+  // Preserve the chosen strategy across the redirect so the callback can skip
+  // number registration for coexistence.
+  store.set('meta_oauth_path', path, cookieOpts);
 
   const extras: Record<string, unknown> = { setup: {}, sessionInfoVersion: '3' };
   if (path === 'coexistence' && metaConfig.coexistenceFeature) {

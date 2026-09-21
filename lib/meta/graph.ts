@@ -31,9 +31,12 @@ export async function exchangeCodeForToken(code: string): Promise<TokenResponse>
   // Redirect URI (APP_URL with a trailing slash), so that is the default.
   // META_EXCHANGE_REDIRECT_URI overrides it; set it to an empty string to send
   // no redirect_uri at all (the classic Business-Login behaviour).
+  // Default: NO redirect_uri (Meta's canonical Facebook-Login-for-Business /
+  // Embedded Signup exchange). The JS-SDK businesslogin code is not bound to a
+  // redirect_uri, and sending one is the usual cause of OAuthException 36008.
+  // META_EXCHANGE_REDIRECT_URI can force a value only if a future flow needs it.
   const override = process.env.META_EXCHANGE_REDIRECT_URI;
-  const redirectUri =
-    override !== undefined ? override : `${(metaConfig.appUrl || '').replace(/\/+$/, '')}/`;
+  const redirectUri = override !== undefined ? override : '';
 
   const url = new URL(`${graphBase()}/oauth/access_token`);
   url.searchParams.set('client_id', metaConfig.appId);
@@ -75,6 +78,58 @@ export async function getPhoneNumbers(wabaId: string, token: string): Promise<Ph
   if (!res.ok) throw new Error(`List phone numbers failed (${res.status}): ${await res.text()}`);
   const json = (await res.json()) as { data?: PhoneNumber[] };
   return json.data ?? [];
+}
+
+export interface RegisterResult {
+  ok: boolean;
+  /** True when Meta requires the number's existing two-step PIN (client-owned). */
+  pinRequired: boolean;
+  error?: string;
+}
+
+/**
+ * Register a number for Cloud API use with a two-step-verification PIN.
+ * New numbers: we pass a PIN we generated. Existing numbers with 2FA already on:
+ * Meta rejects a wrong PIN — we surface pinRequired so the UI can ask the client.
+ * Coexistence numbers do not need this (they come registered).
+ */
+export async function registerPhoneNumber(phoneNumberId: string, token: string, pin: string): Promise<RegisterResult> {
+  const res = await fetch(`${graphBase()}/${phoneNumberId}/register`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messaging_product: 'whatsapp', pin }),
+  });
+  if (res.ok) return { ok: true, pinRequired: false };
+  const body = (await res.json().catch(() => ({}))) as { error?: { message?: string; error_subcode?: number } };
+  const sub = body.error?.error_subcode;
+  // 2388080/2388081 (and similar) => two-step PIN is set and ours didn't match.
+  const pinRequired = sub === 2388080 || sub === 2388081 || /pin|two-?step/i.test(body.error?.message ?? '');
+  return { ok: false, pinRequired, error: body.error?.message ?? `register failed (${res.status})` };
+}
+
+export interface PhoneHealth {
+  verifiedName: string | null;
+  displayPhone: string | null;
+  qualityRating: string | null;      // GREEN | YELLOW | RED | UNKNOWN
+  messagingTier: string | null;      // e.g. TIER_1K
+  codeVerificationStatus: string | null;
+}
+
+/** Read a number's live health from Meta for the Number Registry. */
+export async function getPhoneNumberHealth(phoneNumberId: string, token: string): Promise<PhoneHealth | null> {
+  const res = await fetch(
+    `${graphBase()}/${phoneNumberId}?fields=verified_name,display_phone_number,quality_rating,messaging_limit_tier,code_verification_status`,
+    { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' },
+  );
+  if (!res.ok) return null;
+  const j = (await res.json().catch(() => ({}))) as Record<string, string>;
+  return {
+    verifiedName: j.verified_name ?? null,
+    displayPhone: j.display_phone_number ?? null,
+    qualityRating: (j.quality_rating ?? null),
+    messagingTier: (j.messaging_limit_tier ?? null),
+    codeVerificationStatus: (j.code_verification_status ?? null),
+  };
 }
 
 // ---- Server-side (redirect) Embedded Signup -------------------------------

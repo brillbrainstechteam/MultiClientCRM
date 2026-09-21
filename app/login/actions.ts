@@ -24,10 +24,7 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
 
   await createSession(user.id);
 
-  // Send users who haven't connected a WhatsApp number to the connect screen
-  // (which surfaces the three Embedded Signup options); otherwise the dashboard.
-  const connected = await prisma.whatsAppAccount.findFirst({
-    where: { tenantId: user.tenantId, status: 'connected' },
-  });
-  redirect(connected ? '/crm/dashboard' : '/onboarding');
+  // Always land on the dashboard — it is connection-aware and shows a
+  // "Get Started / Connect your number" launchpad when nothing is connected yet.
+  redirect('/crm/dashboard');
 }

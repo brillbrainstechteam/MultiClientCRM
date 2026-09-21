@@ -166,3 +166,22 @@
   padding: 1px 5px;
   border-radius: 4px;
 }
+
+/* ---- Onboarding progress (Phase 2: resume + steps) ---- */
+.tt-onb__progress { margin-bottom: 18px; }
+.tt-onb__steps { list-style: none; display: flex; gap: 6px; padding: 0; margin: 0 0 4px; }
+.tt-onb__step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; position: relative; }
+.tt-onb__step::before { content: ''; position: absolute; top: 11px; left: -50%; width: 100%; height: 2px; background: var(--crm-border-subtle, #e6e2d8); z-index: 0; }
+.tt-onb__step:first-child::before { display: none; }
+.tt-onb__step-dot { position: relative; z-index: 1; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; background: var(--crm-surface-band, #f1efe8); color: var(--crm-text-muted, #6b7a88); border: 2px solid var(--crm-border-subtle, #e6e2d8); }
+.tt-onb__step-label { font-size: 11px; line-height: 1.25; color: var(--crm-text-muted, #6b7a88); max-width: 90px; }
+.tt-onb__step--done .tt-onb__step-dot { background: var(--crm-green, #1b7a6b); border-color: var(--crm-green, #1b7a6b); color: #fff; }
+.tt-onb__step--done::before { background: var(--crm-green, #1b7a6b); }
+.tt-onb__step--current .tt-onb__step-dot { border-color: var(--crm-green, #1b7a6b); color: var(--crm-green, #1b7a6b); box-shadow: 0 0 0 3px rgba(27,122,107,.15); }
+.tt-onb__step--current .tt-onb__step-label { color: var(--crm-text-primary, #0e2438); font-weight: 600; }
+
+.tt-onb__resume { margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; border: 1px solid var(--crm-gold-border, #e4d3a0); background: var(--crm-gold-tint, #fbf5e6); border-radius: 12px; }
+.tt-onb__resume strong { display: block; color: var(--crm-text-title, #0e2438); font-size: 14px; }
+.tt-onb__resume p { margin: 4px 0 0; font-size: 13px; color: var(--crm-text-secondary, #4a6076); line-height: 1.45; }
+.tt-onb__resume-btn { flex: none; display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px; border-radius: 9px; background: linear-gradient(180deg, #217f6f, #1b7a6b); color: #fff; font-weight: 700; font-size: 13.5px; text-decoration: none; }
+.tt-onb__resume-btn:hover { transform: translateY(-1px); }

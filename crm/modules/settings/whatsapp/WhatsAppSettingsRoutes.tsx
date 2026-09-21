@@ -1,6 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import GuidedSetup from '@crm/modules/onboarding/screens/GuidedSetup';
-import NumberDetail from './NumberDetail';
+import NumberDetailReal from './NumberDetailReal';
 import NumbersRealScreen from './NumbersRealScreen';
 
 /**
@@ -14,7 +14,7 @@ export function WhatsAppSettingsRoutes() {
     <Routes>
       <Route index element={<NumbersRealScreen />} />
       <Route path="add-number" element={<GuidedSetup mode="add-number" />} />
-      <Route path="numbers/:numberId" element={<NumberDetail />} />
+      <Route path="numbers/:numberId" element={<NumberDetailReal />} />
     </Routes>
   );
 }

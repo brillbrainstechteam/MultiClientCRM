@@ -43,16 +43,31 @@ export async function GET() {
   const branches = [{ id: DEFAULT_BRANCH_ID, name: businessName, city: '—' }];
   const teams = [{ id: DEFAULT_TEAM_ID, name: 'Team', branchId: DEFAULT_BRANCH_ID }];
 
+  const QUALITY: Record<string, string> = { GREEN: 'high', YELLOW: 'medium', RED: 'low' };
+  const TIER: Record<string, string> = {
+    TIER_50: '50 / day', TIER_250: '250 / day', TIER_1K: '1K / day',
+    TIER_10K: '10K / day', TIER_100K: '100K / day', TIER_UNLIMITED: 'Unlimited',
+  };
   const whatsappNumbers = waAccounts.map((a) => ({
     id: a.id,
     displayNumber: a.displayPhone ?? 'WhatsApp number',
-    displayName: a.verifiedName ?? businessName,
-    brand: businessName,
-    branchId: DEFAULT_BRANCH_ID,
-    department: 'Sales',
-    connectionStatus: a.status === 'connected' ? 'connected' : 'disconnected',
-    qualityRating: 'unrated',
-    messagingLimit: '—',
+    displayName: a.label ?? a.verifiedName ?? businessName,
+    brand: a.brand ?? businessName,
+    branchId: a.branchId ?? DEFAULT_BRANCH_ID,
+    department: a.department ?? 'Sales',
+    connectionStatus: a.status === 'connected' ? 'connected' : a.status === 'reconnect_required' ? 'degraded' : 'disconnected',
+    qualityRating: QUALITY[a.qualityRating ?? ''] ?? 'unrated',
+    messagingLimit: TIER[a.messagingTier ?? ''] ?? '—',
+    // extra (real) fields the registry/detail read directly:
+    qualityRaw: a.qualityRating ?? null,
+    messagingTier: a.messagingTier ?? null,
+    verifiedName: a.verifiedName ?? null,
+    codeVerificationStatus: a.codeVerificationStatus ?? null,
+    wabaId: a.wabaId ?? null,
+    phoneNumberId: a.phoneNumberId ?? null,
+    statusReason: a.statusReason ?? null,
+    qualitySyncedAt: a.qualitySyncedAt ? a.qualitySyncedAt.toISOString() : null,
+    connectedAt: a.connectedAt ? a.connectedAt.toISOString() : null,
     permittedRoles: ['owner', 'manager', 'agent'],
   }));
   const numberIds = whatsappNumbers.map((n) => n.id);

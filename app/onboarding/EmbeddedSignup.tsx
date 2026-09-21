@@ -43,23 +43,46 @@ interface Props {
   configId: string;
   graphVersion: string;
   coexistenceFeature: string;
+  /** Resume: pre-select the strategy the client chose in a prior attempt. */
+  initialStrategy?: string;
 }
 
-export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeature }: Props) {
-  const [path, setPath] = useState<Path>('existing');
+/** Fire-and-forget onboarding-progress write (powers the progress bar + resume). */
+function postProgress(body: Record<string, unknown>) {
+  fetch('/api/crm/onboarding', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    keepalive: true,
+  }).catch(() => undefined);
+}
+
+export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeature, initialStrategy }: Props) {
+  const isPath = (v?: string): v is Path => v === 'coexistence' || v === 'new' || v === 'existing';
+  const [path, setPath] = useState<Path>(isPath(initialStrategy) ? initialStrategy : 'existing');
   const [status, setStatus] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const sdkReady = useRef(false);
-  const session = useRef<{ wabaId?: string; phoneNumberId?: string }>({});
+  const session = useRef<{ wabaId?: string; phoneNumberId?: string; event?: string; currentStep?: string }>({});
 
-  // Capture the WABA / phone-number id the Embedded Signup popup posts back.
+  const choose = (id: Path) => { setPath(id); postProgress({ status: 'strategy_selected', strategy: id }); };
+
+  // Capture the WABA / phone-number id + session event the popup posts back.
+  // event = FINISH | FINISH_ONLY_WABA (coexistence) | CANCEL{current_step} | ERROR.
   useEffect(() => {
     function onMessage(event: MessageEvent) {
       if (!/facebook\.com$/.test(new URL(event.origin).hostname)) return;
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        if (data?.type === 'WA_EMBEDDED_SIGNUP' && data?.data) {
-          session.current = { wabaId: data.data.waba_id, phoneNumberId: data.data.phone_number_id };
+        if (data?.type === 'WA_EMBEDDED_SIGNUP') {
+          session.current = {
+            wabaId: data.data?.waba_id,
+            phoneNumberId: data.data?.phone_number_id,
+            event: data.event,
+            currentStep: data.data?.current_step,
+          };
+          if (data.event === 'CANCEL') postProgress({ status: 'cancelled', lastStep: data.data?.current_step ?? null });
+          else if (data.event === 'ERROR') postProgress({ status: 'error', errorMessage: data.data?.error_message ?? 'Embedded Signup error' });
         }
       } catch {
         /* not our message */
@@ -100,6 +123,7 @@ export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeatu
     initSdk();
     setBusy(true);
     setStatus('Opening WhatsApp onboarding…');
+    postProgress({ status: 'meta_launched', strategy: path });
 
     const extras: Record<string, unknown> = { setup: {}, sessionInfoVersion: '3' };
     if (path === 'coexistence' && coexistenceFeature) extras.featureType = coexistenceFeature;
@@ -116,12 +140,15 @@ export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeatu
         fetch('/api/auth/meta/exchange', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, path, ...session.current }),
+          body: JSON.stringify({ code, strategy: path, ...session.current }),
         })
           .then(async (r) => {
-            if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? 'Connection failed.');
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(j.error ?? 'Connection failed.');
+            return j as { pinRequired?: boolean };
           })
-          .then(() => {
+          .then((j) => {
+            if (j.pinRequired) { window.location.href = '/onboarding?connect=pin'; return; }
             setStatus('Connected! Redirecting…');
             window.location.href = '/crm/dashboard';
           })
@@ -151,7 +178,7 @@ export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeatu
               key={p.id}
               type="button"
               className={`tt-onb__path${active ? ' tt-onb__path--active' : ''}`}
-              onClick={() => setPath(p.id)}
+              onClick={() => choose(p.id)}
               aria-pressed={active}
             >
               <span className="tt-onb__path-icon"><Icon /></span>
