@@ -79,6 +79,19 @@ const businessValueOptions = [
   { value: 'medium', label: 'Medium' },
   { value: 'low', label: 'Low' },
 ];
+const segmentOptions = [
+  { value: '', label: '—' },
+  { value: 'chain_stores', label: 'Chain of stores' },
+  { value: 'corporate', label: 'Corporate' },
+  { value: 'boutique', label: 'Boutique store' },
+  { value: 'exports', label: 'Exports' },
+  { value: 'standalone', label: 'Single standalone store' },
+  { value: 'small_store', label: 'Single small store' },
+];
+const gradeOptions = [
+  { value: '', label: '—' }, { value: 'A', label: 'A' }, { value: 'B', label: 'B' },
+  { value: 'C', label: 'C' }, { value: 'D', label: 'D' },
+];
 
 function ContactForm({
   mode,
@@ -112,6 +125,18 @@ function ContactForm({
   const [leadStatus, setLeadStatus] = useState<string>(existing?.leadStatus ?? 'new');
   const [businessValue, setBusinessValue] = useState<string>(existing?.businessValue ?? 'medium');
   const [source, setSource] = useState(existing?.source ?? 'WhatsApp enquiry');
+  // Jewellery enrichment
+  const [businessSegment, setBusinessSegment] = useState(existing?.businessSegment ?? '');
+  const [grade, setGrade] = useState(existing?.grade ?? '');
+  const [preferredLanguage, setPreferredLanguage] = useState(existing?.preferredLanguage ?? '');
+  const [website, setWebsite] = useState(existing?.website ?? '');
+  const [dateOfBirth, setDateOfBirth] = useState(existing?.dateOfBirth ? existing.dateOfBirth.slice(0, 10) : '');
+  const [companyAnniversary, setCompanyAnniversary] = useState(existing?.companyAnniversary ? existing.companyAnniversary.slice(0, 10) : '');
+  const [nextFollowUpAt, setNextFollowUpAt] = useState(existing?.nextFollowUpAt ? existing.nextFollowUpAt.slice(0, 10) : '');
+  const [kamUserId, setKamUserId] = useState(existing?.kamUserId ?? '');
+  const [clientCode, setClientCode] = useState(existing?.clientCode ?? '');
+  const [pan, setPan] = useState(existing?.pan ?? '');
+  const [interestedIn, setInterestedIn] = useState(existing?.interestedIn ?? '');
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -150,6 +175,17 @@ function ContactForm({
       leadStatus,
       businessValue,
       source,
+      businessSegment: businessSegment || null,
+      grade: grade || null,
+      preferredLanguage: preferredLanguage.trim() || null,
+      website: website.trim() || null,
+      dateOfBirth: dateOfBirth || null,
+      companyAnniversary: companyAnniversary || null,
+      nextFollowUpAt: nextFollowUpAt || null,
+      kamUserId: kamUserId || null,
+      clientCode: clientCode.trim() || null,
+      pan: pan.trim() || null,
+      interestedIn: interestedIn.trim() || null,
     };
     setSubmitting(true);
     try {
@@ -329,6 +365,27 @@ function ContactForm({
           label="Source / first interaction" options={sourceOptions} value={source}
           onChange={(e) => setSource(e.target.value)} disabled={mode === 'edit'}
         />
+
+        <p style={{ gridColumn: '1 / -1', width: '100%', margin: '8px 0 0', fontSize: 12, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', color: '#6b7280' }}>
+          Jewellery details
+        </p>
+        <Select label="Segment" options={segmentOptions} value={businessSegment} onChange={(e) => setBusinessSegment(e.target.value)} />
+        <Select label="Grade (ABCD)" options={gradeOptions} value={grade} onChange={(e) => setGrade(e.target.value)} />
+        <Input label="Preferred language" value={preferredLanguage} onChange={(e) => setPreferredLanguage(e.target.value)} placeholder="e.g. Hindi, Gujarati" />
+        <Select label="Key account manager" options={[{ value: '', label: 'Unassigned' }, ...ownerOptions]} value={kamUserId} onChange={(e) => setKamUserId(e.target.value)} />
+        <Input label="Website" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="Optional" />
+        {customerType === 'b2b' ? (
+          <Input label="Client code" value={clientCode} onChange={(e) => setClientCode(e.target.value)} placeholder="Optional" />
+        ) : null}
+        {customerType === 'b2b' ? (
+          <Input label="PAN" value={pan} onChange={(e) => setPan(e.target.value)} placeholder="Optional" />
+        ) : null}
+        <Input label={customerType === 'b2b' ? 'Contact person birthday' : 'Birthday'} type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
+        {customerType === 'b2b' ? (
+          <Input label="Company anniversary" type="date" value={companyAnniversary} onChange={(e) => setCompanyAnniversary(e.target.value)} />
+        ) : null}
+        <Input label="Next follow-up" type="date" value={nextFollowUpAt} onChange={(e) => setNextFollowUpAt(e.target.value)} />
+        <Input label="Interested in" value={interestedIn} onChange={(e) => setInterestedIn(e.target.value)} placeholder="e.g. Antique bridal sets" />
       </div>
     </Drawer>
   );

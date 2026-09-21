@@ -17,6 +17,25 @@ export const normMobile = (m: string): string => {
 
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : v == null ? '' : String(v));
 
+/** Map their free-text "Contact Type" / segment labels to our segment codes. */
+function normSegment(v: string): string | null {
+  const s = v.toLowerCase();
+  if (!s) return null;
+  if (s.includes('chain')) return 'chain_stores';
+  if (s.includes('corporate')) return 'corporate';
+  if (s.includes('boutique')) return 'boutique';
+  if (s.includes('export')) return 'exports';
+  if (s.includes('small')) return 'small_store';
+  if (s.includes('standalone') || s.includes('single')) return 'standalone';
+  return null;
+}
+const parseDate = (v: unknown): Date | null => {
+  const s = str(v);
+  if (!s) return null;
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+};
+
 /**
  * Bulk-import parsed contact rows into a tenant, de-duplicating by mobile.
  * `onDuplicate` = 'skip' leaves existing rows untouched; 'update' merges the
@@ -59,7 +78,23 @@ export async function importContactRows(
       // Optional enrichment — only set when the row provides it, so schema
       // defaults (customerType 'b2b') are preserved for plain CSV imports.
       ...(ct === 'b2b' || ct === 'b2c' ? { customerType: ct } : {}),
-      ...(str(r.contactPerson) ? { contactPerson: str(r.contactPerson) } : {}),
+      ...(str(r.contactPerson || r['Contact Person'] || r['Contact person']) ? { contactPerson: str(r.contactPerson || r['Contact Person'] || r['Contact person']) } : {}),
+      // Geography (was previously dropped on import).
+      ...(str(r.state || r.State) ? { state: str(r.state || r.State) } : {}),
+      ...(str(r.zone || r.Zone) ? { zone: str(r.zone || r.Zone) } : {}),
+      ...(str(r.pincode || r.Pincode || r.pin || r.Pin) ? { pincode: str(r.pincode || r.Pincode || r.pin || r.Pin) } : {}),
+      ...(str(r.gstin || r.GSTIN || r.GST) ? { gstin: str(r.gstin || r.GSTIN || r.GST) } : {}),
+      // Jewellery enrichment (their Excel column names as aliases).
+      ...(normSegment(str(r.businessSegment || r.segment || r['Business Segment'] || r['Contact Type'] || r['Type of customer'] || r.Type)) ? { businessSegment: normSegment(str(r.businessSegment || r.segment || r['Business Segment'] || r['Contact Type'] || r['Type of customer'] || r.Type)) } : {}),
+      ...(str(r.grade || r.Grade || r['A/B/C/D'] || r.ABCD) ? { grade: str(r.grade || r.Grade || r['A/B/C/D'] || r.ABCD).toUpperCase().slice(0, 1) } : {}),
+      ...(str(r.preferredLanguage || r['Preferred Language'] || r.language || r.Language) ? { preferredLanguage: str(r.preferredLanguage || r['Preferred Language'] || r.language || r.Language) } : {}),
+      ...(str(r.website || r.Website) ? { website: str(r.website || r.Website) } : {}),
+      ...(str(r.clientCode || r['Client Code']) ? { clientCode: str(r.clientCode || r['Client Code']) } : {}),
+      ...(str(r.pan || r.PAN) ? { pan: str(r.pan || r.PAN) } : {}),
+      ...(str(r.interestedIn || r['Interested In'] || r['Enquired Category']) ? { interestedIn: str(r.interestedIn || r['Interested In'] || r['Enquired Category']) } : {}),
+      ...(parseDate(r.dateOfBirth || r.DOB || r.dob || r.Birthday) ? { dateOfBirth: parseDate(r.dateOfBirth || r.DOB || r.dob || r.Birthday) } : {}),
+      ...(parseDate(r.companyAnniversary || r['Company Anniversary'] || r.anniversary || r['Company anniversary']) ? { companyAnniversary: parseDate(r.companyAnniversary || r['Company Anniversary'] || r.anniversary || r['Company anniversary']) } : {}),
+      ...(parseDate(r.nextFollowUpAt || r['Next Follow Up'] || r.nextFollowUp) ? { nextFollowUpAt: parseDate(r.nextFollowUpAt || r['Next Follow Up'] || r.nextFollowUp) } : {}),
     };
 
     const dupId = byMobile.get(mobile);
