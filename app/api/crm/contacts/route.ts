@@ -18,6 +18,7 @@ export async function POST(req: Request) {
   const b = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const str = (v: unknown, d = '') => (typeof v === 'string' && v.trim() ? v.trim() : d);
   const arr = (v: unknown) => (Array.isArray(v) ? v.map(String).map((s) => s.trim()).filter(Boolean) : []);
+  const dateOf = (v: unknown) => { const s = str(v); const d = s ? new Date(s) : null; return d && !isNaN(d.getTime()) ? d : null; };
 
   const customerType = str(b?.customerType, 'b2b') === 'b2c' ? 'b2c' : 'b2b';
   const name = str(b?.name);
@@ -68,6 +69,18 @@ export async function POST(req: Request) {
           state: str(b?.state) || null,
           zone: str(b?.zone) || null,
           pincode: str(b?.pincode) || null,
+          // --- Jewellery B2B enrichment ---
+          businessSegment: str(b?.businessSegment) || null,
+          grade: str(b?.grade) || null,
+          preferredLanguage: str(b?.preferredLanguage) || null,
+          website: str(b?.website) || null,
+          dateOfBirth: dateOf(b?.dateOfBirth),
+          companyAnniversary: dateOf(b?.companyAnniversary),
+          nextFollowUpAt: dateOf(b?.nextFollowUpAt),
+          interestedIn: str(b?.interestedIn) || null,
+          clientCode: str(b?.clientCode) || null,
+          pan: str(b?.pan) || null,
+          kamUserId: str(b?.kamUserId) || null,
           branchId: str(b?.branchId, 'branch_main'),
           primaryWhatsAppNumberId: str(b?.primaryWhatsAppNumberId),
         },

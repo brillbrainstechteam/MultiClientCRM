@@ -434,12 +434,76 @@ model CrmContact {
   kundli                   Json?
   kundliGeneratedAt        DateTime?
 
+  // --- Jewellery B2B enrichment (formalised from the marketing/sales Excels) ---
+  // Segment drives talking-points, templates and tiering ("Contact Type" in the
+  // sheets): chain_stores | corporate | boutique | exports | standalone | small_store
+  businessSegment          String?
+  grade                    String?   // A | B | C | D  (their ABCD categorisation)
+  preferredLanguage        String?   // regional language for templates/agents
+  website                  String?
+  // Important days — the #1 jewellery relationship trigger (wishes + offers).
+  dateOfBirth              DateTime? // contact person's birthday
+  companyAnniversary       DateTime? // firm's anniversary
+  // Telecalling / follow-up queue (Telecalling "Customerwise Tracking").
+  nextFollowUpAt           DateTime?
+  interestedIn             String?
+  lastFeedback             String?
+  lastConnectAt            DateTime? // last call/visit (distinct from lastActivityAt)
+  // Onboarding / KYC (customer-facing bits only).
+  clientCode               String?
+  pan                      String?
+  kamUserId                String?   // Key Account Manager (ownership role)
+  // Prospect funnel checkpoints (Prospects Tracker): data verified -> intro call
+  // -> office visit -> enquiry received; leadStatus stays the headline status.
+  dataVerified             Boolean  @default(false)
+  introCallDone            Boolean  @default(false)
+  officeVisitDone          Boolean  @default(false)
+  // Reach / audience membership (drives segmented broadcasts & groups).
+  inBroadcastList          Boolean  @default(false)
+  inCommunity              Boolean  @default(false)
+  // Flexible extras kept out of columns: showroomCount, teamStrength, sqFeet,
+  // creditLimitWt, kycStatus, dataManagerId, marketingOwnerId, salesOwnerId,
+  // spouse/family important dates, logistics prefs.
+  jewelleryProfile         Json?
+
   @@unique([tenantId, mobile])
   @@index([tenantId])
   @@index([tenantId, stage])
   @@index([tenantId, leadStatus])
   @@index([tenantId, lifecycleStage])
   @@index([tenantId, ownerId])
+  @@index([tenantId, nextFollowUpAt])
+  @@index([tenantId, businessSegment])
+}
+
+// Structured enquiry captured from a conversation (Inbox) — the bridge from
+// chat to pipeline and order. Formalises the sheets' "Enquiry Tracker": the rep
+// logs it once in chat and marketing + KAM see the same record.
+model CrmEnquiry {
+  id              String    @id @default(cuid())
+  tenantId        String
+  contactId       String?                          // linked contact (customer 360)
+  conversationId  String?                          // originating Inbox conversation
+  enquiryNo       String                           // human-facing enquiry number
+  source          String?                          // whatsapp | exhibition | referral | telecalling | ...
+  isNew           Boolean   @default(true)         // new vs existing customer
+  product         String?
+  design          String?
+  weightRange     String?
+  sizeLength      String?
+  pcs             Int?
+  tentativeWeight String?
+  description     String?                          // order description / requirements
+  imagesSentAt    DateTime?                        // "Images sent to client" checkpoint
+  status          String    @default("pending")    // pending | images_sent | converted | lost | cancelled
+  remarks         String?
+  ownerId         String?                          // handling rep / KAM
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, contactId])
+  @@index([conversationId])
 }
 
 // Req 43: immutable log of lead-status / lifecycle transitions per contact.
