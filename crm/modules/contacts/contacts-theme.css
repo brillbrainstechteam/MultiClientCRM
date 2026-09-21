@@ -1,0 +1,66 @@
+/* =====================================================================
+   TalkTrack UI System v1.0 — Contacts pilot theme.
+   Scoped to .crm-contacts-layout so shared design-system components (Button,
+   DataTable, Badge, Drawer, Modal, Stepper, KpiCard…) rendered inside Contacts
+   pick up the new palette WITHOUT touching the rest of the app. Because the
+   semantic tokens (--crm-text-*, --crm-surface-*) resolve base tokens lazily,
+   overriding the base palette here re-themes the whole module.
+
+   Remove this scope and fold these values into tokens.css when the design
+   system is rolled out app-wide (see docs/DESIGN_SYSTEM.md).
+   ===================================================================== */
+.crm-contacts-layout {
+  /* Primary — emerald #10B981 */
+  --crm-green: #10b981;
+  --crm-green-dark: #059669;
+  --crm-green-tint: #ecfdf5;      /* Primary Light */
+  --crm-green-border: #a7f3d0;
+
+  /* Ink & neutrals — slate */
+  --crm-navy: #0f172a;            /* Neutral 900 */
+  --crm-navy-line: #1e293b;
+  --crm-ink: #0f172a;
+  --crm-ink-2: #475569;
+  --crm-muted: #64748b;           /* Neutral 500 */
+  --crm-on-dark-muted: #cbd5e1;
+
+  /* Surfaces — cool neutrals */
+  --crm-canvas: #f8fafc;          /* Neutral 50 */
+  --crm-cream: #f1f5f9;
+  --crm-card: #ffffff;
+  --crm-table-header-band: #f8fafc;
+  --crm-rule: #e2e8f0;            /* Neutral 200 */
+  --crm-rule-soft: #eef2f6;
+
+  /* Accent — amber #F59E0B (was gold) */
+  --crm-gold: #f59e0b;
+  --crm-gold-dark: #d97706;
+  --crm-gold-tint: #fef3c7;
+  --crm-gold-border: #fcd9a5;
+
+  /* Danger — cleaner red */
+  --crm-danger: #ef4444;
+  --crm-danger-tint: #fef2f2;
+  --crm-danger-border: #fecaca;
+
+  /* Warning / "In Progress" — amber (aligns with the accent). */
+  --crm-warn: #d97706;
+  --crm-warn-tint: #fef3c7;
+  --crm-warn-border: #fcd9a5;
+
+  /* Secondary / info / "Pending" — blue #3B82F6. */
+  --crm-blue: #3b82f6;
+  --crm-blue-tint: #eff6ff;
+  --crm-blue-border: #bfdbfe;
+  --crm-info-50: #eff6ff;
+  --crm-info-200: #bfdbfe;
+  --crm-info-600: #2563eb;
+
+  /* Brand scale endpoints that are hard-coded (not derived from --crm-green). */
+  --crm-brand-100: #d1fae5;
+  --crm-brand-900: #065f46;
+
+  /* Neutral scrollbar within the pilot (was warm gold). */
+  --crm-scroll-thumb: rgba(100, 116, 139, 0.32);
+  --crm-scroll-thumb-hover: rgba(100, 116, 139, 0.55);
+}
