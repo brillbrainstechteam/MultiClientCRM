@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, ChevronRight, CheckCircle2, Clock, XCircle, LayoutTemplate } from 'lucide-react';
 import { Drawer, Button, Badge } from '@crm/design-system';
 import type { InboxTemplate } from '../inbox-types';
@@ -33,6 +34,7 @@ function resolvePreview(text: string, values: Record<string, string>, variables:
 }
 
 export function TemplatePicker({ open, onClose, currentNumberId, onSend }: TemplatePickerProps) {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -152,9 +154,9 @@ export function TemplatePicker({ open, onClose, currentNumberId, onSend }: Templ
           {/* Template list */}
           <div style={{ fontSize: 11, color: 'var(--crm-text-muted)', textAlign: 'right' }}>
             <a
-              href="/templates?sourceModule=inbox&returnTo=/inbox"
+              href="/crm/templates?sourceModule=inbox&returnTo=/inbox"
               style={{ color: 'var(--crm-text-brand)', textDecoration: 'none' }}
-              onClick={(e) => { e.preventDefault(); window.location.href = '/templates?sourceModule=inbox&returnTo=/inbox'; }}
+              onClick={(e) => { e.preventDefault(); navigate('/templates?sourceModule=inbox&returnTo=/inbox'); }}
             >
               Manage templates →
             </a>

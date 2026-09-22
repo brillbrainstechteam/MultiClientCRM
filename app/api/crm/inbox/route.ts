@@ -3,6 +3,9 @@ import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 
 const digits = (s: string) => (s ?? '').replace(/\D/g, '');
+// Match on the last 10 digits so a contact saved as "98…" still links to the
+// WhatsApp conversation from "9198…" (country code present or not).
+const matchKey = (s: string) => digits(s).slice(-10);
 
 /**
  * Inbox hydration for the embedded CRM. Returns the tenant's real conversations
@@ -31,8 +34,8 @@ export async function GET() {
   const connected = accounts.find((a) => a.status === 'connected');
   const fallbackNumberId = connected?.id ?? accounts[0]?.id ?? '';
 
-  // normalised mobile digits -> CrmContact id.
-  const crmByDigits = new Map(crmContacts.map((c) => [digits(c.mobile), c.id]));
+  // normalised mobile (last 10 digits) -> CrmContact id.
+  const crmByDigits = new Map(crmContacts.filter((c) => matchKey(c.mobile)).map((c) => [matchKey(c.mobile), c.id]));
 
   const mapped = conversations.map((c) => {
     const d = digits(c.contactPhone);
@@ -41,7 +44,7 @@ export async function GET() {
     return {
       id: c.id,
       whatsappNumberId: numberByPhoneId.get(c.phoneNumberId) ?? fallbackNumberId,
-      contactId: crmByDigits.get(d) ?? null,
+      contactId: crmByDigits.get(matchKey(d)) ?? null,
       rawMobile: c.contactPhone ? `+${c.contactPhone}` : null,
       contactName: c.contactName ?? null,
       status: c.status,

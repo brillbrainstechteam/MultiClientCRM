@@ -14,7 +14,7 @@
  *   Filter params: ?f_statuses=open,pending&f_assignees=user_meera&f_labels=lbl_hot_lead
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useReducer } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { findItem } from '@crm/modules/catalogue-orders/data';
 import {
@@ -40,7 +40,7 @@ import {
 import { useWorkspace, ALL_SCOPE } from '@crm/app/workspace-context';
 import { useScopedHref } from '@crm/app/use-scoped-href';
 import { contacts } from '@crm/mock-data';
-import type { QuickViewKey, ConversationSortKey, SearchMode, InboxFilterState, InboxMessage, MessageStatus, InboxTemplate, AiSuggestedTask } from './inbox-types';
+import type { QuickViewKey, ConversationSortKey, SearchMode, InboxFilterState, InboxConversation, InboxMessage, MessageStatus, InboxTemplate, AiSuggestedTask } from './inbox-types';
 import { emptyFilterState, isFilterActive } from './inbox-types';
 import {
   allConversations,
@@ -48,9 +48,11 @@ import {
   findConversation,
   findActivityEvents,
   findAiTasks,
+  patchConversation,
 } from './inbox-mock-data';
 import {
   getConversationsForView,
+  scopeConversations,
   quickViewCounts,
   defaultViewForRole,
   searchConversationsByContact,
@@ -146,7 +148,7 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
   function openInNewWindow() {
     const qs = searchParams.toString();
     window.open(
-      `/inbox-window${qs ? `?${qs}` : ''}`,
+      `/crm/inbox-window${qs ? `?${qs}` : ''}`,
       'talktrack-inbox',
       'popup,width=1440,height=900',
     );
@@ -156,6 +158,9 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
 
   // Mark-read: prototype behavior
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
+
+  // Bumped after patching the live inbox data so the list/counts re-render.
+  const [, bumpData] = useReducer((x: number) => x + 1, 0);
 
   // Per-conversation overrides (Batch 3 interactions)
   const [convAssignees, setConvAssignees] = useState<Map<string, { userId: string | null; teamId: string | null }>>(new Map());
@@ -248,7 +253,15 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
     }
   }
 
-  const viewCounts = quickViewCounts(allConversations, currentUser.id, role);
+  // Queue counts follow the same role + number scope as the list itself.
+  const scopedForCounts = scopeConversations(
+    allConversations,
+    role,
+    currentUser.id,
+    whatsappNumberId === ALL_SCOPE ? 'all' : whatsappNumberId,
+    branchId === ALL_SCOPE ? 'all' : branchId,
+  );
+  const viewCounts = quickViewCounts(scopedForCounts, currentUser.id, role);
   const primaryViews = viewCounts.filter((v) => v.group === 'primary');
   const moreViews = viewCounts.filter((v) => v.group === 'more');
   const activeViewIsMore = moreViews.some((v) => v.key === view);
@@ -644,83 +657,98 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, activeConvId]);
 
-  const persistStatus = useCallback((convId: string, status: 'open' | 'pending' | 'resolved') => {
-    void fetch(`/api/crm/conversations/${convId}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
-      body: JSON.stringify({ status }),
-    }).catch(() => undefined);
-  }, []);
+  /**
+   * Apply a state change to the target conversations: patch the live inbox data
+   * (so the list, queue counts and filters all reflect it — not just the open
+   * thread) and persist it. In bulk mode the target is the selection.
+   */
+  function targetIds(): string[] {
+    if (isBulkMode && selectedIds.length > 0) return selectedIds;
+    return activeConvId ? [activeConvId] : [];
+  }
 
-  const handleReopen = useCallback(() => {
+  function updateConversations(ids: string[], patch: Partial<InboxConversation>, body: Record<string, unknown>) {
+    for (const id of ids) {
+      patchConversation(id, patch);
+      void fetch(`/api/crm/conversations/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+        body: JSON.stringify(body),
+      }).catch(() => undefined);
+    }
+    bumpData();
+  }
+
+  function handleReopen() {
     if (!activeConvId) return;
-    setConvStatuses((prev) => {
-      const next = new Map(prev);
-      next.set(activeConvId, 'open');
-      return next;
-    });
-    persistStatus(activeConvId, 'open');
-  }, [activeConvId, persistStatus]);
+    setConvStatuses((prev) => new Map(prev).set(activeConvId, 'open'));
+    updateConversations([activeConvId], { status: 'open' }, { status: 'open' });
+  }
 
   const handleForwardConfirm = useCallback((_targetConvId: string, _note: string) => {
     setForwardMessage(null);
   }, []);
 
-  const handleAssign = useCallback((userId: string | null, teamId: string | null) => {
-    if (!activeConvId) return;
+  function handleAssign(userId: string | null, teamId: string | null) {
+    const ids = targetIds();
+    if (ids.length === 0) return;
     setConvAssignees((prev) => {
       const next = new Map(prev);
-      next.set(activeConvId, { userId, teamId });
+      ids.forEach((id) => next.set(id, { userId, teamId }));
       return next;
     });
-    // Persist the assignment (best-effort; UI already reflects it optimistically).
-    void fetch(`/api/crm/conversations/${activeConvId}/assign`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({ assigneeUserId: userId }),
-    }).catch(() => undefined);
-  }, [activeConvId]);
+    for (const id of ids) {
+      patchConversation(id, { assigneeId: userId, teamId });
+      void fetch(`/api/crm/conversations/${id}/assign`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+        body: JSON.stringify({ assigneeUserId: userId }),
+      }).catch(() => undefined);
+    }
+    bumpData();
+    if (isBulkMode) exitBulkMode();
+  }
 
-  const handleChangeStatus = useCallback((status: 'open' | 'pending' | 'resolved') => {
-    if (!activeConvId) return;
+  function handleChangeStatus(status: 'open' | 'pending' | 'resolved') {
+    const ids = targetIds();
+    if (ids.length === 0) return;
     setConvStatuses((prev) => {
       const next = new Map(prev);
-      next.set(activeConvId, status);
+      ids.forEach((id) => next.set(id, status));
       return next;
     });
-    persistStatus(activeConvId, status);
-  }, [activeConvId, persistStatus]);
+    updateConversations(ids, { status }, { status });
+  }
 
-  const handleApplyLabels = useCallback((labelIds: string[]) => {
-    if (!activeConvId) return;
+  function handleApplyLabels(labelIds: string[]) {
+    const ids = targetIds();
+    if (ids.length === 0) return;
     setConvLabels((prev) => {
       const next = new Map(prev);
-      next.set(activeConvId, labelIds);
+      ids.forEach((id) => next.set(id, labelIds));
       return next;
     });
-    void fetch(`/api/crm/conversations/${activeConvId}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
-      body: JSON.stringify({ labels: labelIds }),
-    }).catch(() => undefined);
-  }, [activeConvId]);
+    updateConversations(ids, { labelIds }, { labels: labelIds });
+  }
 
-  const handleToggleSpam = useCallback((markAsSpam: boolean) => {
-    if (!activeConvId) return;
+  function handleToggleSpam(markAsSpam: boolean) {
+    const ids = targetIds();
+    if (ids.length === 0) return;
     setConvSpam((prev) => {
       const next = new Map(prev);
-      next.set(activeConvId, markAsSpam);
+      ids.forEach((id) => next.set(id, markAsSpam));
       return next;
     });
-    void fetch(`/api/crm/conversations/${activeConvId}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
-      body: JSON.stringify({ isSpam: markAsSpam }),
-    }).catch(() => undefined);
-  }, [activeConvId]);
+    updateConversations(ids, { isSpam: markAsSpam }, { isSpam: markAsSpam });
+    if (isBulkMode) exitBulkMode();
+  }
 
   // Mark a conversation read (persist lastReadAt) when it is opened, so unread
   // counts reflect reality across sessions.
   useEffect(() => {
     if (!activeConvId) return;
+    if ((findConversation(activeConvId)?.unreadCount ?? 0) > 0) {
+      patchConversation(activeConvId, { unreadCount: 0 });
+      bumpData();
+    }
     void fetch(`/api/crm/conversations/${activeConvId}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
       body: JSON.stringify({ markRead: true }),
@@ -934,7 +962,7 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
                   onClearSelection={exitBulkMode}
                   onBulkAssign={() => openOverlay('popover', 'assign')}
                   onBulkResolve={() => {
-                    selectedIds.forEach((id) => setConvStatuses((prev) => new Map(prev).set(id, 'resolved')));
+                    handleChangeStatus('resolved');
                     exitBulkMode();
                   }}
                   onBulkLabels={() => openOverlay('popover', 'labels')}

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { UserCheck, AlertTriangle, WifiOff, Users } from 'lucide-react';
 import { Popover, Avatar, Button } from '@crm/design-system';
 import { users, teams, findUser } from '@crm/mock-data';
@@ -51,6 +52,7 @@ function AvailabilityDot({ status }: { status: string }) {
 export function AssignPopover({
   open, currentAssigneeId, conversationNumberId, onClose, onAssign,
 }: AssignPopoverProps) {
+  const navigate = useNavigate();
   const [teamFilter, setTeamFilter] = useState<string>('all');
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
 
@@ -221,9 +223,9 @@ export function AssignPopover({
       </div>
       <div style={{ borderTop: '1px solid var(--crm-border)', padding: '8px 12px', fontSize: 11, color: 'var(--crm-text-muted)' }}>
         <a
-          href="/team-access?sourceModule=inbox&returnTo=/inbox"
+          href="/crm/team-access/people?sourceModule=inbox&returnTo=/inbox"
           style={{ color: 'var(--crm-text-brand)', textDecoration: 'none' }}
-          onClick={(e) => { e.preventDefault(); window.location.href = '/team-access?sourceModule=inbox&returnTo=/inbox'; }}
+          onClick={(e) => { e.preventDefault(); navigate('/team-access/people?sourceModule=inbox&returnTo=/inbox'); }}
         >
           Manage team &amp; access →
         </a>

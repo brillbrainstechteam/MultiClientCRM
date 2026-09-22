@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { UserPlus, Search, Link as LinkIcon } from 'lucide-react';
 import { Drawer, Button } from '@crm/design-system';
 import { contacts } from '@crm/mock-data';
+import { refreshCrmData } from '@crm/app/crm-data';
+import { hydrateInboxData } from '../inbox-mock-data';
 import type { InboxConversation } from '../inbox-types';
 
 interface SaveCustomerDrawerProps {
@@ -18,11 +20,24 @@ interface DuplicateMatch {
   company: string | null;
 }
 
+const last10 = (s: string) => s.replace(/\D/g, '').slice(-10);
+
 function findDuplicates(mobile: string): DuplicateMatch[] {
-  const normalized = mobile.replace(/\D/g, '');
+  const key = last10(mobile);
+  if (!key) return [];
   return contacts
-    .filter((c) => c.mobile.replace(/\D/g, '').endsWith(normalized.slice(-10)))
+    .filter((c) => last10(c.mobile) === key)
     .map((c) => ({ contactId: c.id, name: c.name, mobile: c.mobile, company: c.company ?? null }));
+}
+
+/**
+ * Re-pull contacts + inbox so the conversation links to the saved contact (the
+ * inbox API matches conversations to contacts by mobile). Inbox first: the CRM
+ * refresh remounts the app, which must then read the already-updated inbox.
+ */
+async function refreshAfterSave() {
+  await hydrateInboxData().catch(() => undefined);
+  await refreshCrmData();
 }
 
 export function SaveCustomerDrawer({ open, conversation: c, onClose, onSaved }: SaveCustomerDrawerProps) {
@@ -33,6 +48,8 @@ export function SaveCustomerDrawer({ open, conversation: c, onClose, onSaved }: 
   const [step, setStep] = useState<'form' | 'duplicate-check' | 'success'>('form');
   const [matches, setMatches] = useState<DuplicateMatch[]>([]);
   const [linkedId, setLinkedId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const rawMobile = c?.rawMobile ?? '';
 
@@ -43,33 +60,56 @@ export function SaveCustomerDrawer({ open, conversation: c, onClose, onSaved }: 
       setMatches(found);
       setStep('duplicate-check');
     } else {
-      // Prototype: simulate create
-      setStep('success');
-      setTimeout(() => {
-        onSaved(`contact_new_${Date.now()}`);
-        resetForm();
-        onClose();
-      }, 900);
+      void createContact();
     }
   }
 
-  function handleLink(contactId: string) {
+  async function createContact() {
+    if (!rawMobile) { setError('This conversation has no mobile number to save.'); return; }
+    setSaving(true);
+    setError(null);
+    const hasCompany = company.trim().length > 0;
+    try {
+      const res = await fetch('/api/crm/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          // B2B needs a business + contact person; without a company it's a B2C contact.
+          customerType: hasCompany ? 'b2b' : 'b2c',
+          name: name.trim(),
+          company: hasCompany ? company.trim() : undefined,
+          contactPerson: hasCompany ? name.trim() : undefined,
+          mobile: rawMobile,
+          email: email.trim() || undefined,
+          city: city.trim() || undefined,
+          source: 'WhatsApp inbox',
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
+      if (!res.ok) throw new Error(data.error ?? 'Could not save the contact.');
+      setStep('success');
+      onSaved(data.id ?? '');
+      resetForm();
+      await refreshAfterSave();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save the contact.');
+      setStep('form');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleLink(contactId: string) {
     setLinkedId(contactId);
     setStep('success');
-    setTimeout(() => {
-      onSaved(contactId);
-      resetForm();
-      onClose();
-    }, 900);
+    onSaved(contactId);
+    resetForm();
+    await refreshAfterSave();
   }
 
   function handleCreateNew() {
-    setStep('success');
-    setTimeout(() => {
-      onSaved(`contact_new_${Date.now()}`);
-      resetForm();
-      onClose();
-    }, 900);
+    void createContact();
   }
 
   function resetForm() {
@@ -80,6 +120,7 @@ export function SaveCustomerDrawer({ open, conversation: c, onClose, onSaved }: 
     setStep('form');
     setMatches([]);
     setLinkedId(null);
+    setError(null);
   }
 
   const inputStyle = {
@@ -121,11 +162,17 @@ export function SaveCustomerDrawer({ open, conversation: c, onClose, onSaved }: 
             <input style={inputStyle} value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Company name" />
           </div>
 
+          {error && (
+            <div role="alert" style={{ padding: '8px 12px', background: '#fdf0ef', border: '1px solid var(--crm-danger, #b0453f)', borderRadius: 6, fontSize: 12, color: 'var(--crm-danger, #b0453f)' }}>
+              {error}
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
             <Button variant="secondary" size="sm" onClick={() => { resetForm(); onClose(); }}>Cancel</Button>
-            <Button variant="primary" size="sm" onClick={handleCheck} disabled={!name.trim()}>
+            <Button variant="primary" size="sm" onClick={handleCheck} disabled={!name.trim() || saving}>
               <Search size={13} style={{ marginRight: 4 }} />
-              Check duplicates & save
+              {saving ? 'Saving…' : 'Check duplicates & save'}
             </Button>
           </div>
         </div>
@@ -153,7 +200,7 @@ export function SaveCustomerDrawer({ open, conversation: c, onClose, onSaved }: 
 
           <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
             <Button variant="secondary" size="sm" onClick={() => setStep('form')}>Back</Button>
-            <Button variant="primary" size="sm" onClick={handleCreateNew}>
+            <Button variant="primary" size="sm" onClick={handleCreateNew} disabled={saving}>
               <UserPlus size={13} style={{ marginRight: 4 }} />
               Create new contact
             </Button>

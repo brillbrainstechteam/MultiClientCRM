@@ -428,6 +428,14 @@ function mapNote(n: InboxApiNote, conversationId: string): InboxMessage {
   };
 }
 
+/**
+ * Patch one conversation in the live binding so list views, queue counts and
+ * filters all see the change (not just the open thread's header).
+ */
+export function patchConversation(id: string, patch: Partial<InboxConversation>): void {
+  allConversations = allConversations.map((c) => (c.id === id ? { ...c, ...patch } : c));
+}
+
 /** Replace the live inbox bindings (used after hydration and any refresh). */
 export function setInboxData(convs: InboxConversation[], msgs: Record<string, InboxMessage[]>): void {
   allConversations = convs;
