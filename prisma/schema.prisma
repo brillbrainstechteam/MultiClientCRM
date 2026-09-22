@@ -151,12 +151,32 @@ model Conversation {
   // Team & Access: which agent this conversation is assigned to (persisted).
   assigneeUserId String?
   status         String  @default("open") // open | pending | resolved
+  labels         String[] @default([])    // applied label ids/names
+  isSpam         Boolean  @default(false)
+  lastReadAt     DateTime?                 // when an agent last read this thread (unread = inbound after this)
   lastMessageAt DateTime @default(now())
   createdAt     DateTime @default(now())
 
   messages Message[]
+  notes    ConversationNote[]
 
   @@unique([tenantId, phoneNumberId, contactPhone])
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, assigneeUserId])
+}
+
+// Internal (agent-only) notes on a conversation — never sent to the customer.
+model ConversationNote {
+  id             String   @id @default(cuid())
+  tenantId       String
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  authorUserId   String?
+  text           String
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId])
   @@index([tenantId])
 }
 

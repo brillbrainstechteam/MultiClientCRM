@@ -488,7 +488,15 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
         return next;
       });
 
-    if (newMsg.isNote) { patchStatus('sent', { sentAt: new Date().toISOString() }); return; }
+    if (newMsg.isNote) {
+      patchStatus('sent', { sentAt: new Date().toISOString() });
+      // Persist the internal note (agent-only; never sent to the customer).
+      void fetch(`/api/crm/conversations/${activeConvId}/notes`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+        body: JSON.stringify({ text }),
+      }).catch(() => undefined);
+      return;
+    }
 
     const conv = findConversation(activeConvId);
     const to = (conv?.rawMobile ?? '').replace(/\D/g, '');
@@ -636,6 +644,13 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, activeConvId]);
 
+  const persistStatus = useCallback((convId: string, status: 'open' | 'pending' | 'resolved') => {
+    void fetch(`/api/crm/conversations/${convId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+      body: JSON.stringify({ status }),
+    }).catch(() => undefined);
+  }, []);
+
   const handleReopen = useCallback(() => {
     if (!activeConvId) return;
     setConvStatuses((prev) => {
@@ -643,7 +658,8 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
       next.set(activeConvId, 'open');
       return next;
     });
-  }, [activeConvId]);
+    persistStatus(activeConvId, 'open');
+  }, [activeConvId, persistStatus]);
 
   const handleForwardConfirm = useCallback((_targetConvId: string, _note: string) => {
     setForwardMessage(null);
@@ -672,7 +688,8 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
       next.set(activeConvId, status);
       return next;
     });
-  }, [activeConvId]);
+    persistStatus(activeConvId, status);
+  }, [activeConvId, persistStatus]);
 
   const handleApplyLabels = useCallback((labelIds: string[]) => {
     if (!activeConvId) return;
@@ -681,6 +698,10 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
       next.set(activeConvId, labelIds);
       return next;
     });
+    void fetch(`/api/crm/conversations/${activeConvId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+      body: JSON.stringify({ labels: labelIds }),
+    }).catch(() => undefined);
   }, [activeConvId]);
 
   const handleToggleSpam = useCallback((markAsSpam: boolean) => {
@@ -690,6 +711,20 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
       next.set(activeConvId, markAsSpam);
       return next;
     });
+    void fetch(`/api/crm/conversations/${activeConvId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+      body: JSON.stringify({ isSpam: markAsSpam }),
+    }).catch(() => undefined);
+  }, [activeConvId]);
+
+  // Mark a conversation read (persist lastReadAt) when it is opened, so unread
+  // counts reflect reality across sessions.
+  useEffect(() => {
+    if (!activeConvId) return;
+    void fetch(`/api/crm/conversations/${activeConvId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+      body: JSON.stringify({ markRead: true }),
+    }).catch(() => undefined);
   }, [activeConvId]);
 
   const handleApproveTask = useCallback((taskId: string, _edits?: Partial<AiSuggestedTask>) => {

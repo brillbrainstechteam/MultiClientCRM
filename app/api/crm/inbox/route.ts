@@ -20,7 +20,7 @@ export async function GET() {
     prisma.conversation.findMany({
       where: { tenantId },
       orderBy: { lastMessageAt: 'desc' },
-      include: { messages: { orderBy: { at: 'asc' } } },
+      include: { messages: { orderBy: { at: 'asc' } }, notes: { orderBy: { createdAt: 'asc' } } },
       take: 200,
     }),
     prisma.crmContact.findMany({ where: { tenantId }, select: { id: true, mobile: true } }),
@@ -37,12 +37,18 @@ export async function GET() {
   const mapped = conversations.map((c) => {
     const d = digits(c.contactPhone);
     const lastInbound = [...c.messages].reverse().find((m) => m.direction === 'inbound');
+    const unread = c.messages.filter((m) => m.direction === 'inbound' && (!c.lastReadAt || m.at > c.lastReadAt)).length;
     return {
       id: c.id,
       whatsappNumberId: numberByPhoneId.get(c.phoneNumberId) ?? fallbackNumberId,
       contactId: crmByDigits.get(d) ?? null,
       rawMobile: c.contactPhone ? `+${c.contactPhone}` : null,
       contactName: c.contactName ?? null,
+      status: c.status,
+      assigneeUserId: c.assigneeUserId ?? null,
+      labels: c.labels ?? [],
+      isSpam: c.isSpam,
+      unread,
       firstMessageAt: (c.messages[0]?.at ?? c.createdAt).toISOString?.() ?? String(c.messages[0]?.at ?? c.createdAt),
       lastMessageAt: c.lastMessageAt.toISOString(),
       lastInboundAt: lastInbound ? lastInbound.at.toISOString() : null,
@@ -53,6 +59,7 @@ export async function GET() {
         status: m.status ?? null,
         at: m.at.toISOString(),
       })),
+      notes: c.notes.map((n) => ({ id: n.id, text: n.text, authorUserId: n.authorUserId, createdAt: n.createdAt.toISOString() })),
     };
   });
 

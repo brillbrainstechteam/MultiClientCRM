@@ -331,16 +331,23 @@ export const inboxAnalytics: InboxAnalytics = {
 // AI tasks, analytics) stays fixture-backed until those modules are built.
 
 interface InboxApiMessage { id: string; direction: string; text: string; status: string | null; at: string; }
+interface InboxApiNote { id: string; text: string; authorUserId: string | null; createdAt: string; }
 interface InboxApiConversation {
   id: string;
   whatsappNumberId: string;
   contactId: string | null;
   rawMobile: string | null;
   contactName: string | null;
+  status?: string;
+  assigneeUserId?: string | null;
+  labels?: string[];
+  isSpam?: boolean;
+  unread?: number;
   firstMessageAt: string;
   lastMessageAt: string;
   lastInboundAt: string | null;
   messages: InboxApiMessage[];
+  notes?: InboxApiNote[];
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -389,25 +396,35 @@ function mapConversation(c: InboxApiConversation): InboxConversation {
     at: last?.at ?? c.lastMessageAt,
   };
   const awaitingAgent = last?.direction === 'inbound';
+  const status = (['open', 'pending', 'resolved'].includes(c.status ?? '') ? c.status : 'open') as InboxConversation['status'];
   return {
     id: c.id,
     contactId: c.contactId,
     rawMobile: c.rawMobile,
     whatsappNumberId: c.whatsappNumberId,
-    assigneeId: null,
+    assigneeId: c.assigneeUserId ?? null,
     teamId: null,
     botOwned: false,
-    status: 'open',
-    unreadCount: 0,
-    labelIds: [],
+    status,
+    unreadCount: c.unread ?? 0,
+    labelIds: c.labels ?? [],
     replyStatus: awaitingAgent ? 'awaiting-agent' : (last ? 'awaiting-customer' : 'none'),
     responseWindow: computeResponseWindow(c.lastInboundAt),
     sla: { status: 'ok', deadline: null, minutesRemaining: null },
     preview,
-    isSpam: false,
+    isSpam: c.isSpam ?? false,
     aiTaskCount: 0,
     firstMessageAt: c.firstMessageAt,
     lastMessageAt: c.lastMessageAt,
+  };
+}
+
+/** Persisted internal note -> an inline note message in the thread. */
+function mapNote(n: InboxApiNote, conversationId: string): InboxMessage {
+  return {
+    id: n.id, conversationId, kind: 'text', direction: 'outbound', text: n.text,
+    status: 'sent', statusDetail: { sentAt: n.createdAt, deliveredAt: null, readAt: null, failedAt: null, failureReason: null, failureCode: null },
+    sentById: n.authorUserId, isAutomated: false, isNote: true, mentionedUserIds: [], replyToMessageId: null, at: n.createdAt,
   };
 }
 
@@ -425,6 +442,12 @@ export async function hydrateInboxData(): Promise<void> {
   const rows = data.conversations ?? [];
   const convs = rows.map(mapConversation);
   const msgs: Record<string, InboxMessage[]> = {};
-  for (const c of rows) msgs[c.id] = c.messages.map((m) => mapMessage(m, c.id));
+  for (const c of rows) {
+    const merged = [
+      ...c.messages.map((m) => mapMessage(m, c.id)),
+      ...(c.notes ?? []).map((n) => mapNote(n, c.id)),
+    ].sort((a, b) => a.at.localeCompare(b.at));
+    msgs[c.id] = merged;
+  }
   setInboxData(convs, msgs);
 }
