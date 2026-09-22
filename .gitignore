@@ -37,3 +37,9 @@ reset-password.mjs
 
 # Meta submission reference (holds token + demo password)
 META_SUBMISSION.md
+
+# local analysis material + handoff notes (not for repo; PROGRESS.md holds logins)
+/excel_based_marketing_sales/
+/images/
+/docs/*.xlsx
+/PROGRESS.md
