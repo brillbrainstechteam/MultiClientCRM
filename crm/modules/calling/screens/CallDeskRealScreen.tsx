@@ -77,7 +77,7 @@ export default function CallDeskRealScreen() {
       {toast ? <Toast tone="success" message={toast} onDismiss={() => setToast(null)} /> : null}
       <PageHeader
         title="Calling"
-        description="Log calls and their outcomes. Connect telephony (BYOT) to enable click-to-call and recordings."
+        description="Connect telephony (BYOT) for click-to-call and recordings."
         actions={<Button variant="primary" iconLeft={<PhoneCall />} onClick={() => setLogOpen(true)}>Log a call</Button>}
       />
 

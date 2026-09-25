@@ -201,7 +201,6 @@ export default function AllContactsScreen() {
     <div className="crm-all">
       <PageHeader
         title="All Contacts"
-        description="Search, filter and manage every contact in your access scope."
         actions={
           <>
             <Button

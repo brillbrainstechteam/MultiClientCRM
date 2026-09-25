@@ -263,7 +263,6 @@ export default function CallQueueScreen() {
     <div className="crm-queue">
       <PageHeader
         title="Call Queue"
-        description="One queue, saved views. Compact rows keep the scan-and-call flow fast."
         toolbar={
           <div className="crm-queue__views">
             {savedQueueViews.map((view) => (

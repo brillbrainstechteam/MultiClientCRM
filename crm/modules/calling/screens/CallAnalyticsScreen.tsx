@@ -35,7 +35,7 @@ export default function CallAnalyticsScreen() {
 
   return (
     <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <PageHeader title="Call analytics" description="Calling activity and outcomes, from your real call log." />
+      <PageHeader title="Call analytics" />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
         <KpiCard label="Total calls" value={s.total} emphasis="gold" meta={`${s.last7} in last 7 days`} />
         <KpiCard label="People reached" value={s.reach} />

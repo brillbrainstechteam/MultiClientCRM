@@ -171,7 +171,6 @@ export default function CallHistoryScreen() {
     <div className="crm-history">
       <PageHeader
         title="Call History"
-        description="Every logged call attempt, searchable and filterable — the source record behind each outcome."
       />
 
       <div className="crm-history__toolbar">

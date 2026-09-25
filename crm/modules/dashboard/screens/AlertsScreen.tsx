@@ -155,7 +155,6 @@ export default function AlertsScreen() {
     <div className="crm-alerts-screen">
       <PageHeader
         title="Alerts & Attention Centre"
-        description="Every open and recently handled alert across the workspace, filtered to your current scope."
         breadcrumbs={[{ label: 'Dashboard', to: scopedHref('/dashboard') }, { label: 'Alerts' }]}
       />
 

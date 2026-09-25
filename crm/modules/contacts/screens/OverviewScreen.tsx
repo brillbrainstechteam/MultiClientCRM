@@ -50,7 +50,7 @@ export default function OverviewScreen() {
     <div className="crm-overview">
       <PageHeader
         title="Contacts Overview"
-        description={`Operational snapshot for ${scopeNote}. For trends and breakdowns, see Reports.`}
+        description={`Operational snapshot for ${scopeNote}.`}
         actions={
           <>
             <Button

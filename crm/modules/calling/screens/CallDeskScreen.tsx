@@ -82,7 +82,7 @@ export default function CallDeskScreen() {
   if (state === 'loading') {
     return (
       <div className="crm-desk">
-        <PageHeader title="Call Desk" description="Know who to call next, why, and how fast you can log it." />
+        <PageHeader title="Call Desk" />
         <LoadingSkeleton height={120} />
         <LoadingSkeleton lines={6} />
       </div>
@@ -116,7 +116,6 @@ export default function CallDeskScreen() {
     <div className="crm-desk">
       <PageHeader
         title="Call Desk"
-        description="Know who to call next, why you're calling, and how fast you can log the result."
         actions={
           <>
             {can(role, 'calling.create_list') ? (

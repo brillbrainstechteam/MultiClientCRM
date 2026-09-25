@@ -164,7 +164,6 @@ export default function ImportsHubScreen() {
       ) : null}
       <PageHeader
         title="Imports & Sync"
-        description="Bring contacts in from files, images or connected sources — and track every import."
         actions={
           <>
             <Button

@@ -117,7 +117,6 @@ export default function CallListsScreen() {
     <div className="crm-lists">
       <PageHeader
         title="Call Lists"
-        description="Managed batches of calling work — create, assign and track distribution."
         actions={
           can(role, 'calling.create_list') ? (
             <Button variant="primary" iconLeft={<Plus />} onClick={() => navigate(scopedHref('/calling/lists/new'))}>

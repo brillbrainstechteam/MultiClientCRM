@@ -82,7 +82,6 @@ export default function DataQualityScreen() {
     <div className="crm-dq">
       <PageHeader
         title="Data Quality"
-        description="Find and fix contacts that need attention. Corrections here keep your database clean and campaign-ready."
       />
 
       <Tabs tabs={tabs} activeId={activeTab} onChange={setTab} ariaLabel="Data quality issues" />
