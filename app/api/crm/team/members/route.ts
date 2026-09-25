@@ -11,28 +11,37 @@ function serialize(u: { id: string; name: string; email: string; role: string; t
   return { id: u.id, name: u.name, email: u.email, role: u.role, department: u.teamFunction, status: u.status, createdAt: u.createdAt.toISOString() };
 }
 
-/** Seat limit from the tenant's plan (limits.users); null = unlimited/unknown. */
-async function seatLimit(tenantId: string): Promise<number | null> {
+/** Included seats + overage price from the tenant's plan. */
+async function seatPlan(tenantId: string): Promise<{ included: number | null; overagePrice: number; currency: string }> {
   const sub = await prisma.subscription.findUnique({ where: { tenantId } });
   const code = sub?.planCode ?? (await prisma.tenant.findUnique({ where: { id: tenantId } }))?.plan ?? 'trial';
   const plan = await prisma.subscriptionPlan.findUnique({ where: { code } });
-  const limits = (plan?.limits ?? null) as { users?: number } | null;
-  return typeof limits?.users === 'number' ? limits.users : null;
+  const limits = (plan?.limits ?? null) as { users?: number; seatOveragePrice?: number } | null;
+  return {
+    included: typeof limits?.users === 'number' ? limits.users : null,
+    overagePrice: typeof limits?.seatOveragePrice === 'number' ? limits.seatOveragePrice : 0,
+    currency: plan?.currency ?? 'INR',
+  };
 }
 
-/** List the tenant's team members (owner/admin/manager). */
+function seatBilling(used: number, included: number | null, overagePrice: number, currency: string) {
+  const overage = included !== null ? Math.max(used - included, 0) : 0;
+  return { used, included, overage, overagePrice, currency, monthlyOverage: overage * overagePrice };
+}
+
+/** List the tenant's team members + seat billing (owner/admin/manager). */
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
   if (!['owner', 'admin', 'manager'].includes(user.role)) {
     return NextResponse.json({ error: 'Your role cannot view team members.' }, { status: 403 });
   }
-  const [members, limit] = await Promise.all([
+  const [members, plan] = await Promise.all([
     prisma.user.findMany({ where: { tenantId: user.tenantId }, orderBy: { createdAt: 'asc' } }),
-    seatLimit(user.tenantId),
+    seatPlan(user.tenantId),
   ]);
   const activeSeats = members.filter((m) => m.status === 'active').length;
-  return NextResponse.json({ members: members.map(serialize), seats: { used: activeSeats, limit } });
+  return NextResponse.json({ members: members.map(serialize), seats: seatBilling(activeSeats, plan.included, plan.overagePrice, plan.currency) });
 }
 
 /** Create a team member with an initial password (owner/admin only). Seat-limited. */
@@ -58,13 +67,14 @@ export async function POST(req: Request) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return NextResponse.json({ error: 'A user with this email already exists.' }, { status: 400 });
 
-  // Seat enforcement.
-  const [activeSeats, limit] = await Promise.all([
+  // Seat handling: within included seats = free; beyond = allowed as paid
+  // overage IF the plan supports it, else blocked (e.g. trial).
+  const [activeSeats, plan] = await Promise.all([
     prisma.user.count({ where: { tenantId: user.tenantId, status: 'active' } }),
-    seatLimit(user.tenantId),
+    seatPlan(user.tenantId),
   ]);
-  if (limit !== null && activeSeats >= limit) {
-    return NextResponse.json({ error: `Your plan includes ${limit} seats and all are in use. Upgrade your plan to add more members.`, code: 'seat_limit' }, { status: 402 });
+  if (plan.included !== null && activeSeats >= plan.included && plan.overagePrice <= 0) {
+    return NextResponse.json({ error: `Your plan includes ${plan.included} seats and all are in use. Upgrade your plan to add more members.`, code: 'seat_limit' }, { status: 402 });
   }
 
   const created = await prisma.user.create({

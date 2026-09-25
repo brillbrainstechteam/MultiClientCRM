@@ -9,7 +9,7 @@ import BranchDetailScreen from './screens/BranchDetailScreen';
 import MemberProfileScreen from './screens/MemberProfileScreen';
 import OverviewScreen from './screens/OverviewScreen';
 import TeamMembersReal from './screens/TeamMembersReal';
-import PerformanceScreen from './screens/PerformanceScreen';
+import PerformanceScreen from './screens/PerformanceReal';
 import StructureScreen from './screens/StructureScreen';
 import TeamWorkspaceScreen from './screens/TeamWorkspaceScreen';
 import WorkDistributionScreen from './screens/WorkDistributionScreen';

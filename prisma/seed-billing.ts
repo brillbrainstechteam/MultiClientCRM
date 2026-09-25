@@ -29,7 +29,7 @@ const PLANS = [
       { key: 'automations', label: 'Automations', included: false },
       { key: 'ai', label: 'AI agents', included: false },
     ],
-    limits: { users: 2, numbers: 1, contacts: 500, campaigns: 2, messages: 1000, storageGb: 1, calling: false, ai: false },
+    limits: { users: 2, numbers: 1, contacts: 500, campaigns: 2, messages: 1000, storageGb: 1, calling: false, ai: false, seatOveragePrice: 0 },
   },
   {
     code: 'starter', name: 'Starter', sortOrder: 1,
@@ -41,7 +41,7 @@ const PLANS = [
       { key: 'automations', label: 'Automations', included: true },
       { key: 'ai', label: 'AI agents', included: false },
     ],
-    limits: { users: 5, numbers: 2, contacts: 5000, campaigns: 20, messages: 25000, storageGb: 5, calling: true, ai: false },
+    limits: { users: 5, numbers: 2, contacts: 5000, campaigns: 20, messages: 25000, storageGb: 5, calling: true, ai: false, seatOveragePrice: 299 },
   },
   {
     code: 'growth', name: 'Growth', sortOrder: 2,
@@ -53,7 +53,7 @@ const PLANS = [
       { key: 'automations', label: 'Automations', included: true },
       { key: 'ai', label: 'AI agents', included: true },
     ],
-    limits: { users: 15, numbers: 5, contacts: 50000, campaigns: 100, messages: 200000, storageGb: 25, calling: true, ai: true },
+    limits: { users: 15, numbers: 5, contacts: 50000, campaigns: 100, messages: 200000, storageGb: 25, calling: true, ai: true, seatOveragePrice: 249 },
   },
   {
     code: 'advanced', name: 'Advanced', sortOrder: 3,
@@ -65,7 +65,7 @@ const PLANS = [
       { key: 'automations', label: 'Automations', included: true },
       { key: 'ai', label: 'AI agents', included: true },
     ],
-    limits: { users: 50, numbers: 20, contacts: 500000, campaigns: 1000, messages: 2000000, storageGb: 100, calling: true, ai: true },
+    limits: { users: 50, numbers: 20, contacts: 500000, campaigns: 1000, messages: 2000000, storageGb: 100, calling: true, ai: true, seatOveragePrice: 199 },
   },
 ];
 

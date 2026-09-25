@@ -6,7 +6,8 @@ import { useWorkspace } from '@crm/app/workspace-context';
 import './TeamMembersReal.css';
 
 interface Member { id: string; name: string; email: string; role: string; department: string | null; status: string; createdAt: string; }
-interface Seats { used: number; limit: number | null; }
+interface Seats { used: number; included: number | null; overage: number; overagePrice: number; currency: string; monthlyOverage: number; }
+const inr = (n: number) => '₹' + n.toLocaleString('en-IN');
 
 const ROLE_OPTS = [
   { value: 'agent', label: 'Agent' },
@@ -29,7 +30,7 @@ export default function TeamMembersReal() {
   // so owner covers both here; the API is the real gate (owner/admin only).
   const canManage = role === 'owner';
   const [members, setMembers] = useState<Member[]>([]);
-  const [seats, setSeats] = useState<Seats>({ used: 0, limit: null });
+  const [seats, setSeats] = useState<Seats>({ used: 0, included: null, overage: 0, overagePrice: 0, currency: 'INR', monthlyOverage: 0 });
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
@@ -37,7 +38,7 @@ export default function TeamMembersReal() {
   const load = useCallback(() => {
     fetch('/api/crm/team/members', { credentials: 'same-origin' })
       .then((r) => r.json())
-      .then((d) => { if (!d.error) { setMembers(d.members ?? []); setSeats(d.seats ?? { used: 0, limit: null }); } setLoading(false); })
+      .then((d) => { if (!d.error) { setMembers(d.members ?? []); if (d.seats) setSeats(d.seats); } setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
@@ -49,23 +50,27 @@ export default function TeamMembersReal() {
     setToast(ok); load();
   };
 
-  const seatFull = seats.limit !== null && seats.used >= seats.limit;
+  // Blocked only when the plan has no paid overage (e.g. trial) and seats are full.
+  const blocked = seats.included !== null && seats.used >= seats.included && seats.overagePrice <= 0;
+  const nextIsOverage = seats.included !== null && seats.used >= seats.included && seats.overagePrice > 0;
 
   return (
     <div className="tm">
       <PageHeader title="Team members" actions={canManage ? (
-        <Button variant="primary" onClick={() => setAdding((v) => !v)} disabled={seatFull && !adding}>
+        <Button variant="primary" onClick={() => setAdding((v) => !v)} disabled={blocked && !adding}>
           <UserPlus size={16} /> Add member
         </Button>
       ) : undefined} />
 
       <div className="tm__seats">
-        <span className="tm__seats-num">{seats.used}{seats.limit !== null ? ` / ${seats.limit}` : ''}</span>
-        <span className="tm__seats-label">seats used{seats.limit !== null ? '' : ''}</span>
-        {seatFull ? <Badge tone="warning">All seats in use — upgrade to add more</Badge> : null}
+        <span className="tm__seats-num">{seats.used}{seats.included !== null ? ` / ${seats.included}` : ''}</span>
+        <span className="tm__seats-label">seats used</span>
+        {seats.overage > 0 ? <Badge tone="info">+{seats.overage} paid seat{seats.overage !== 1 ? 's' : ''} · {inr(seats.monthlyOverage)}/mo</Badge> : null}
+        {blocked ? <Badge tone="warning">All seats in use — upgrade to add more</Badge> : null}
+        {nextIsOverage && seats.overage === 0 ? <Badge tone="neutral">Next seat: +{inr(seats.overagePrice)}/mo</Badge> : null}
       </div>
 
-      {adding && canManage ? <AddMemberForm onCancel={() => setAdding(false)} onCreated={(m) => { setAdding(false); setToast(`${m.name} added.`); load(); }} onError={setToast} /> : null}
+      {adding && canManage ? <AddMemberForm overageNote={nextIsOverage ? `Heads up: this member is beyond your ${seats.included} included seats and adds ${inr(seats.overagePrice)}/mo.` : null} onCancel={() => setAdding(false)} onCreated={(m) => { setAdding(false); setToast(`${m.name} added.`); load(); }} onError={setToast} /> : null}
 
       {loading ? <p className="tm__muted">Loading members…</p> : (
         <div className="tm__table">
@@ -107,7 +112,7 @@ export default function TeamMembersReal() {
   );
 }
 
-function AddMemberForm({ onCreated, onCancel, onError }: { onCreated: (m: Member) => void; onCancel: () => void; onError: (s: string) => void }) {
+function AddMemberForm({ onCreated, onCancel, onError, overageNote }: { onCreated: (m: Member) => void; onCancel: () => void; onError: (s: string) => void; overageNote: string | null }) {
   const [f, setF] = useState({ name: '', email: '', role: 'agent', department: 'sales', password: '' });
   const [busy, setBusy] = useState(false);
   const up = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }));
@@ -123,6 +128,7 @@ function AddMemberForm({ onCreated, onCancel, onError }: { onCreated: (m: Member
   return (
     <div className="tm__form">
       <h3 className="tm__form-title">Add a team member</h3>
+      {overageNote ? <p className="tm__overage">{overageNote}</p> : null}
       <div className="tm__grid">
         <Input label="Full name" value={f.name} onChange={(e) => up('name', e.target.value)} placeholder="e.g. Rahul Sharma" />
         <Input label="Email" type="email" value={f.email} onChange={(e) => up('email', e.target.value)} placeholder="rahul@company.com" />

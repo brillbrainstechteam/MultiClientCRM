@@ -28,12 +28,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (typeof b.password === 'string' && b.password.length >= 6) data.passwordHash = await hashPassword(b.password);
   if (Object.keys(data).length === 0) return NextResponse.json({ error: 'Nothing to update.' }, { status: 400 });
 
-  // Re-enabling a member must respect the seat limit.
+  // Re-enabling: within included seats is free; beyond is allowed only if the
+  // plan supports paid overage (else blocked, e.g. trial).
   if (data.status === 'active' && target.status !== 'active') {
     const sub = await prisma.subscription.findUnique({ where: { tenantId: user.tenantId } });
     const plan = sub ? await prisma.subscriptionPlan.findUnique({ where: { code: sub.planCode } }) : null;
-    const limit = (plan?.limits as { users?: number } | null)?.users;
-    if (typeof limit === 'number') {
+    const lim = (plan?.limits as { users?: number; seatOveragePrice?: number } | null);
+    const limit = lim?.users;
+    const overagePrice = lim?.seatOveragePrice ?? 0;
+    if (typeof limit === 'number' && overagePrice <= 0) {
       const active = await prisma.user.count({ where: { tenantId: user.tenantId, status: 'active' } });
       if (active >= limit) return NextResponse.json({ error: `All ${limit} plan seats are in use.`, code: 'seat_limit' }, { status: 402 });
     }
