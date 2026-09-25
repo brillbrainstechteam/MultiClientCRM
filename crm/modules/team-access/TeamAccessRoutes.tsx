@@ -8,7 +8,7 @@ import AuditScreen from './screens/AuditScreen';
 import BranchDetailScreen from './screens/BranchDetailScreen';
 import MemberProfileScreen from './screens/MemberProfileScreen';
 import OverviewScreen from './screens/OverviewScreen';
-import PeopleScreen from './screens/PeopleScreen';
+import TeamMembersReal from './screens/TeamMembersReal';
 import PerformanceScreen from './screens/PerformanceScreen';
 import StructureScreen from './screens/StructureScreen';
 import TeamWorkspaceScreen from './screens/TeamWorkspaceScreen';
@@ -18,7 +18,7 @@ import { teamAccessPages, type TeamAccessScreen } from './team-access-manifest';
 /** Screens implemented so far, keyed by manifest path. Everything else stays a registered placeholder. */
 const implemented: Record<string, ComponentType> = {
   '/team-access': OverviewScreen,
-  '/team-access/people': PeopleScreen,
+  '/team-access/people': TeamMembersReal,
   '/team-access/people/:memberId': MemberProfileScreen,
   '/team-access/structure': StructureScreen,
   '/team-access/teams/:teamId': TeamWorkspaceScreen,

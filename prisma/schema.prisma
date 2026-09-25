@@ -43,7 +43,9 @@ model User {
   email        String   @unique
   passwordHash String
   role         String   @default("owner") // owner | admin | manager | agent
-  teamFunction String?  // sales | marketing | support | other (orthogonal to role)
+  teamFunction String?  // sales | marketing | support | other (department, orthogonal to role)
+  status       String   @default("active") // active | disabled
+  createdByUserId String?                  // the admin who created this member
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
