@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { visibleUserIds } from '@/lib/crm/scope';
 
 const EDITABLE = new Set([
   'name', 'company', 'contactPerson', 'customerType', 'mobile', 'email', 'city',
@@ -30,6 +31,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const existing = await prisma.crmContact.findFirst({ where: { id, tenantId: user.tenantId } });
   if (!existing) return NextResponse.json({ error: 'Contact not found.' }, { status: 404 });
+  // Row-level guard: agents/managers can only edit contacts within their scope.
+  const vis = await visibleUserIds(user);
+  if (vis !== 'all' && !vis.includes(existing.ownerId)) {
+    return NextResponse.json({ error: 'This contact is not assigned to you.' }, { status: 403 });
+  }
 
   const data: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(body)) {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { serializeCrmContact } from '@/lib/crm/contact-serialize';
+import { contactScopeWhere } from '@/lib/crm/scope';
 
 /**
  * Hydration endpoint for the embedded CRM.
@@ -34,10 +35,13 @@ export async function GET() {
   const tenantId = sessionUser.tenantId;
   const businessName = sessionUser.tenant.businessName || 'Your business';
 
+  // Strict per-role visibility: agents/managers only see contacts assigned
+  // within their scope; owner/admin see all (see lib/crm/scope).
+  const scope = await contactScopeWhere(sessionUser);
   const [authUsers, waAccounts, contacts] = await Promise.all([
     prisma.user.findMany({ where: { tenantId }, orderBy: { createdAt: 'asc' } }),
     prisma.whatsAppAccount.findMany({ where: { tenantId }, orderBy: { connectedAt: 'desc' } }),
-    prisma.crmContact.findMany({ where: { tenantId }, orderBy: { lastActivityAt: 'desc' } }),
+    prisma.crmContact.findMany({ where: { tenantId, ...scope }, orderBy: { lastActivityAt: 'desc' } }),
   ]);
 
   const branches = [{ id: DEFAULT_BRANCH_ID, name: businessName, city: '—' }];

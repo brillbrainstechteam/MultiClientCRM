@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { conversationScopeWhere } from '@/lib/crm/scope';
 
 const digits = (s: string) => (s ?? '').replace(/\D/g, '');
 // Match on the last 10 digits so a contact saved as "98…" still links to the
@@ -18,10 +19,13 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
   const tenantId = user.tenantId;
 
+  // Strict per-role visibility: agents/managers see only conversations assigned
+  // within their scope; owner/admin see all.
+  const vScope = await conversationScopeWhere(user);
   const [accounts, conversations, crmContacts] = await Promise.all([
     prisma.whatsAppAccount.findMany({ where: { tenantId }, orderBy: { connectedAt: 'desc' } }),
     prisma.conversation.findMany({
-      where: { tenantId },
+      where: { tenantId, ...vScope },
       orderBy: { lastMessageAt: 'desc' },
       include: { messages: { orderBy: { at: 'asc' } }, notes: { orderBy: { createdAt: 'asc' } } },
       take: 200,

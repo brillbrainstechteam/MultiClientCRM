@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { getOrCreateSubscription, effectiveStatus } from '@/lib/billing/subscription';
 import { getOrCreateWallet } from '@/lib/billing/wallet';
 import { currentMonthUsage } from '@/lib/billing/usage';
+import { contactScopeWhere, conversationScopeWhere } from '@/lib/crm/scope';
 
 // Tier -> proactive-messaging capacity (unique customers / 24h). Null = unlimited.
 const TIER_CAPACITY: Record<string, number | null> = {
@@ -25,18 +26,21 @@ export async function GET() {
   // getOrCreate calls run alongside the counts; plan name is mapped locally
   // (no extra query).
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  // Row-level scope: agents/managers see only their assigned contacts/chats.
+  const cScope = await contactScopeWhere(user);
+  const vScope = await conversationScopeWhere(user);
   const [
     accounts, contacts, prospects, customers,
     conversations, openConversations, messagesToday, teamCount, onboarding,
     subscription, wallet, usage, proactive24h,
   ] = await Promise.all([
     prisma.whatsAppAccount.findMany({ where: { tenantId }, orderBy: { connectedAt: 'desc' } }),
-    prisma.crmContact.count({ where: { tenantId } }),
-    prisma.crmContact.count({ where: { tenantId, lifecycleStage: 'prospect' } }),
-    prisma.crmContact.count({ where: { tenantId, lifecycleStage: 'customer' } }),
-    prisma.conversation.count({ where: { tenantId } }),
-    prisma.conversation.count({ where: { tenantId, status: 'open' } }),
-    prisma.message.count({ where: { conversation: { tenantId }, direction: 'inbound', at: { gte: startOfDay } } }),
+    prisma.crmContact.count({ where: { tenantId, ...cScope } }),
+    prisma.crmContact.count({ where: { tenantId, lifecycleStage: 'prospect', ...cScope } }),
+    prisma.crmContact.count({ where: { tenantId, lifecycleStage: 'customer', ...cScope } }),
+    prisma.conversation.count({ where: { tenantId, ...vScope } }),
+    prisma.conversation.count({ where: { tenantId, status: 'open', ...vScope } }),
+    prisma.message.count({ where: { conversation: { tenantId, ...vScope }, direction: 'inbound', at: { gte: startOfDay } } }),
     prisma.user.count({ where: { tenantId } }),
     prisma.onboardingSession.findUnique({ where: { tenantId } }),
     getOrCreateSubscription(tenantId),

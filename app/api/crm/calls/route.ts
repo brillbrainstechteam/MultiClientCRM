@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { visibleUserIds } from '@/lib/crm/scope';
 
 const digits = (s: string) => (s ?? '').replace(/\D/g, '');
 
@@ -10,8 +11,11 @@ export async function GET(req: Request) {
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
   const contactId = new URL(req.url).searchParams.get('contactId') ?? undefined;
 
+  // Agents/managers see only calls they (or their department) logged.
+  const vis = await visibleUserIds(user);
+  const scope = vis === 'all' ? {} : { byUserId: { in: vis } };
   const calls = await prisma.crmCallLog.findMany({
-    where: { tenantId: user.tenantId, ...(contactId ? { contactId } : {}) },
+    where: { tenantId: user.tenantId, ...scope, ...(contactId ? { contactId } : {}) },
     orderBy: { createdAt: 'desc' },
     take: 200,
   });
