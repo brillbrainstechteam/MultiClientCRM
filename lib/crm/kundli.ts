@@ -20,12 +20,19 @@ export interface KundliInput {
   tags?: string[];
 }
 
+export interface StorePresence {
+  totalCities: number | null;
+  totalStores: number | null;
+  byCity: { city: string; stores: number | null }[];
+}
+
 export interface Kundli {
   companyOverview: string;
   industry: string;
   sizeEstimate: string;
   productsServices: string[];
   onlinePresence: { website?: string; socials?: string[] };
+  storePresence: StorePresence;
   recentSignals: string[];
   likelyNeeds: string[];
   talkingPoints: string[];
@@ -34,6 +41,11 @@ export interface Kundli {
     discoveryQuestions: string[];
     valuePitch: string;
     objectionHandling: string[];
+  };
+  // Hinglish (Hindi + English in Roman script) call script for Indian SME calls.
+  hinglishScript: {
+    opening: string;
+    valuePitch: string;
   };
   bestTimeOrChannel: string;
   risksNotes: string[];
@@ -66,6 +78,8 @@ function buildPrompt(input: KundliInput): string {
     'KNOWN DETAILS:',
     JSON.stringify(known, null, 2),
     '',
+    'For storePresence, research how many physical stores/showrooms/branches the business runs and in which cities. Use numbers only where you are confident; use null when unknown — never guess counts.',
+    'For hinglishScript, write a natural Hinglish (Hindi + English, in Roman script) version of the opening line and value pitch, the way an Indian sales rep would actually speak on a call.',
     'Return ONLY a JSON object (no markdown, no commentary) of EXACTLY this shape:',
     `{
   "companyOverview": string,
@@ -73,10 +87,12 @@ function buildPrompt(input: KundliInput): string {
   "sizeEstimate": string,
   "productsServices": string[],
   "onlinePresence": { "website": string, "socials": string[] },
+  "storePresence": { "totalCities": number | null, "totalStores": number | null, "byCity": [{ "city": string, "stores": number | null }] },
   "recentSignals": string[],
   "likelyNeeds": string[],
   "talkingPoints": string[],
   "suggestedScript": { "opening": string, "discoveryQuestions": string[], "valuePitch": string, "objectionHandling": string[] },
+  "hinglishScript": { "opening": string, "valuePitch": string },
   "bestTimeOrChannel": string,
   "risksNotes": string[],
   "confidence": "low" | "medium" | "high",
@@ -95,14 +111,24 @@ function coerce(text: string, generatedWith: string, extraSources: string[]): Ku
   const str = (v: unknown, d = 'unknown'): string => (typeof v === 'string' && v.trim() ? v.trim() : d);
   const script = (o.suggestedScript ?? {}) as Record<string, unknown>;
   const presence = (o.onlinePresence ?? {}) as Record<string, unknown>;
+  const hing = (o.hinglishScript ?? {}) as Record<string, unknown>;
   const conf = ['low', 'medium', 'high'].includes(String(o.confidence)) ? (o.confidence as Kundli['confidence']) : 'low';
   const sources = [...new Set([...arr(o.sources), ...extraSources])];
+  const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+  const sp = (o.storePresence ?? {}) as Record<string, unknown>;
+  const byCity = Array.isArray(sp.byCity)
+    ? (sp.byCity as unknown[]).map((r) => {
+        const row = (r ?? {}) as Record<string, unknown>;
+        return { city: str(row.city, ''), stores: num(row.stores) };
+      }).filter((r) => r.city)
+    : [];
   return {
     companyOverview: str(o.companyOverview),
     industry: str(o.industry),
     sizeEstimate: str(o.sizeEstimate),
     productsServices: arr(o.productsServices),
     onlinePresence: { website: typeof presence.website === 'string' ? presence.website : undefined, socials: arr(presence.socials) },
+    storePresence: { totalCities: num(sp.totalCities), totalStores: num(sp.totalStores), byCity },
     recentSignals: arr(o.recentSignals),
     likelyNeeds: arr(o.likelyNeeds),
     talkingPoints: arr(o.talkingPoints),
@@ -112,6 +138,7 @@ function coerce(text: string, generatedWith: string, extraSources: string[]): Ku
       valuePitch: str(script.valuePitch, ''),
       objectionHandling: arr(script.objectionHandling),
     },
+    hinglishScript: { opening: str(hing.opening, ''), valuePitch: str(hing.valuePitch, '') },
     bestTimeOrChannel: str(o.bestTimeOrChannel, ''),
     risksNotes: arr(o.risksNotes),
     confidence: conf,

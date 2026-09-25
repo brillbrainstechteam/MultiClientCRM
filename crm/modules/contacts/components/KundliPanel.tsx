@@ -6,8 +6,10 @@ interface Kundli {
   companyOverview: string; industry: string; sizeEstimate: string;
   productsServices: string[];
   onlinePresence: { website?: string; socials?: string[] };
+  storePresence?: { totalCities: number | null; totalStores: number | null; byCity: { city: string; stores: number | null }[] };
   recentSignals: string[]; likelyNeeds: string[]; talkingPoints: string[];
   suggestedScript: { opening: string; discoveryQuestions: string[]; valuePitch: string; objectionHandling: string[] };
+  hinglishScript?: { opening: string; valuePitch: string };
   bestTimeOrChannel: string; risksNotes: string[];
   confidence: 'low' | 'medium' | 'high'; sources: string[]; generatedWith: string;
 }
@@ -91,6 +93,18 @@ export function KundliPanel({ contactId }: { contactId: string }) {
         {kundli.onlinePresence.website ? <Meta label="Website" value={kundli.onlinePresence.website} link /> : null}
       </div>
 
+      {kundli.storePresence && (kundli.storePresence.totalStores !== null || kundli.storePresence.byCity.length > 0) ? (
+        <Section title="Store presence">
+          <div style={sx.metaRow}>
+            <Meta label="Cities" value={kundli.storePresence.totalCities !== null ? String(kundli.storePresence.totalCities) : (kundli.storePresence.byCity.length ? String(kundli.storePresence.byCity.length) : '—')} />
+            <Meta label="Stores" value={kundli.storePresence.totalStores !== null ? String(kundli.storePresence.totalStores) : '—'} />
+          </div>
+          {kundli.storePresence.byCity.length ? (
+            <ul style={sx.ul}>{kundli.storePresence.byCity.map((c, i) => <li key={i}>{c.city}{c.stores !== null ? ` — ${c.stores} store${c.stores === 1 ? '' : 's'}` : ''}</li>)}</ul>
+          ) : null}
+        </Section>
+      ) : null}
+
       <ListSection title="Products / services" items={kundli.productsServices} />
       <ListSection title="Recent signals" items={kundli.recentSignals} />
       <ListSection title="Likely needs" items={kundli.likelyNeeds} />
@@ -102,6 +116,13 @@ export function KundliPanel({ contactId }: { contactId: string }) {
         {s.valuePitch ? <p style={sx.p}><strong>Value pitch: </strong>{s.valuePitch}</p> : null}
         {s.objectionHandling.length ? (<><p style={sx.subLabel}>Objection handling</p><ul style={sx.ul}>{s.objectionHandling.map((q, i) => <li key={i}>{q}</li>)}</ul></>) : null}
       </Section>
+
+      {kundli.hinglishScript && (kundli.hinglishScript.opening || kundli.hinglishScript.valuePitch) ? (
+        <Section title="Hinglish script">
+          {kundli.hinglishScript.opening ? <p style={sx.p}><strong>Opening: </strong>{kundli.hinglishScript.opening}</p> : null}
+          {kundli.hinglishScript.valuePitch ? <p style={sx.p}><strong>Value pitch: </strong>{kundli.hinglishScript.valuePitch}</p> : null}
+        </Section>
+      ) : null}
 
       <ListSection title="Risks / notes" items={kundli.risksNotes} />
 
