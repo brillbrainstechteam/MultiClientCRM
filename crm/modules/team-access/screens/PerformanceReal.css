@@ -35,3 +35,5 @@
   .pf-row { grid-template-columns: 1fr 1fr 1fr; row-gap: 6px; }
   .pf-member { grid-column: 1 / -1; }
 }
+
+.pf-date { font-weight: 600; color: var(--crm-text-secondary); }
