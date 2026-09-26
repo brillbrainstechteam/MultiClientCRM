@@ -31,6 +31,8 @@ export async function hydrateCrmData(): Promise<void> {
   setWorkspaceData({
     name: data.name,
     plan: data.plan,
+    currentUserId: data.currentUserId,
+    currentUserRole: data.currentUserRole,
     branches: data.branches,
     whatsappNumbers: data.whatsappNumbers,
     teams: data.teams,

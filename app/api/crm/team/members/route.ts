@@ -5,7 +5,7 @@ import { hashPassword } from '@/lib/auth/password';
 import { audit } from '@/lib/crm/audit';
 
 const ROLES = ['admin', 'manager', 'agent'];
-const DEPTS = ['sales', 'marketing', 'support', 'other'];
+const DEPTS = ['sales', 'marketing', 'frontend_marketing', 'backend_marketing', 'support', 'other'];
 
 function serialize(u: { id: string; name: string; email: string; role: string; teamFunction: string | null; status: string; createdAt: Date }) {
   return { id: u.id, name: u.name, email: u.email, role: u.role, department: u.teamFunction, status: u.status, createdAt: u.createdAt.toISOString() };

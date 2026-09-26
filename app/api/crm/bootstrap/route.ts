@@ -29,6 +29,19 @@ function initials(name: string): string {
 
 const ROLE_LABEL: Record<string, string> = { owner: 'Owner', manager: 'Manager', agent: 'Agent' };
 
+/**
+ * Map a stored DB role to the CRM's three visibility roles — LEAST PRIVILEGE.
+ * Only the genuine tenant `owner` gets owner-level access (all modules + view-as).
+ * A co-`admin` is treated as a manager (team + reports, but not billing/owner).
+ * Anything unrecognised falls to `agent` (own contacts only) — never owner — so a
+ * created member can never silently see everything.
+ */
+function normalizeRole(dbRole: string): 'owner' | 'manager' | 'agent' {
+  if (dbRole === 'owner') return 'owner';
+  if (dbRole === 'manager' || dbRole === 'admin') return 'manager';
+  return 'agent';
+}
+
 export async function GET() {
   const sessionUser = await getSessionUser();
   if (!sessionUser) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
@@ -78,7 +91,7 @@ export async function GET() {
 
   const users = authUsers.map((u) => {
     const name = u.name?.trim() || u.email.split('@')[0];
-    const role = ['owner', 'manager', 'agent'].includes(u.role) ? u.role : 'owner';
+    const role = normalizeRole(u.role);
     return {
       id: u.id,
       name,
@@ -94,9 +107,16 @@ export async function GET() {
     };
   });
 
+  // The logged-in user + their real (normalised) role — drives RBAC in the UI so
+  // a created member cannot act as owner (view-as is owner-only).
+  const currentUserId = sessionUser.id;
+  const currentUserRole = users.find((u) => u.id === currentUserId)?.role ?? normalizeRole(sessionUser.role);
+
   return NextResponse.json({
     name: businessName,
     plan: sessionUser.tenant.plan ?? 'trial',
+    currentUserId,
+    currentUserRole,
     branches,
     teams,
     whatsappNumbers,

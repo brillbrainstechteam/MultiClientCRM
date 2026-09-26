@@ -10,6 +10,7 @@ import MemberProfileScreen from './screens/MemberProfileScreen';
 import OverviewScreen from './screens/OverviewScreen';
 import TeamMembersReal from './screens/TeamMembersReal';
 import PerformanceScreen from './screens/PerformanceReal';
+import ZonesConfigReal from '@crm/modules/contacts/zones/ZonesConfigReal';
 import StructureScreen from './screens/StructureScreen';
 import TeamWorkspaceScreen from './screens/TeamWorkspaceScreen';
 import WorkDistributionScreen from './screens/WorkDistributionScreen';
@@ -19,6 +20,7 @@ import { teamAccessPages, type TeamAccessScreen } from './team-access-manifest';
 const implemented: Record<string, ComponentType> = {
   '/team-access': OverviewScreen,
   '/team-access/people': TeamMembersReal,
+  '/team-access/zones': ZonesConfigReal,
   '/team-access/people/:memberId': MemberProfileScreen,
   '/team-access/structure': StructureScreen,
   '/team-access/teams/:teamId': TeamWorkspaceScreen,
@@ -32,6 +34,7 @@ const implemented: Record<string, ComponentType> = {
 const routeGuards: Record<string, { capability: Capability; area: string }> = {
   '/team-access/people': { capability: 'viewPeople', area: 'People' },
   '/team-access/people/:memberId': { capability: 'viewPeople', area: 'Member Profile' },
+  '/team-access/zones': { capability: 'manageTeamsBranches', area: 'Zone routing' },
   '/team-access/structure': { capability: 'manageTeamsBranches', area: 'Structure' },
   '/team-access/teams/:teamId': { capability: 'manageTeamsBranches', area: 'Team Workspace' },
   '/team-access/branches/:branchId': { capability: 'manageTeamsBranches', area: 'Branch Detail' },

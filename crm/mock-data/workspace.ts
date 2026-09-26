@@ -176,6 +176,22 @@ export let workspace: Workspace = {
   whatsappNumberIds: whatsappNumbers.map((number) => number.id),
 };
 
+/**
+ * The logged-in user's real id + normalised role, hydrated from the API. These
+ * drive RBAC in the embedded CRM: the acting role is the real role, and only an
+ * owner may "view as" another role. Defaults keep the static prototype working.
+ */
+let currentUserId: string | null = null;
+let currentUserRole: User['role'] = 'owner';
+
+export function getCurrentUserId(): string | null {
+  return currentUserId;
+}
+
+export function getCurrentUserRole(): User['role'] {
+  return currentUserRole;
+}
+
 export function findUser(userId: string): User | undefined {
   return users.find((user) => user.id === userId);
 }
@@ -203,6 +219,7 @@ export function findTeam(teamId: string): Team | undefined {
 export function setWorkspaceData(next: {
   branches?: Branch[]; whatsappNumbers?: WhatsAppNumber[]; teams?: Team[]; users?: User[];
   name?: string; branchIds?: string[]; whatsappNumberIds?: string[]; plan?: Workspace['plan'];
+  currentUserId?: string | null; currentUserRole?: string;
 }): void {
   if (next.branches) branches = next.branches;
   if (next.whatsappNumbers) whatsappNumbers = next.whatsappNumbers;
@@ -212,4 +229,8 @@ export function setWorkspaceData(next: {
   if (next.branchIds) workspace = { ...workspace, branchIds: next.branchIds };
   if (next.whatsappNumberIds) workspace = { ...workspace, whatsappNumberIds: next.whatsappNumberIds };
   if (next.plan) workspace = { ...workspace, plan: next.plan };
+  if (next.currentUserId !== undefined) currentUserId = next.currentUserId;
+  if (next.currentUserRole && ['owner', 'manager', 'agent'].includes(next.currentUserRole)) {
+    currentUserRole = next.currentUserRole as User['role'];
+  }
 }

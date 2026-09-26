@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { serializeCrmContact } from '@/lib/crm/contact-serialize';
+import { routeLocation } from '@/lib/crm/zone-routing';
 
 /**
  * Create a contact for the signed-in tenant.
@@ -39,6 +40,20 @@ export async function POST(req: Request) {
   const leadStatus = str(b?.leadStatus, 'new');
   const id = `contact_${Math.random().toString(36).slice(2, 10)}`;
 
+  // Zone-based auto-assignment: when no owner is chosen, map the contact's
+  // city/state to a zone and hand it to that zone's member (if exactly one).
+  // An explicit ownerId always wins. Best-effort — never blocks creation.
+  const city = str(b?.city, '—');
+  let ownerId = str(b?.ownerId);
+  let zone = str(b?.zone) || null;
+  if (!ownerId) {
+    try {
+      const routed = await routeLocation(user.tenantId, city, str(b?.state) || null);
+      if (routed.zoneName && !zone) zone = routed.zoneName;
+      if (routed.assigneeUserId) ownerId = routed.assigneeUserId;
+    } catch { /* routing is best-effort */ }
+  }
+
   try {
     const created = await prisma.$transaction(async (tx) => {
       const c = await tx.crmContact.create({
@@ -51,8 +66,8 @@ export async function POST(req: Request) {
           customerType,
           mobile,
           email: str(b?.email) || null,
-          city: str(b?.city, '—'),
-          ownerId: str(b?.ownerId),
+          city,
+          ownerId,
           stage: str(b?.stage, 'new'),
           leadStatus,
           lifecycleStage: str(b?.lifecycleStage, 'prospect'),
@@ -67,7 +82,7 @@ export async function POST(req: Request) {
           gstin: str(b?.gstin) || null,
           legalName: str(b?.legalName) || null,
           state: str(b?.state) || null,
-          zone: str(b?.zone) || null,
+          zone,
           pincode: str(b?.pincode) || null,
           // --- Jewellery B2B enrichment ---
           businessSegment: str(b?.businessSegment) || null,

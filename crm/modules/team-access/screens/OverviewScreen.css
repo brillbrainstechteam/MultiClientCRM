@@ -1,45 +1,61 @@
-.crm-team-overview {
+/* Team & Access Overview — clean, real landing. Uses the UI System v1.0 tokens. */
+.crm-team-overview__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.crm-team-navcard {
   display: flex;
   flex-direction: column;
-  gap: var(--crm-space-6);
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  padding: 20px;
+  border: 1px solid var(--crm-border, #E2E8F0);
+  border-radius: 14px;
+  background: var(--crm-surface, #FFFFFF);
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.crm-team-navcard:hover {
+  border-color: var(--crm-primary, #10B981);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.10);
+  transform: translateY(-1px);
+}
+.crm-team-navcard:focus-visible {
+  outline: 2px solid var(--crm-primary, #10B981);
+  outline-offset: 2px;
 }
 
-.crm-team-overview__kpis {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--crm-space-4);
+.crm-team-navcard__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--crm-primary-soft, #ECFDF5);
+  color: var(--crm-primary, #10B981);
+}
+.crm-team-navcard__icon svg { width: 20px; height: 20px; }
+
+.crm-team-navcard__title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--crm-text, #0F172A);
+}
+.crm-team-navcard__body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--crm-text-muted, #64748B);
 }
 
-.crm-team-overview__section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--crm-space-3);
-}
-
-.crm-team-overview__section-title {
-  font-size: var(--crm-font-size-lg);
-  font-weight: var(--crm-weight-bold);
-  color: var(--crm-text-title);
-}
-
-.crm-team-overview__attention {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--crm-space-4);
-}
-
-.crm-team-overview__snapshot {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--crm-space-4);
-}
-
-@media (max-width: 1120px) {
-  .crm-team-overview__kpis,
-  .crm-team-overview__snapshot {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .crm-team-overview__attention {
-    grid-template-columns: 1fr;
-  }
+.crm-team-overview__note {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--crm-primary-soft, #ECFDF5);
+  color: var(--crm-text, #0F172A);
+  font-size: 13px;
 }

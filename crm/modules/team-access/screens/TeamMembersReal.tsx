@@ -10,14 +10,15 @@ interface Seats { used: number; included: number | null; overage: number; overag
 const inr = (n: number) => '₹' + n.toLocaleString('en-IN');
 
 const ROLE_OPTS = [
-  { value: 'agent', label: 'Agent' },
-  { value: 'manager', label: 'Manager' },
-  { value: 'admin', label: 'Admin' },
+  { value: 'agent', label: 'Agent — sees only their own assigned contacts' },
+  { value: 'manager', label: 'Manager — sees their department + reports' },
 ];
 const DEPT_OPTS = [
   { value: '', label: 'No department' },
   { value: 'sales', label: 'Sales' },
   { value: 'marketing', label: 'Marketing' },
+  { value: 'frontend_marketing', label: 'Front-end marketing' },
+  { value: 'backend_marketing', label: 'Back-end marketing' },
   { value: 'support', label: 'Support' },
 ];
 const ROLE_TONE: Record<string, 'brand' | 'info' | 'neutral' | 'gold'> = { owner: 'gold', admin: 'brand', manager: 'info', agent: 'neutral' };
@@ -90,7 +91,7 @@ export default function TeamMembersReal() {
               <div>
                 {canManage && m.role !== 'owner'
                   ? <Select label="Department" hideLabel options={DEPT_OPTS} value={m.department ?? ''} onChange={(e) => patch(m.id, { department: e.target.value || null }, 'Department updated.')} />
-                  : <span className="tm__dept">{m.department ? cap(m.department) : '—'}</span>}
+                  : <span className="tm__dept">{m.department ? dept(m.department) : '—'}</span>}
               </div>
               <div><Badge tone={m.status === 'active' ? 'success' : 'neutral'}>{m.status === 'active' ? 'Active' : 'Disabled'}</Badge></div>
               <div className="tm__actions">
@@ -150,3 +151,4 @@ function resetPw(m: Member, patch: (id: string, body: Record<string, unknown>, o
 }
 function initials(name: string) { return name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase() || '?'; }
 function cap(s: string) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function dept(s: string) { return s.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }

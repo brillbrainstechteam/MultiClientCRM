@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { ensureZones, matchZone } from '@/lib/crm/zone-routing';
 
 export type ImportRow = Record<string, unknown>;
 export type OnDuplicate = 'skip' | 'update';
@@ -49,6 +50,10 @@ export async function importContactRows(
 ): Promise<ImportResult> {
   const existing = await prisma.crmContact.findMany({ where: { tenantId }, select: { id: true, mobile: true } });
   const byMobile = new Map(existing.map((c) => [c.mobile, c.id]));
+
+  // Load zones once so each new row can be routed City→State→Zone→member
+  // without a per-row query. Best-effort: if routing fails, import continues.
+  const zones = await ensureZones(tenantId).catch(() => []);
 
   let created = 0, updated = 0, skipped = 0;
   const seen = new Set<string>();
@@ -105,8 +110,19 @@ export async function importContactRows(
       } else skipped++;
       continue;
     }
+    // Zone-based auto-assignment for brand-new contacts without an explicit
+    // owner: map location to a zone, set the zone name, and assign to the zone's
+    // member when exactly one covers it.
+    const createFields: Record<string, unknown> = { ...fields };
+    if (!createFields.ownerId && zones.length) {
+      const z = matchZone(zones, str(createFields.city), (createFields.state as string) ?? null);
+      if (z) {
+        if (!createFields.zone) createFields.zone = z.name;
+        if (z.memberUserIds.length === 1) createFields.ownerId = z.memberUserIds[0];
+      }
+    }
     await prisma.crmContact.create({
-      data: { id: `contact_${Math.random().toString(36).slice(2, 10)}`, tenantId, mobile, ...fields },
+      data: { id: `contact_${Math.random().toString(36).slice(2, 10)}`, tenantId, mobile, ...createFields } as never,
     });
     byMobile.set(mobile, 'new');
     created++;

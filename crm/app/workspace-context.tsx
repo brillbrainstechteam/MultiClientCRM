@@ -5,6 +5,8 @@ import {
   findBranch,
   findTeam,
   findWhatsAppNumber,
+  getCurrentUserId,
+  getCurrentUserRole,
   users,
   whatsappNumbers,
   workspace,
@@ -37,6 +39,8 @@ export interface WorkspaceContextValue {
   workspace: Workspace;
   currentUser: User;
   role: RoleKey;
+  /** True only for the real account owner — gates the "view as role" control. */
+  canViewAs: boolean;
   team: Team | undefined;
   /** `undefined` means "all permitted branches". */
   branch: Branch | undefined;
@@ -79,8 +83,19 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const value = useMemo<WorkspaceContextValue>(() => {
-    const role = resolveRoleParam(searchParams.get('role'));
-    const currentUser = users.find((user) => user.role === role) ?? users[0];
+    // The real logged-in identity, hydrated from /api/crm/bootstrap. RBAC is
+    // driven by this — NOT by the URL. Only a real owner may "view as" another
+    // role (a prototype/support affordance); a created member is locked to their
+    // own role so they never see owner-only modules.
+    const realRole = getCurrentUserRole();
+    const realUserId = getCurrentUserId();
+    const canViewAs = realRole === 'owner';
+    const role = canViewAs ? resolveRoleParam(searchParams.get('role')) : realRole;
+    const realUser = realUserId ? users.find((user) => user.id === realUserId) : undefined;
+    const currentUser =
+      role === realRole && realUser
+        ? realUser
+        : users.find((user) => user.role === role) ?? realUser ?? users[0];
 
     const availableBranches =
       role === 'owner'
@@ -159,6 +174,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       workspace,
       currentUser,
       role,
+      canViewAs,
       team: findTeam(currentUser.teamId),
       branch,
       branchId,

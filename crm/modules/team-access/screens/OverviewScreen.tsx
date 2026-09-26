@@ -1,171 +1,112 @@
-import { ArrowLeft, Clock, ShieldAlert, TriangleAlert, UserRoundPlus, UsersRound } from 'lucide-react';
-import { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { ChartNoAxesCombined, MapPin, PhoneCall, UserRoundPlus, Users, ClipboardList } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useScopedHref } from '@crm/app/use-scoped-href';
 import { useWorkspace } from '@crm/app/workspace-context';
-import { AttentionCard, Button, KpiCard } from '@crm/design-system';
+import { Button, KpiCard } from '@crm/design-system';
 import { PageHeader } from '@crm/components';
-import { contentStateView } from '../components';
-import { performanceSnapshots } from '../team-access-mock-data';
-import { overviewStats } from '../team-access-selectors';
+import './OverviewScreen.css';
+
+interface Seats { used: number; included: number | null; overage: number; }
+interface Totals { assignedContacts: number; calls: number; followUpInProgress: number; notInterested: number; enquiryReceived: number; }
 
 /**
- * TEAM-S01 — Overview. Actionable staffing/access/work risk snapshot. Does
- * not duplicate Dashboard or Reports (SPEC §3) — every figure drills into the
- * exact People/Work Distribution/Performance view behind it.
+ * TEAM-S01 — Overview. A clean, real snapshot of the team operating model:
+ * seats + member count, and the calling totals the Performance report rolls up.
+ * Every card drills into a live screen (Members / Zone routing / Performance).
  */
 export default function OverviewScreen() {
   const navigate = useNavigate();
   const scopedHref = useScopedHref();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { branchId, branch, currentUser } = useWorkspace();
+  const { role, currentUser } = useWorkspace();
+  const canManage = role === 'owner';
 
-  const tabRedirect = searchParams.get('tab');
+  const [seats, setSeats] = useState<Seats | null>(null);
+  const [members, setMembers] = useState<number>(0);
+  const [totals, setTotals] = useState<Totals | null>(null);
+
   useEffect(() => {
-    if (tabRedirect === 'workload') {
-      navigate(scopedHref('/team-access/work', { view: 'workload' }), { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tabRedirect]);
+    fetch('/api/crm/team/members', { credentials: 'same-origin' })
+      .then((r) => r.json())
+      .then((d) => { if (!d.error) { setSeats(d.seats ?? null); setMembers((d.members ?? []).length); } })
+      .catch(() => {});
+    fetch('/api/crm/team/performance', { credentials: 'same-origin' })
+      .then((r) => r.json())
+      .then((d) => { if (!d.error) setTotals(d.totals ?? null); })
+      .catch(() => {});
+  }, []);
 
-  if (tabRedirect === 'workload') return null;
-
-  const scope = { branchId: branchId === 'all' ? null : branchId };
-  const stats = overviewStats(scope);
-
-  const state = searchParams.get('state');
-  const clearState = () =>
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.delete('state');
-      return next;
-    });
-  const stateView = contentStateView(state, { onRetry: clearState });
-
-  const returnTo = searchParams.get('returnTo');
-  const sourceModule = searchParams.get('sourceModule');
-
-  const dataAvailable = performanceSnapshots.filter((p) => p.dataAvailable);
-  const avgFirstResponse = dataAvailable.length
-    ? Math.round(dataAvailable.reduce((sum, p) => sum + (p.firstResponseMinutes ?? 0), 0) / dataAvailable.length)
-    : null;
-  const avgResolution = dataAvailable.length
-    ? (dataAvailable.reduce((sum, p) => sum + (p.resolutionHours ?? 0), 0) / dataAvailable.length).toFixed(1)
-    : null;
-  const totalOverdue = performanceSnapshots.reduce((sum, p) => sum + p.overdue, 0);
-  const totalResolved = performanceSnapshots.reduce((sum, p) => sum + p.resolved, 0);
+  const go = (path: string) => navigate(scopedHref(path));
 
   return (
     <div className="crm-team-overview">
       <PageHeader
-        title="Team & Access Overview"
-        description={`Team, access & workload${branch ? ` · ${branch.name}` : ''}`}
-        breadcrumbs={
-          returnTo
-            ? [{ label: sourceModule ? sourceModule[0].toUpperCase() + sourceModule.slice(1) : 'Back', to: returnTo }, { label: 'Team & Access' }]
-            : undefined
-        }
+        title="Team & Access"
+        description="Members, zone routing and calling performance"
         actions={
-          <>
-            {returnTo ? (
-              <Button variant="secondary" iconLeft={<ArrowLeft />} onClick={() => navigate(returnTo)}>
-                Back
+          canManage ? (
+            <>
+              <Button variant="secondary" iconLeft={<MapPin />} onClick={() => go('/team-access/zones')}>
+                Zone routing
               </Button>
-            ) : null}
-            <Button
-              variant="secondary"
-              iconLeft={<UsersRound />}
-              onClick={() => navigate(scopedHref('/team-access/work', { view: 'workload' }))}
-            >
-              Review workload
-            </Button>
-            <Button
-              variant="primary"
-              iconLeft={<UserRoundPlus />}
-              onClick={() => navigate(scopedHref('/team-access/people', { drawer: 'invite', step: 'identity' }))}
-            >
-              Invite team member
-            </Button>
-          </>
+              <Button variant="primary" iconLeft={<UserRoundPlus />} onClick={() => go('/team-access/people')}>
+                Add member
+              </Button>
+            </>
+          ) : undefined
         }
       />
 
-      {stateView ?? (
-        <>
-          <section aria-label="Key figures" className="crm-team-overview__kpis">
-            <KpiCard label="Active members" value={stats.activeCount} icon={<UsersRound />} meta="In current scope" />
-            <KpiCard label="Pending invites" value={stats.pendingCount} meta="Awaiting acceptance" />
-            <KpiCard label="Unassigned work" value={stats.unassignedWork} meta="Waiting in fallback queues" emphasis="gold" />
-            <KpiCard label="Inactive members" value={stats.inactiveCount} meta="Access blocked, history kept" />
-          </section>
+      <section aria-label="Key figures" className="crm-team-overview__kpis">
+        <KpiCard label="Team members" value={members} icon={<Users />} meta={seats?.included != null ? `${seats.used}/${seats.included} seats used` : `${seats?.used ?? members} active`} />
+        {seats && seats.overage > 0
+          ? <KpiCard label="Paid extra seats" value={seats.overage} meta="Beyond your plan" emphasis="gold" />
+          : <KpiCard label="Assigned contacts" value={totals?.assignedContacts ?? '—'} icon={<ClipboardList />} meta="Across the team" />}
+        <KpiCard label="Calls done" value={totals?.calls ?? '—'} icon={<PhoneCall />} meta="Logged outcomes" />
+        <KpiCard label="Enquiries received" value={totals?.enquiryReceived ?? '—'} meta="Handed to sales" emphasis="gold" />
+      </section>
 
-          <section aria-label="Needs attention" className="crm-team-overview__section">
-            <h2 className="crm-team-overview__section-title">Needs attention</h2>
-            <div className="crm-team-overview__attention">
-              <AttentionCard
-                title="Overloaded members"
-                count={stats.overloadedCount}
-                description="Over capacity on one or more work types"
-                icon={<TriangleAlert />}
-                tone="danger"
-                to={scopedHref('/team-access/work', { view: 'workload', state: 'overload' })}
-              />
-              <AttentionCard
-                title="Unavailable with open work"
-                count={stats.unavailableWithWorkCount}
-                description="Marked away/offline while still holding work"
-                icon={<Clock />}
-                tone="warn"
-                to={scopedHref('/team-access/work', { view: 'workload' })}
-              />
-              <AttentionCard
-                title="Number access issues"
-                count={stats.numberIssueCount}
-                description="Active members with no WhatsApp number access"
-                icon={<ShieldAlert />}
-                tone="warn"
-                to={scopedHref('/team-access/structure', { view: 'numbers' })}
-              />
-              <AttentionCard
-                title="Exit follow-up required"
-                count={stats.exitAttentionCount}
-                description="Offboarding transfers needing manual review"
-                icon={<UserRoundPlus />}
-                tone="neutral"
-                to={scopedHref('/team-access/audit', { event: 'offboarding' })}
-              />
-            </div>
-          </section>
-
-          {currentUser.role !== 'agent' ? (
-            <section aria-label="Performance snapshot" className="crm-team-overview__section">
-              <h2 className="crm-team-overview__section-title">Performance snapshot</h2>
-              <div className="crm-team-overview__snapshot">
-                <KpiCard label="Resolved (period)" value={totalResolved} meta="Across all members" />
-                <KpiCard label="Overdue" value={totalOverdue} meta="Needs owner attention" />
-                <KpiCard label="Avg. first response" value={avgFirstResponse !== null ? `${avgFirstResponse}m` : 'Not available'} />
-                <KpiCard label="Avg. resolution time" value={avgResolution !== null ? `${avgResolution}h` : 'Not available'} />
-              </div>
-            </section>
+      <section aria-label="Manage" className="crm-team-overview__section">
+        <h2 className="crm-team-overview__section-title">Manage</h2>
+        <div className="crm-team-overview__cards">
+          <NavCard
+            icon={<Users />}
+            title="Members"
+            body="Create agents & managers, set departments, reset passwords and manage seats."
+            onClick={() => go('/team-access/people')}
+          />
+          <NavCard
+            icon={<MapPin />}
+            title="Zone routing"
+            body="Map states & cities to zones and assign members. New contacts auto-route to their zone's member."
+            onClick={() => go('/team-access/zones')}
+          />
+          {role !== 'agent' ? (
+            <NavCard
+              icon={<ChartNoAxesCombined />}
+              title="Performance"
+              body="Per-member report: assigned, calls done, follow-ups in progress, not interested and enquiries."
+              onClick={() => go('/team-access/performance')}
+            />
           ) : null}
+        </div>
+      </section>
 
-          {currentUser.role === 'owner' ? (
-            <section aria-label="Not in this build yet" className="crm-team-overview__section">
-              <h2 className="crm-team-overview__section-title">Not in this build yet</h2>
-              <ul className="crm-team-overview__deferred">
-                <li><strong>Targets & goal tracking</strong> — Phase 2 (source metric reliability unresolved).</li>
-                <li><strong>Shift-based availability</strong> — Phase 2; V1 availability uses employment, number access, manual status and capacity only.</li>
-                <li><strong>Automatic escalation rule builder</strong> — Phase 2; escalations are resolved manually in Work Distribution today.</li>
-                <li><strong>AI assignment recommendations</strong> — Phase 2, recommendation-only when it ships.</li>
-                <li><strong>Manager summaries & risk alerts</strong> — Phase 2.</li>
-                <li><strong>Advanced conversation quality review</strong> — Phase 2; stays owned by Inbox, not duplicated here.</li>
-                <li><strong>HR/Directory sync</strong> — Phase 2.</li>
-                <li><strong>Login/2FA/Sessions, Notification defaults, HR & API integrations</strong> — configured in workspace <a href="/settings">Settings</a>, not Team & Access.</li>
-              </ul>
-            </section>
-          ) : null}
-        </>
-      )}
+      {role === 'agent' ? (
+        <p className="crm-team-overview__note">
+          You’re signed in as <strong>{currentUser.name}</strong> (Agent). You see only the contacts assigned to you.
+        </p>
+      ) : null}
     </div>
+  );
+}
+
+function NavCard({ icon, title, body, onClick }: { icon: React.ReactNode; title: string; body: string; onClick: () => void }) {
+  return (
+    <button type="button" className="crm-team-navcard" onClick={onClick}>
+      <span className="crm-team-navcard__icon">{icon}</span>
+      <span className="crm-team-navcard__title">{title}</span>
+      <span className="crm-team-navcard__body">{body}</span>
+    </button>
   );
 }

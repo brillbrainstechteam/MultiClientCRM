@@ -35,10 +35,18 @@ export const teamAccessPages: TeamAccessScreen[] = [
   {
     id: 'TEAM-S02',
     path: '/team-access/people',
-    title: 'People',
+    title: 'Members',
     surface: 'page',
     purpose: 'Directory of members with status, role, team, branch, availability, workload and access cues.',
     batch: 1,
+  },
+  {
+    id: 'TEAM-S22',
+    path: '/team-access/zones',
+    title: 'Zone routing',
+    surface: 'page',
+    purpose: 'Map states/cities to zones and assign members; new contacts auto-route to their zone member.',
+    batch: 6,
   },
   {
     id: 'TEAM-S03',

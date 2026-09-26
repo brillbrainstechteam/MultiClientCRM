@@ -1,10 +1,8 @@
 import {
   ChartNoAxesCombined,
-  History,
   LayoutGrid,
-  Network,
+  MapPin,
   Users,
-  Workflow,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -22,18 +20,17 @@ interface SecondaryNavItem {
 
 const items: SecondaryNavItem[] = [
   { label: 'Overview', to: '/team-access', icon: LayoutGrid, matchPrefix: '/team-access', end: true },
-  { label: 'People', to: '/team-access/people', icon: Users, matchPrefix: '/team-access/people', requires: 'viewPeople' },
-  { label: 'Structure', to: '/team-access/structure', icon: Network, matchPrefix: '/team-access/structure', requires: 'manageTeamsBranches' },
-  { label: 'Work Distribution', to: '/team-access/work', icon: Workflow, matchPrefix: '/team-access/work', requires: 'manageWorkload' },
+  { label: 'Members', to: '/team-access/people', icon: Users, matchPrefix: '/team-access/people', requires: 'viewPeople' },
+  { label: 'Zone routing', to: '/team-access/zones', icon: MapPin, matchPrefix: '/team-access/zones', requires: 'manageTeamsBranches' },
   { label: 'Performance', to: '/team-access/performance', icon: ChartNoAxesCombined, matchPrefix: '/team-access/performance', requires: 'viewPerformance' },
-  { label: 'Audit', to: '/team-access/audit', icon: History, matchPrefix: '/team-access/audit', requires: 'viewAudit' },
 ];
 
 /**
- * The module's six operational destinations (SIMPLIFICATION_DECISIONS.md §1).
- * Structure also covers Teams/Branches/Numbers; Work Distribution covers
- * Workload/Routing/Queues/Escalations — sub-navigation lives inside those
- * pages as tabs, not as additional top-level entries.
+ * The module's live operational destinations. Members = create/manage team
+ * accounts (seats, roles, departments). Zone routing = map members to zones so
+ * new contacts auto-assign. Performance = per-member calling report. Prototype
+ * scaffolding (Structure/Work/Audit) still has routes for deep links but is kept
+ * out of the primary nav to avoid clutter.
  */
 export function TeamAccessSecondaryNav() {
   const location = useLocation();

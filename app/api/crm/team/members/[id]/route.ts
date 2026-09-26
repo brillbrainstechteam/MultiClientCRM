@@ -5,7 +5,7 @@ import { hashPassword } from '@/lib/auth/password';
 import { audit } from '@/lib/crm/audit';
 
 const ROLES = ['admin', 'manager', 'agent'];
-const DEPTS = ['sales', 'marketing', 'support', 'other'];
+const DEPTS = ['sales', 'marketing', 'frontend_marketing', 'backend_marketing', 'support', 'other'];
 
 /** Update a member: role, department, status (activate/disable), or reset password. Owner/admin only. */
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {

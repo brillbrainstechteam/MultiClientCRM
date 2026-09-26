@@ -24,7 +24,7 @@ const connectionOptions = [
  * writes `?role=` so reviewers can capture each permission variant by URL.
  */
 export function TopBar() {
-  const { currentUser, role, setScope } = useWorkspace();
+  const { currentUser, role, canViewAs, setScope } = useWorkspace();
   const { connected, setConnected } = useAppSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -60,24 +60,27 @@ export function TopBar() {
       />
 
       <div className="crm-topbar__right">
-        {/* Prototype review controls — flip workspace state and acting role to
-            reach every screen state. In production these come from real auth. */}
-        <div className="crm-topbar__review-control">
-          <Select
-            label="Workspace"
-            size="sm"
-            options={connectionOptions}
-            value={connected ? 'connected' : 'new'}
-            onChange={(event) => setConnected(event.target.value === 'connected')}
-          />
-          <Select
-            label="View as role"
-            size="sm"
-            options={roleOptions}
-            value={role}
-            onChange={(event) => setScope({ role: event.target.value as RoleKey })}
-          />
-        </div>
+        {/* Owner-only review controls — flip workspace state and acting role to
+            reach every screen state. Hidden for created members so they cannot
+            escalate their own view. In production these come from real auth. */}
+        {canViewAs ? (
+          <div className="crm-topbar__review-control">
+            <Select
+              label="Workspace"
+              size="sm"
+              options={connectionOptions}
+              value={connected ? 'connected' : 'new'}
+              onChange={(event) => setConnected(event.target.value === 'connected')}
+            />
+            <Select
+              label="View as role"
+              size="sm"
+              options={roleOptions}
+              value={role}
+              onChange={(event) => setScope({ role: event.target.value as RoleKey })}
+            />
+          </div>
+        ) : null}
 
         <IconButton label="Help" icon={<CircleHelp />} disabled />
         <IconButton label="Notifications" icon={<Bell />} disabled />

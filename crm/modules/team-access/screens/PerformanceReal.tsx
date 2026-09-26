@@ -70,7 +70,7 @@ export default function PerformanceReal() {
               <div key={r.userId} className={`pf-row${r.status === 'disabled' ? ' pf-row--off' : ''}`}>
                 <div className="pf-member">
                   <span className="pf-ava">{r.name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()}</span>
-                  <div><strong>{r.name}</strong><span>{cap(r.role)}{r.department ? ` · ${cap(r.department)}` : ''}</span></div>
+                  <div><strong>{r.name}</strong><span>{cap(r.role)}{r.department ? ` · ${dept(r.department)}` : ''}</span></div>
                 </div>
                 <span className="pf-num">{r.assignedContacts}</span>
                 <span className="pf-num pf-strong">{r.calls}</span>
@@ -98,3 +98,4 @@ function Tile({ icon: Icon, label, value, tone }: { icon: React.ComponentType<{ 
   );
 }
 function cap(s: string) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function dept(s: string) { return s.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
