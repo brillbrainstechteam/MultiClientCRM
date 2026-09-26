@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { runInboundAutomations } from '@/lib/crm/automation';
+import { routeLocation } from '@/lib/crm/zone-routing';
 
 /**
  * Routing for a WhatsApp webhook payload: resolve the owning tenant from the
@@ -88,6 +89,30 @@ export async function ingestWebhookPayload(payload: any): Promise<IngestResult> 
         update: { lastMessageAt: at, name: nameByWaId[from] || undefined },
         create: { tenantId, phone: from, name: nameByWaId[from] || null, lastMessageAt: at },
       });
+
+      // Zone routing on first touch: City → State → Zone → member. One member in
+      // the zone = auto-assign; several = leave for the admin to pick. Best-effort.
+      if (!convo.assigneeUserId && !convo.zoneId) {
+        try {
+          const crm = await prisma.crmContact.findFirst({
+            where: { tenantId, mobile: { in: [`+${from}`, from] } },
+            select: { id: true, city: true, state: true },
+          });
+          const route = await routeLocation(tenantId, crm?.city, crm?.state);
+          if (route.zoneId) {
+            await prisma.conversation.update({
+              where: { id: convo.id },
+              data: { zoneId: route.zoneId, ...(route.assigneeUserId ? { assigneeUserId: route.assigneeUserId } : {}) },
+            });
+            if (crm) {
+              await prisma.crmContact.update({
+                where: { id: crm.id },
+                data: { zone: route.zoneName ?? undefined, ...(route.assigneeUserId ? { ownerId: route.assigneeUserId } : {}) },
+              });
+            }
+          }
+        } catch { /* routing never blocks ingest */ }
+      }
 
       const existing = m.id ? await prisma.message.findUnique({ where: { waMessageId: m.id } }) : null;
       if (!existing) {

@@ -59,7 +59,7 @@ export default function OverviewScreen() {
     <div className="crm-team-overview">
       <PageHeader
         title="Team & Access Overview"
-        description={`Staffing, access and workload risk for ${branch ? branch.name : 'all branches in scope'}. Drill into any figure for the exact people behind it.`}
+        description={`Team, access & workload${branch ? ` · ${branch.name}` : ''}`}
         breadcrumbs={
           returnTo
             ? [{ label: sourceModule ? sourceModule[0].toUpperCase() + sourceModule.slice(1) : 'Back', to: returnTo }, { label: 'Team & Access' }]

@@ -16,7 +16,7 @@ import DataQualityScreen from './screens/DataQualityScreen';
 import ContactReportsScreen from './screens/ContactReportsScreen';
 import DuplicateMergeScreen from './screens/DuplicateMergeScreen';
 import { ImportWizard } from './imports/ImportWizard';
-import ZoneAssignmentSettings from './zones/ZoneAssignmentSettings';
+import ZonesConfigReal from './zones/ZonesConfigReal';
 import {
   contactPages,
   importWizardSteps,
@@ -108,7 +108,7 @@ export function ContactsRoutes() {
         {contactPages.map(screenRoute)}
         {screenRoute(segmentEditScreen)}
         {importWizardSteps.map(screenRoute)}
-        <Route path="zones" element={<ZoneAssignmentSettings context="contacts" />} />
+        <Route path="zones" element={<ZonesConfigReal />} />
         <Route path="imports/new" element={<Navigate to="/contacts/imports/new/method" replace />} />
         <Route path="*" element={<Navigate to="/contacts" replace />} />
       </Route>
