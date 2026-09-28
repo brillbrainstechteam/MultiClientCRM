@@ -30,15 +30,15 @@ function initials(name: string): string {
 const ROLE_LABEL: Record<string, string> = { owner: 'Owner', manager: 'Manager', agent: 'Agent' };
 
 /**
- * Map a stored DB role to the CRM's three visibility roles — LEAST PRIVILEGE.
- * Only the genuine tenant `owner` gets owner-level access (all modules + view-as).
- * A co-`admin` is treated as a manager (team + reports, but not billing/owner).
- * Anything unrecognised falls to `agent` (own contacts only) — never owner — so a
- * created member can never silently see everything.
+ * Map a stored DB role to the CRM's three visibility roles.
+ *   owner / admin → owner-level access: all modules, member management, view-as.
+ *     `admin` is a full co-owner (it just keeps its "Admin" label for clarity).
+ *   manager       → team + reports, but not billing.
+ *   anything else → agent (own contacts only) — least privilege, never owner.
  */
 function normalizeRole(dbRole: string): 'owner' | 'manager' | 'agent' {
-  if (dbRole === 'owner') return 'owner';
-  if (dbRole === 'manager' || dbRole === 'admin') return 'manager';
+  if (dbRole === 'owner' || dbRole === 'admin') return 'owner';
+  if (dbRole === 'manager') return 'manager';
   return 'agent';
 }
 
@@ -98,7 +98,7 @@ export async function GET() {
       initials: initials(name),
       email: u.email,
       role,
-      roleLabel: ROLE_LABEL[role] ?? 'Owner',
+      roleLabel: u.role === 'admin' ? 'Admin' : (ROLE_LABEL[role] ?? 'Owner'),
       teamId: DEFAULT_TEAM_ID,
       branchId: DEFAULT_BRANCH_ID,
       permittedWhatsAppNumberIds: numberIds,

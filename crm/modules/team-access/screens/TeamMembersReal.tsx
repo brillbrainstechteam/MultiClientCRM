@@ -12,6 +12,7 @@ const inr = (n: number) => '₹' + n.toLocaleString('en-IN');
 const ROLE_OPTS = [
   { value: 'agent', label: 'Agent — sees only their own assigned contacts' },
   { value: 'manager', label: 'Manager — sees their department + reports' },
+  { value: 'admin', label: 'Admin — full co-owner (all access + billing)' },
 ];
 const DEPT_OPTS = [
   { value: '', label: 'No department' },
