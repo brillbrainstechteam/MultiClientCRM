@@ -11,6 +11,7 @@ import SegmentsScreen from './screens/SegmentsScreen';
 import SegmentDetailScreen from './screens/SegmentDetailScreen';
 import SegmentBuilderScreen from './screens/SegmentBuilderScreen';
 import ImportsHubScreen from './screens/ImportsHubScreen';
+import ProspectingScreen from './screens/ProspectingScreen';
 import ImportJobDetailScreen from './screens/ImportJobDetailScreen';
 import DataQualityScreen from './screens/DataQualityScreen';
 import ContactReportsScreen from './screens/ContactReportsScreen';
@@ -36,6 +37,7 @@ const implemented: Record<string, ComponentType> = {
   '/contacts/segments/:segmentId': SegmentDetailScreen,
   '/contacts/segments/new': SegmentBuilderScreen,
   '/contacts/segments/:segmentId/edit': SegmentBuilderScreen,
+  '/contacts/prospecting': ProspectingScreen,
   '/contacts/imports': ImportsHubScreen,
   '/contacts/imports/jobs/:jobId': ImportJobDetailScreen,
   '/contacts/data-quality': DataQualityScreen,
@@ -57,6 +59,7 @@ const implemented: Record<string, ComponentType> = {
  * access-denied state instead of the protected view (CLAUDE.md §9).
  */
 const routeGuards: Record<string, { capability: Capability; area: string }> = {
+  '/contacts/prospecting': { capability: 'manageImports', area: 'Find New Businesses' },
   '/contacts/imports': { capability: 'manageImports', area: 'Imports & Sync' },
   '/contacts/imports/jobs/:jobId': { capability: 'manageImports', area: 'Imports & Sync' },
   '/contacts/imports/new/method': { capability: 'manageImports', area: 'Imports & Sync' },

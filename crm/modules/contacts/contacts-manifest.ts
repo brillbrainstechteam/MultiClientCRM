@@ -74,6 +74,14 @@ export const contactPages: ContactScreen[] = [
     batch: 2,
   },
   {
+    id: 'CON-S29',
+    path: '/contacts/prospecting',
+    title: 'Find New Businesses',
+    surface: 'page',
+    purpose: 'B2B prospecting via Google Places — search by location, dedupe against the CRM, add as prospects.',
+    batch: 3,
+  },
+  {
     id: 'CON-S07',
     path: '/contacts/imports',
     title: 'Imports & Sync Hub',

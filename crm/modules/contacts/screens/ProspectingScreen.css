@@ -1,0 +1,6 @@
+.crm-prospecting-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4, 16px);
+  padding: var(--crm-space-5, 24px);
+}

@@ -1,0 +1,36 @@
+# TalkTrack CRM on our own VPS.
+#
+# Separate from the repo-root docker-compose.yml, which runs the local dev
+# Postgres — this one runs the app itself in production.
+#
+#   cd /srv/talktrack && docker compose -f deploy/docker-compose.vps.yml up -d --build
+#
+# The app binds to 127.0.0.1:3000 only: the VPS's existing reverse proxy
+# terminates TLS and forwards to it, so TalkTrack coexists with the other apps
+# on the box instead of competing for ports 80/443.
+
+services:
+  talktrack:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_META_APP_ID: ${NEXT_PUBLIC_META_APP_ID}
+        NEXT_PUBLIC_META_CONFIG_ID: ${NEXT_PUBLIC_META_CONFIG_ID}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+    image: talktrack-crm:latest
+    container_name: talktrack-crm
+    restart: unless-stopped
+    env_file: ../.env.production
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      # Showroom photos. This host path must survive redeploys and be backed up
+      # together with Postgres — a CrmFile row without its bytes is a dead image.
+      - /var/lib/talktrack/uploads:/var/lib/talktrack/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s

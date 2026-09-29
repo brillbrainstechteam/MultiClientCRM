@@ -16,7 +16,6 @@ import { useScopedHref } from '@crm/app/use-scoped-href';
 import { Badge, Button, ConfirmDialog, Toast } from '@crm/design-system';
 import { contacts, importJobs, type ImportMethod } from '@crm/mock-data';
 import { ImportRow } from '../components';
-import { ProspectingPanel } from '../ProspectingPanel';
 import { GoogleSyncPanel } from '../GoogleSyncPanel';
 import { methodLabels } from '../imports/import-flow';
 import { downloadTemplate } from '../imports/import-template';
@@ -198,8 +197,6 @@ export default function ImportsHubScreen() {
           </>
         }
       />
-
-      <ProspectingPanel />
 
       <section className="crm-hub__section">
         <h2 className="crm-hub__title">Import methods</h2>
