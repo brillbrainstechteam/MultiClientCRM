@@ -1,98 +1,174 @@
-# Moving TalkTrack CRM from Vercel to our VPS
+# Moving TalkTrack CRM from Vercel to the VPS (CloudPanel + Cloudflare)
 
 The domain does not change, so **nothing in Meta or Google needs reconfiguring** —
-the webhook URL, OAuth redirect URI and JS SDK allowed domains all stay valid.
-What changes is only which server answers `talktrackcrm.brillbrainsconsultants.com`.
+the webhook URL, OAuth redirect URI and JS SDK allowed domains stay valid. Only
+the server answering `talktrackcrm.brillbrainsconsultants.com` changes.
 
-The database stays on Neon for the move. Self-hosting Postgres too is a separate
-job; doing both at once means two things can break at the same time.
+The database stays on Neon for this move. Self-hosting Postgres is a separate
+job — doing both at once means two things can break at the same time.
+
+**Shape of it:** the app runs in Docker, listening on `127.0.0.1:3000`.
+CloudPanel's nginx fronts it as a **Reverse Proxy** site, so TalkTrack sits
+beside the other apps on the box instead of competing for ports 80/443.
 
 ## 0. Two settings that will break everything if you get them wrong
 
-1. **`SESSION_SECRET` must be copied across exactly.** Stored WhatsApp access
-   tokens are encrypted with a key derived from it (`lib/crypto.ts`). A new value
-   means every stored token becomes undecryptable — the WhatsApp connection dies
-   and everyone is logged out.
-2. **`NEXT_PUBLIC_*` values are compiled into the browser bundle at build time**,
-   not read at runtime. They are passed as Docker build args; changing them later
-   needs a rebuild, not a restart.
+1. **`SESSION_SECRET` must be copied from Vercel exactly.** Stored WhatsApp
+   access tokens are encrypted with a key derived from it (`lib/crypto.ts`). A
+   different value makes every token undecryptable — the WhatsApp connection
+   dies and everyone is logged out.
+2. **`NEXT_PUBLIC_*` are compiled into the browser bundle at build time**, not
+   read at runtime. They are Docker build args; changing them later needs a
+   rebuild, not a restart.
 
-## 1. On the VPS: prerequisites
+## 1. Record the current DNS (your rollback)
+
+In Cloudflare → `brillbrainsconsultants.com` → DNS, find the `talktrackcrm`
+record and **write down its current value** (the Vercel IP) before changing
+anything. Rollback is putting that value back.
+
+Lower its **TTL to 1–2 minutes** now, an hour or so before cutover, so a
+rollback propagates in minutes rather than hours.
+
+## 2. SSH: Docker and directories
 
 ```bash
-docker --version && docker compose version     # Docker + compose plugin
-sudo mkdir -p /var/lib/talktrack/uploads       # showroom photos live here
-sudo chown -R 1001:1001 /var/lib/talktrack     # uid the container runs as
-sudo mkdir -p /srv/talktrack
+ssh root@<VPS_IP>
+
+# Docker, if not already installed
+command -v docker || curl -fsSL https://get.docker.com | sh
+docker --version && docker compose version
+
+# App directory and the uploads volume (1001 = the uid the container runs as)
+mkdir -p /srv /var/lib/talktrack/uploads
+chown -R 1001:1001 /var/lib/talktrack
 ```
 
-Clone into `/srv/talktrack` and check out `main`.
+## 3. Clone the repository
 
-## 2. Environment
+The repo is private, so use a GitHub **personal access token** (or add a deploy
+key first):
 
-Create `/srv/talktrack/.env.production` with the values from the current Vercel
-project (Settings → Environment Variables → Production). Every key in use today:
+```bash
+cd /srv
+git clone https://<GITHUB_TOKEN>@github.com/brillbrainstechteam/MultiClientCRM.git talktrack
+cd /srv/talktrack
+```
+
+## 4. Environment file
+
+Copy the **Production** values out of Vercel (Project → Settings → Environment
+Variables) into `/srv/talktrack/.env.production`:
+
+```bash
+nano /srv/talktrack/.env.production
+```
 
 | Key | Notes |
 |---|---|
 | `DATABASE_URL`, `DIRECT_URL` | Neon, unchanged |
-| `SESSION_SECRET` | **must be identical to Vercel's** |
+| `SESSION_SECRET` | **identical to Vercel's** |
 | `APP_URL` | `https://talktrackcrm.brillbrainsconsultants.com` |
-| `NEXT_PUBLIC_META_APP_ID`, `NEXT_PUBLIC_META_CONFIG_ID`, `NEXT_PUBLIC_META_COEXISTENCE_FEATURE` | build args too |
+| `NEXT_PUBLIC_META_APP_ID`, `NEXT_PUBLIC_META_CONFIG_ID`, `NEXT_PUBLIC_META_COEXISTENCE_FEATURE` | also used as build args |
 | `META_APP_SECRET`, `META_GRAPH_VERSION` | |
 | `WHATSAPP_WEBHOOK_VERIFY_TOKEN` | must match Meta → WhatsApp → Configuration |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Contacts/Sheets sync |
 | `GEMINI_API_KEY`, `OPENAI_API_KEY` | Kundli briefs |
 | `PLACES_API_KEY`, `PROSPECTING_TENANTS` | Find New Businesses |
-| `STORAGE_DRIVER=local`, `STORAGE_DIR=/var/lib/talktrack/uploads` | new — showroom photos |
+| `STORAGE_DRIVER=local` | showroom photos |
+| `STORAGE_DIR=/var/lib/talktrack/uploads` | must match the volume above |
 
-`WHATSAPP_TEST_*` are local-dev only and can be left out.
+`WHATSAPP_TEST_*` are local-dev only; leave them out.
 
-## 3. Build, migrate, run
+```bash
+chmod 600 /srv/talktrack/.env.production
+```
+
+## 5. Build, migrate, start
+
+Run these from `/srv/talktrack`. `--env-file` matters: it feeds both the
+container environment and the `${...}` build args.
 
 ```bash
 cd /srv/talktrack
-docker compose -f deploy/docker-compose.vps.yml build
-docker compose -f deploy/docker-compose.vps.yml run --rm --no-deps talktrack npx prisma migrate deploy
-docker compose -f deploy/docker-compose.vps.yml up -d
-curl -I http://127.0.0.1:3000/login     # expect 200
+docker compose --env-file .env.production -f deploy/docker-compose.vps.yml build
+
+# migrate-if-prod.mjs only fires on Vercel, so migrations are explicit here.
+# This creates the CrmFile table used by showroom photos.
+docker compose --env-file .env.production -f deploy/docker-compose.vps.yml \
+  run --rm --no-deps talktrack npx prisma migrate deploy
+
+docker compose --env-file .env.production -f deploy/docker-compose.vps.yml up -d
+curl -I http://127.0.0.1:3000/login      # expect HTTP/1.1 200
 ```
 
-The migration step is not optional: `scripts/migrate-if-prod.mjs` only runs on
-Vercel, so on the VPS migrations are applied by hand. The pending
-`CrmFile` migration (showroom photos) is applied by this step.
+If that curl returns 200, the app is running. The site is not reachable from
+the internet yet — DNS still points at Vercel.
 
-## 4. Reverse proxy
+## 6. CloudPanel: the Reverse Proxy site
 
-The app listens on `127.0.0.1:3000` only, so it sits behind the proxy already
-serving the other apps on the box. Copy `deploy/nginx-talktrack.conf` to
-`/etc/nginx/sites-available/talktrack`, symlink it into `sites-enabled`, then
-`sudo nginx -t && sudo systemctl reload nginx`.
+CloudPanel → **Sites → Add Site → Create a Reverse Proxy**:
 
-`client_max_body_size 12m` matters: photos are posted as base64, so an 8MB image
-is ~11MB of body and the default 1MB limit would reject it with a 413.
+| Field | Value |
+|---|---|
+| Domain Name | `talktrackcrm.brillbrainsconsultants.com` |
+| Reverse Proxy URL | `http://127.0.0.1:3000` |
+| Site User | `talktrack` |
+| Site User Password | generate and save it |
 
-**TLS** depends on how Cloudflare is set up:
-- **DNS-only (grey cloud):** `sudo certbot --nginx -d talktrackcrm.brillbrainsconsultants.com`.
-- **Proxied (orange cloud):** an HTTP-01 challenge cannot reach the box. Use a
-  Cloudflare **Origin Certificate** on the VPS and set SSL mode to **Full (strict)**,
-  or issue the certificate with a DNS-01 challenge.
+Then **Sites → talktrackcrm… → Vhost Editor** and, inside the `server { }`
+block, make sure these are present:
 
-## 5. Cutover
+```nginx
+client_max_body_size 12m;          # photos post as base64: an 8MB image is ~11MB
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header X-Forwarded-Host  $host;
+```
 
-1. Test through the VPS **before** moving DNS: add
-   `<vps-ip> talktrackcrm.brillbrainsconsultants.com` to your laptop's hosts file
-   and walk through login, Inbox, Templates and `/diagnostics/whatsapp`.
-2. Lower the record's TTL an hour ahead, so a rollback takes minutes.
-3. In Cloudflare, repoint the record from Vercel to the VPS (`A` → VPS IP).
-4. Watch `docker compose -f deploy/docker-compose.vps.yml logs -f` and confirm a
-   real inbound WhatsApp message reaches the Inbox.
-5. Leave the Vercel project deployed for a few days. **Rollback = point DNS back.**
+Without `client_max_body_size`, photo uploads fail with a 413. The forwarded
+headers matter because the Meta OAuth `redirect_uri` is derived from them.
 
-## 6. After the move
+CloudPanel's firewall leaves only 22, 80, 443 and 8443 open, which is correct
+here — port 3000 is bound to localhost and must never be exposed.
 
-- Updates: `./deploy/deploy.sh` (pull, rebuild, migrate, restart).
-- **Back up `/var/lib/talktrack/uploads` together with the database.** A `CrmFile`
-  row whose bytes are missing is a broken image.
-- Logs: `docker compose -f deploy/docker-compose.vps.yml logs -f talktrack`.
-- Once settled, Postgres can move off Neon onto the VPS as its own step.
+## 7. Cutover: DNS and TLS
+
+Pick one. **Option A avoids any window without a valid certificate.**
+
+### Option A — Cloudflare Origin Certificate (recommended, no downtime)
+1. Cloudflare → SSL/TLS → **Origin Server → Create Certificate**. Include
+   `talktrackcrm.brillbrainsconsultants.com`. Copy the certificate and key.
+2. CloudPanel → Sites → your site → **SSL/TLS → Add Custom Certificate**, paste
+   both, save.
+3. Cloudflare → SSL/TLS → Overview → set encryption mode to **Full (strict)**.
+4. Cloudflare → DNS → change the `talktrackcrm` **A record to the VPS IP**,
+   proxy **ON** (orange cloud).
+
+The certificate is installed before the switch, so the site is valid the moment
+DNS moves.
+
+### Option B — Let's Encrypt through CloudPanel
+1. Cloudflare → DNS → point the A record at the VPS IP with proxy **OFF**
+   (grey cloud), so the HTTP-01 challenge reaches the box.
+2. CloudPanel → Sites → your site → **SSL/TLS → New Let's Encrypt Certificate**.
+3. Once issued, turn the proxy back on if you want Cloudflare in front.
+
+## 8. Verify before you call it done
+
+1. `https://talktrackcrm.brillbrainsconsultants.com/login` — sign in.
+2. `/diagnostics/whatsapp` — every check green.
+3. Send a WhatsApp message **to** the business number; confirm it appears in the
+   Inbox (this proves Meta's webhook is reaching the new server).
+4. Reply from the Inbox; confirm it arrives on the phone.
+5. Templates screen lists the WABA's templates.
+6. Customer 360 → **Showroom photos** → upload one, reload, confirm it renders.
+
+## 9. After the move
+
+- **Updates:** `cd /srv/talktrack && ./deploy/deploy.sh` (pull, rebuild, migrate, restart).
+- **Logs:** `docker compose --env-file .env.production -f deploy/docker-compose.vps.yml logs -f talktrack`
+- **Back up `/var/lib/talktrack/uploads` with the database.** A `CrmFile` row
+  whose bytes are gone is a broken image.
+- **Keep the Vercel project deployed for a few days.** Rollback is putting the
+  old A record value back.
+- Once settled, Postgres can move off Neon as its own project.

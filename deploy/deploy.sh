@@ -4,7 +4,9 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-COMPOSE="docker compose -f deploy/docker-compose.vps.yml"
+# --env-file also feeds ${VAR} interpolation for the build args; without it
+# Compose would look for a .env beside the compose file and silently pass blanks.
+COMPOSE="docker compose --env-file .env.production -f deploy/docker-compose.vps.yml"
 
 echo "==> Pulling latest code"
 git pull --ff-only
