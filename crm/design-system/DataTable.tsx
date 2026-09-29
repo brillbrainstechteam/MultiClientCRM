@@ -7,6 +7,14 @@ export interface Column<Row> {
   render: (row: Row) => ReactNode;
   width?: string;
   align?: 'left' | 'right' | 'center';
+  /** Makes the header a sort control; `sortValue` supplies the comparable value. */
+  sortable?: boolean;
+  sortValue?: (row: Row) => string | number;
+}
+
+export interface SortState {
+  key: string;
+  dir: 'asc' | 'desc';
 }
 
 export interface DataTableProps<Row> {
@@ -21,6 +29,10 @@ export interface DataTableProps<Row> {
   onRowClick?: (row: Row) => void;
   emptyState?: ReactNode;
   caption: string;
+  /** Current sort; when set with sortable columns, rows are sorted internally. */
+  sort?: SortState | null;
+  /** Called with the clicked column key so the caller can toggle sort state. */
+  onSort?: (key: string) => void;
 }
 
 /**
@@ -39,10 +51,28 @@ export function DataTable<Row>({
   onRowClick,
   emptyState,
   caption,
+  sort,
+  onSort,
 }: DataTableProps<Row>) {
   const selectedCount = selectedIds?.size ?? 0;
   const allSelected = rows.length > 0 && selectedCount >= rows.length;
   const someSelected = selectedCount > 0 && !allSelected;
+
+  // Internal sort: applied when a sort state points at a column with sortValue.
+  let displayRows = rows;
+  if (sort) {
+    const col = columns.find((c) => c.key === sort.key && c.sortValue);
+    if (col?.sortValue) {
+      const val = col.sortValue;
+      displayRows = [...rows].sort((a, b) => {
+        const av = val(a); const bv = val(b);
+        let cmp: number;
+        if (typeof av === 'number' && typeof bv === 'number') cmp = av - bv;
+        else cmp = String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' });
+        return sort.dir === 'asc' ? cmp : -cmp;
+      });
+    }
+  }
 
   if (rows.length === 0 && emptyState) {
     return (
@@ -77,20 +107,39 @@ export function DataTable<Row>({
                 />
               </th>
             ) : null}
-            {columns.map((column) => (
-              <th
-                key={column.key}
-                scope="col"
-                className={`crm-table__cell crm-table__header-cell crm-table__cell--${column.align ?? 'left'}`}
-                style={column.width ? { width: column.width } : undefined}
-              >
-                {column.header}
-              </th>
-            ))}
+            {columns.map((column) => {
+              const isSortable = column.sortable && !!column.sortValue && !!onSort;
+              const active = sort?.key === column.key;
+              return (
+                <th
+                  key={column.key}
+                  scope="col"
+                  aria-sort={active ? (sort!.dir === 'asc' ? 'ascending' : 'descending') : (isSortable ? 'none' : undefined)}
+                  className={`crm-table__cell crm-table__header-cell crm-table__cell--${column.align ?? 'left'}`}
+                  style={column.width ? { width: column.width } : undefined}
+                >
+                  {isSortable ? (
+                    <button
+                      type="button"
+                      onClick={() => onSort!(column.key)}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        font: 'inherit', color: 'inherit', letterSpacing: 'inherit', textTransform: 'inherit' as never,
+                        background: 'none', border: 0, padding: 0, cursor: 'pointer',
+                        flexDirection: column.align === 'right' ? 'row-reverse' : 'row',
+                      }}
+                    >
+                      {column.header}
+                      <span aria-hidden="true" style={{ fontSize: '11px', opacity: active ? 1 : 0.4 }}>{active ? (sort!.dir === 'asc' ? '↑' : '↓') : '↕'}</span>
+                    </button>
+                  ) : column.header}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => {
+          {displayRows.map((row) => {
             const id = rowKey(row);
             const selected = selectedIds?.has(id) ?? false;
             return (

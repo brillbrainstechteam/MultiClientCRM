@@ -58,7 +58,7 @@ export { AttentionCard } from './AttentionCard';
 export type { AttentionCardProps, AttentionTone } from './AttentionCard';
 
 export { DataTable } from './DataTable';
-export type { Column, DataTableProps } from './DataTable';
+export type { Column, DataTableProps, SortState } from './DataTable';
 
 export { Stepper } from './Stepper';
 export type { StepperItem, StepperProps } from './Stepper';

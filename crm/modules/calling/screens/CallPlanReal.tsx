@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, MapPin, CalendarClock, ChevronRight, X, BookOpen, Navigation } from 'lucide-react';
+import { Phone, MapPin, CalendarClock, ChevronRight, X, BookOpen, Navigation, ListPlus } from 'lucide-react';
 import { PageHeader } from '@crm/components';
 import { Button, Badge } from '@crm/design-system';
 import { useWorkspace } from '@crm/app/workspace-context';
+import { CreatePlanModal } from '../components/CreatePlanModal';
 import './CallPlanReal.css';
 
 interface PlanContact {
@@ -39,6 +40,8 @@ export default function CallPlanReal() {
   const [loading, setLoading] = useState(true);
   const [assignee, setAssignee] = useState<string | null>(null);
   const [logging, setLogging] = useState<PlanContact | null>(null);
+  const [planning, setPlanning] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -56,7 +59,12 @@ export default function CallPlanReal() {
       <PageHeader
         title="Activity plan"
         description={channel === 'call' ? 'Plan and log your telecalling for the day' : 'Plan field visits by area and log what happened'}
-        actions={<Button variant="ghost" onClick={() => navigate('/calling/history')}>Activity history <ChevronRight size={15} /></Button>}
+        actions={
+          <>
+            {isAdmin ? <Button variant="secondary" iconLeft={<ListPlus size={16} />} onClick={() => setPlanning(true)}>Create plan</Button> : null}
+            <Button variant="ghost" onClick={() => navigate('/calling/history')}>Activity history <ChevronRight size={15} /></Button>
+          </>
+        }
       />
 
       {/* Channel switch — one planner, two activities. */}
@@ -102,6 +110,8 @@ export default function CallPlanReal() {
       )}
 
       {logging ? <OutcomeModal contact={logging} channel={channel} onClose={() => setLogging(null)} onDone={() => { setLogging(null); load(); }} /> : null}
+      {planning ? <CreatePlanModal channel={channel} onClose={() => setPlanning(false)} onDone={(n) => { setPlanning(false); setToast(`${n} contact${n === 1 ? '' : 's'} added to the plan.`); load(); }} /> : null}
+      {toast ? <div className="cp-toast" role="status" onAnimationEnd={() => setToast(null)}>{toast}</div> : null}
     </div>
   );
 }

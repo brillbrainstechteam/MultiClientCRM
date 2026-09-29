@@ -12,6 +12,7 @@ import {
   SearchField,
   Select,
   type Column,
+  type SortState,
 } from '@crm/design-system';
 import { Trash2, SquarePen } from 'lucide-react';
 import { findUser, segments, type Segment } from '@crm/mock-data';
@@ -27,6 +28,9 @@ export default function SegmentsScreen() {
 
   const q = searchParams.get('q') ?? '';
   const typeFilter = searchParams.get('type') ?? '';
+  const sortKey = searchParams.get('sort') ?? '';
+  const sortDir = searchParams.get('dir') === 'desc' ? 'desc' : 'asc';
+  const sort: SortState | null = sortKey ? { key: sortKey, dir: sortDir } : null;
 
   const setParam = (key: string, value: string) =>
     setSearchParams((prev) => {
@@ -36,11 +40,25 @@ export default function SegmentsScreen() {
       return next;
     });
 
+  // Toggle sort: same column flips asc/desc; a new column starts ascending.
+  const onSort = (key: string) =>
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (sortKey === key && sortDir === 'asc') { next.set('sort', key); next.set('dir', 'desc'); }
+      else if (sortKey === key && sortDir === 'desc') { next.delete('sort'); next.delete('dir'); }
+      else { next.set('sort', key); next.set('dir', 'asc'); }
+      return next;
+    });
+
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return segments.filter((s) => {
       if (typeFilter && s.type !== typeFilter) return false;
-      if (needle && !s.name.toLowerCase().includes(needle)) return false;
+      if (needle) {
+        const owner = findUser(s.ownerId)?.name ?? '';
+        const hay = `${s.name} ${s.description ?? ''} ${owner}`.toLowerCase();
+        if (!hay.includes(needle)) return false;
+      }
       return true;
     });
   }, [q, typeFilter]);
@@ -50,6 +68,8 @@ export default function SegmentsScreen() {
       key: 'name',
       header: 'Segment',
       width: '30%',
+      sortable: true,
+      sortValue: (s) => s.name.toLowerCase(),
       render: (s) => (
         <div className="crm-seg__name">
           <span className="crm-seg__name-text">{s.name}</span>
@@ -60,6 +80,8 @@ export default function SegmentsScreen() {
     {
       key: 'type',
       header: 'Type',
+      sortable: true,
+      sortValue: (s) => s.type,
       render: (s) => (
         <Badge tone={s.type === 'dynamic' ? 'info' : 'neutral'} appearance="outline">
           {s.type === 'dynamic' ? 'Dynamic' : 'Snapshot'}
@@ -70,16 +92,22 @@ export default function SegmentsScreen() {
       key: 'count',
       header: 'Matches',
       align: 'right',
+      sortable: true,
+      sortValue: (s) => s.count,
       render: (s) => <span className="crm-seg__count">{s.count.toLocaleString('en-IN')}</span>,
     },
     {
       key: 'owner',
       header: 'Owner',
+      sortable: true,
+      sortValue: (s) => (findUser(s.ownerId)?.name ?? '').toLowerCase(),
       render: (s) => <span>{findUser(s.ownerId)?.name ?? '—'}</span>,
     },
     {
       key: 'usage',
       header: 'Used by',
+      sortable: true,
+      sortValue: (s) => s.usedByCampaignIds.length,
       render: (s) =>
         s.usedByCampaignIds.length ? (
           <Badge tone="brand" appearance="soft">
@@ -92,6 +120,8 @@ export default function SegmentsScreen() {
     {
       key: 'updated',
       header: 'Updated',
+      sortable: true,
+      sortValue: (s) => new Date(s.updatedAt).getTime(),
       render: (s) => <span className="crm-seg__muted">{formatDate(s.updatedAt)}</span>,
     },
     {
@@ -129,7 +159,6 @@ export default function SegmentsScreen() {
     <div className="crm-seg">
       <PageHeader
         title="Segments"
-        description="Reusable audiences. Dynamic segments recalculate automatically; snapshots are frozen at capture."
         actions={
           <Button
             variant="primary"
@@ -168,6 +197,8 @@ export default function SegmentsScreen() {
         columns={columns}
         rows={rows}
         rowKey={(s) => s.id}
+        sort={sort}
+        onSort={onSort}
         onRowClick={(s) => navigate(scopedHref(`/contacts/segments/${s.id}`))}
         emptyState={
           <EmptyState
