@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
-import { MapPin, Check, Plus, Trash2, X, Pencil } from 'lucide-react';
+import { MapPin, Plus, Trash2, X, Pencil, Users } from 'lucide-react';
 import { PageHeader } from '@crm/components';
-import { Button, Input, Toast } from '@crm/design-system';
+import { Button, Input, Select, Toast } from '@crm/design-system';
 import { useWorkspace } from '@crm/app/workspace-context';
 import './ZonesConfigReal.css';
 
@@ -16,9 +16,11 @@ const INDIA_STATES = [
   'Chandigarh', 'Puducherry', 'Andaman and Nicobar Islands', 'Dadra and Nagar Haveli and Daman and Diu', 'Lakshadweep',
 ];
 
-/** Real zone routing config: define zones (states/cities) and assign members. A
- *  new inbound lead is mapped City → State → Zone → member. Each state or city
- *  belongs to exactly one zone (enforced server-side). Owner/admin can edit. */
+const initials = (name: string) => name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase() || '?';
+
+/** Real zone routing config: define zones (states/cities), then map members to
+ *  each zone. A new inbound lead is mapped City → State → Zone → member. Each
+ *  state or city belongs to exactly one zone (enforced server-side). */
 export default function ZonesConfigReal() {
   const { role } = useWorkspace();
   const canEdit = role === 'owner';
@@ -47,24 +49,19 @@ export default function ZonesConfigReal() {
     return true;
   };
 
-  const toggle = (zone: Zone, memberId: string) => {
-    if (!canEdit) return;
-    const next = zone.memberUserIds.includes(memberId)
-      ? zone.memberUserIds.filter((id) => id !== memberId)
-      : [...zone.memberUserIds, memberId];
+  const setMembersOnZone = (zone: Zone, next: string[]) => {
     setZones((zs) => zs.map((z) => (z.id === zone.id ? { ...z, memberUserIds: next } : z))); // optimistic
     patchZone(zone.id, { memberUserIds: next });
   };
+  const addMember = (zone: Zone, id: string) => { if (id && !zone.memberUserIds.includes(id)) setMembersOnZone(zone, [...zone.memberUserIds, id]); };
+  const removeMember = (zone: Zone, id: string) => setMembersOnZone(zone, zone.memberUserIds.filter((x) => x !== id));
 
   const addValue = (zone: Zone, field: 'states' | 'cities', value: string) => {
     const v = value.trim();
-    if (!v) return;
-    if (zone[field].some((x) => x.toLowerCase() === v.toLowerCase())) return;
+    if (!v || zone[field].some((x) => x.toLowerCase() === v.toLowerCase())) return;
     patchZone(zone.id, { [field]: [...zone[field], v] });
   };
-  const removeValue = (zone: Zone, field: 'states' | 'cities', value: string) => {
-    patchZone(zone.id, { [field]: zone[field].filter((x) => x !== value) });
-  };
+  const removeValue = (zone: Zone, field: 'states' | 'cities', value: string) => patchZone(zone.id, { [field]: zone[field].filter((x) => x !== value) });
 
   const createZone = async () => {
     const name = newName.trim();
@@ -93,7 +90,7 @@ export default function ZonesConfigReal() {
     await patchZone(zone.id, { name });
   };
 
-  const memberName = (id: string) => members.find((m) => m.id === id)?.name ?? id;
+  const findMember = (id: string) => members.find((m) => m.id === id);
 
   return (
     <div className="zc">
@@ -116,54 +113,69 @@ export default function ZonesConfigReal() {
         <p className="zc-muted">No zones yet. {canEdit ? 'Add a zone to start routing leads by location.' : ''}</p>
       ) : (
         <div className="zc-grid">
-          {zones.map((z) => (
-            <section key={z.id} className="zc-zone">
-              <div className="zc-zone__head">
-                <span className="zc-zone__ic"><MapPin size={16} /></span>
-                <div className="zc-zone__title">
-                  {editId === z.id ? (
-                    <input className="zc-nameinput" autoFocus value={editName} onChange={(e) => setEditName(e.target.value)} onBlur={() => saveName(z)} onKeyDown={(e) => { if (e.key === 'Enter') saveName(z); if (e.key === 'Escape') setEditId(null); }} />
-                  ) : (
-                    <strong>
-                      {z.name}
-                      {canEdit ? <button className="zc-iconbtn zc-iconbtn--sm" title="Rename zone" onClick={() => { setEditId(z.id); setEditName(z.name); }}><Pencil size={12} /></button> : null}
-                    </strong>
-                  )}
+          {zones.map((z) => {
+            const assigned = z.memberUserIds.map(findMember).filter(Boolean) as Member[];
+            const unassigned = members.filter((m) => !z.memberUserIds.includes(m.id));
+            const status = assigned.length === 0 ? { cls: '', text: 'Unassigned' }
+              : assigned.length === 1 ? { cls: ' zc-status--auto', text: 'Auto-assign' }
+                : { cls: ' zc-status--pick', text: `${assigned.length} · pick per lead` };
+            return (
+              <section key={z.id} className="zc-zone">
+                <header className="zc-zone__head">
+                  <span className="zc-zone__ic"><MapPin size={16} /></span>
+                  <div className="zc-zone__title">
+                    {editId === z.id ? (
+                      <input className="zc-nameinput" autoFocus value={editName} onChange={(e) => setEditName(e.target.value)} onBlur={() => saveName(z)} onKeyDown={(e) => { if (e.key === 'Enter') saveName(z); if (e.key === 'Escape') setEditId(null); }} />
+                    ) : (
+                      <strong>
+                        {z.name}
+                        {canEdit ? <button className="zc-iconbtn zc-iconbtn--sm" title="Rename zone" onClick={() => { setEditId(z.id); setEditName(z.name); }}><Pencil size={12} /></button> : null}
+                      </strong>
+                    )}
+                    <span className="zc-zone__sub">{z.states.length} state{z.states.length !== 1 ? 's' : ''} · {z.cities.length} cit{z.cities.length !== 1 ? 'ies' : 'y'}</span>
+                  </div>
+                  <span className={`zc-status${status.cls}`}>{status.text}</span>
+                  {canEdit ? <button className="zc-iconbtn zc-iconbtn--danger" title="Delete zone" onClick={() => deleteZone(z)}><Trash2 size={15} /></button> : null}
+                </header>
+
+                {/* Members — mapped right at the top so assignment is obvious. */}
+                <div className="zc-section">
+                  <div className="zc-fieldlabel"><Users size={12} /> Members</div>
+                  <div className="zc-assigned">
+                    {assigned.length === 0 ? <span className="zc-chips__empty">No one assigned yet</span> : assigned.map((m) => (
+                      <span key={m.id} className="zc-person" title={m.department ? `${m.name} · ${m.department}` : m.name}>
+                        <span className="zc-avatar">{initials(m.name)}</span>
+                        <span className="zc-person__name">{m.name}</span>
+                        {canEdit ? <button className="zc-chip__x" title={`Remove ${m.name}`} onClick={() => removeMember(z, m.id)}><X size={12} /></button> : null}
+                      </span>
+                    ))}
+                  </div>
+                  {canEdit ? (
+                    members.length === 0 ? <p className="zc-hint">Create people in the Members tab to assign them here.</p>
+                      : unassigned.length > 0 ? (
+                        <div className="zc-memberadd">
+                          <Select
+                            label="Assign member" hideLabel value=""
+                            options={[{ value: '', label: '+ Assign member…' }, ...unassigned.map((m) => ({ value: m.id, label: m.department ? `${m.name} — ${m.department}` : m.name }))]}
+                            onChange={(e) => { if (e.target.value) addMember(z, e.target.value); }}
+                          />
+                        </div>
+                      ) : null
+                  ) : null}
                 </div>
-                <span className={`zc-zone__count${z.memberUserIds.length === 1 ? ' zc-zone__count--auto' : z.memberUserIds.length > 1 ? ' zc-zone__count--pick' : ''}`}>
-                  {z.memberUserIds.length === 0 ? 'No members' : z.memberUserIds.length === 1 ? 'Auto-assign' : `${z.memberUserIds.length} · pick per lead`}
-                </span>
-                {canEdit ? <button className="zc-iconbtn zc-iconbtn--danger" title="Delete zone" onClick={() => deleteZone(z)}><Trash2 size={15} /></button> : null}
-              </div>
 
-              <ChipField
-                label="States" field="states" zone={z} canEdit={canEdit}
-                listId={`states-${z.id}`} suggestions={INDIA_STATES}
-                onAdd={(v) => addValue(z, 'states', v)} onRemove={(v) => removeValue(z, 'states', v)}
-              />
-              <ChipField
-                label="Cities" field="cities" zone={z} canEdit={canEdit}
-                onAdd={(v) => addValue(z, 'cities', v)} onRemove={(v) => removeValue(z, 'cities', v)}
-              />
-
-              <div className="zc-fieldlabel">Members</div>
-              <div className="zc-members">
-                {members.length === 0 ? <p className="zc-muted">Add team members first.</p> : members.map((m) => {
-                  const on = z.memberUserIds.includes(m.id);
-                  return (
-                    <button key={m.id} className={`zc-member${on ? ' zc-member--on' : ''}`} onClick={() => toggle(z, m.id)} disabled={!canEdit}>
-                      <span className="zc-check">{on ? <Check size={13} /> : null}</span>
-                      <span className="zc-member__name">{m.name}</span>
-                      {m.department ? <span className="zc-member__dept">{m.department}</span> : null}
-                    </button>
-                  );
-                })}
-              </div>
-              {z.memberUserIds.length > 0 ? (
-                <p className="zc-zone__foot">Covered by {z.memberUserIds.map(memberName).join(', ')}</p>
-              ) : null}
-            </section>
-          ))}
+                <ChipField
+                  label="States" zone={z} field="states" canEdit={canEdit}
+                  listId={`states-${z.id}`} suggestions={INDIA_STATES}
+                  onAdd={(v) => addValue(z, 'states', v)} onRemove={(v) => removeValue(z, 'states', v)}
+                />
+                <ChipField
+                  label="Cities" zone={z} field="cities" canEdit={canEdit}
+                  onAdd={(v) => addValue(z, 'cities', v)} onRemove={(v) => removeValue(z, 'cities', v)}
+                />
+              </section>
+            );
+          })}
         </div>
       )}
       {toast ? <Toast message={toast} tone="error" onDismiss={() => setToast(null)} /> : null}
@@ -179,8 +191,8 @@ function ChipField({ label, zone, field, canEdit, onAdd, onRemove, listId, sugge
   const commit = () => { if (draft.trim()) { onAdd(draft); setDraft(''); } };
   const values = zone[field];
   return (
-    <div className="zc-chipfield">
-      <div className="zc-fieldlabel">{label}</div>
+    <div className="zc-section">
+      <div className="zc-fieldlabel">{label} <span className="zc-count">{values.length}</span></div>
       <div className="zc-chips">
         {values.length === 0 ? <span className="zc-chips__empty">None yet</span> : values.map((v) => (
           <span key={v} className="zc-chip">
@@ -199,9 +211,7 @@ function ChipField({ label, zone, field, canEdit, onAdd, onRemove, listId, sugge
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commit(); } }}
           />
-          {listId && suggestions ? (
-            <datalist id={listId}>{suggestions.map((s) => <option key={s} value={s} />)}</datalist>
-          ) : null}
+          {listId && suggestions ? (<datalist id={listId}>{suggestions.map((s) => <option key={s} value={s} />)}</datalist>) : null}
           <button className="zc-iconbtn" title={`Add ${field === 'states' ? 'state' : 'city'}`} onClick={commit} disabled={!draft.trim()}><Plus size={15} /></button>
         </div>
       ) : null}
