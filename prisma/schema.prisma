@@ -548,6 +548,22 @@ model CrmEnquiry {
   @@index([conversationId])
 }
 
+// Planned marketing activities shown on the Campaigns planning calendar
+// (field marketing, telecalling, campaign, exhibition). Festivals are static.
+model CrmPlanEvent {
+  id            String   @id @default(cuid())
+  tenantId      String
+  title         String
+  type          String   @default("campaign") // field | telecalling | campaign | exhibition
+  date          DateTime
+  endDate       DateTime?
+  note          String?
+  createdByUserId String?
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId, date])
+}
+
 // Req 43: immutable log of lead-status / lifecycle transitions per contact.
 model CrmStageTransition {
   id         String   @id @default(cuid())

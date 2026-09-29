@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Copy, GitCompareArrows, Plus, SlidersHorizontal } from 'lucide-react';
+import { Copy, GitCompareArrows, Plus, SlidersHorizontal, CalendarDays } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@crm/components';
 import { useScopedHref } from '@crm/app/use-scoped-href';
@@ -279,6 +279,9 @@ export default function CampaignsOverviewScreen() {
         description="Create, launch and track WhatsApp campaigns from one connected lifecycle."
         actions={
           <>
+            <Button variant="secondary" iconLeft={<CalendarDays />} onClick={() => navigate(scopedHref('/campaigns/planner'))}>
+              Planning calendar
+            </Button>
             <Button variant="secondary" iconLeft={<SlidersHorizontal />} onClick={() => setParam('drawer', 'filters')}>
               Filters
             </Button>

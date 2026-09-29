@@ -4,6 +4,7 @@ import CampaignsOverviewScreen from './screens/CampaignsOverviewScreen';
 import CampaignDetailScreen from './screens/CampaignDetailScreen';
 import CampaignBuilderScreen from './screens/CampaignBuilderScreen';
 import CampaignsCompareScreen from './screens/CampaignsCompareScreen';
+import PlannerScreen from './screens/PlannerScreen';
 
 /**
  * Campaigns route table (CODE_FIRST_ADAPTER.md "Canonical routes"). `new` is
@@ -17,6 +18,7 @@ export function CampaignsRoutes() {
       <Route element={<CampaignsLayout />}>
         <Route index element={<CampaignsOverviewScreen />} />
         <Route path="new" element={<CampaignBuilderScreen />} />
+        <Route path="planner" element={<PlannerScreen />} />
         <Route path="compare" element={<CampaignsCompareScreen />} />
         <Route path=":campaignId" element={<CampaignDetailScreen />} />
         <Route path="*" element={<Navigate to="/campaigns" replace />} />
