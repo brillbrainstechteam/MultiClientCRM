@@ -1265,6 +1265,7 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
         currentAssigneeId={effectiveAssignee.userId}
         currentTeamId={effectiveAssignee.teamId}
         conversationNumberId={activeConv?.whatsappNumberId ?? ''}
+        contactId={activeConv?.contactId ?? null}
         onClose={() => closeOverlay('popover')}
         onAssign={(userId, teamId) => {
           handleAssign(userId, teamId);

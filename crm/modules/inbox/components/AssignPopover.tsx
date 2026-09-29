@@ -1,15 +1,15 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserCheck, AlertTriangle, WifiOff, Users } from 'lucide-react';
-import { Popover, Avatar, Button } from '@crm/design-system';
-import { users, teams, findUser } from '@crm/mock-data';
-import type { User } from '@crm/mock-data';
+import { UserCheck, Users, MapPin, UserPlus } from 'lucide-react';
+import { Popover, Avatar } from '@crm/design-system';
 
+interface AssignMember { id: string; name: string; email: string; role: string; department: string | null; }
 interface AssignPopoverProps {
   open: boolean;
   currentAssigneeId: string | null;
   currentTeamId: string | null;
   conversationNumberId: string;
+  contactId: string | null;
   onClose: () => void;
   onAssign: (userId: string | null, teamId: string | null) => void;
 }
@@ -17,112 +17,49 @@ interface AssignPopoverProps {
 function nameInitials(name: string): string {
   return name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase() || '?';
 }
+const titleCase = (s: string) => s.split('_').filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+function roleLabel(r: string) { return r === 'owner' ? 'Owner' : r === 'admin' ? 'Admin' : r === 'manager' ? 'Manager' : r === 'agent' ? 'Team member' : titleCase(r); }
+function memberSub(m: AssignMember) { return m.department ? `${roleLabel(m.role)} · ${titleCase(m.department)}` : roleLabel(m.role); }
 
-const AVAILABILITY_LABEL: Record<string, string> = {
-  available: 'Available',
-  busy: 'Busy',
-  offline: 'Offline',
-};
-
-const AVAILABILITY_COLOR: Record<string, string> = {
-  available: 'var(--crm-success)',
-  busy: 'var(--crm-warning)',
-  offline: 'var(--crm-text-muted)',
-};
-
-// Mock workload (open conversations count per agent)
-const MOCK_WORKLOAD: Record<string, number> = {
-  user_meera: 4,
-  user_rohan: 8,
-  user_vikram: 2,
-  user_anita: 1,
-  user_farida: 6,
-  user_karan: 11,
-};
-
-function AvailabilityDot({ status }: { status: string }) {
-  return (
-    <span style={{
-      width: 8, height: 8, borderRadius: '50%', display: 'inline-block', flexShrink: 0,
-      background: AVAILABILITY_COLOR[status] ?? 'var(--crm-text-muted)',
-    }} />
-  );
-}
-
+/**
+ * Assign a conversation. Members are resolved by the contact's area (zone): if
+ * the contact's city/state maps to an area, only that area's members show; if
+ * the location is unknown or maps to no area, everyone shows. "Show everyone"
+ * expands an area list, and there's always a way to add a team member.
+ */
 export function AssignPopover({
-  open, currentAssigneeId, conversationNumberId, onClose, onAssign,
+  open, currentAssigneeId, contactId, onClose, onAssign,
 }: AssignPopoverProps) {
   const navigate = useNavigate();
-  const [teamFilter, setTeamFilter] = useState<string>('all');
-  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [source, setSource] = useState<'zone' | 'all'>('all');
+  const [zoneName, setZoneName] = useState<string | null>(null);
+  const [members, setMembers] = useState<AssignMember[]>([]);
+  const [allMembers, setAllMembers] = useState<AssignMember[]>([]);
+  const [showAll, setShowAll] = useState(false);
 
-  const eligibleUsers = useMemo(() => {
-    // Prefer members permitted on this conversation's WhatsApp number, but fall
-    // back to the whole team when none match (e.g. the number id isn't on anyone's
-    // permit list yet) so assignment is never left with an empty list.
-    const permitted = users.filter((u) => u.permittedWhatsAppNumberIds?.includes(conversationNumberId));
-    return permitted.length > 0 ? permitted : users;
-  }, [conversationNumberId]);
-
-  const filtered = useMemo(() => {
-    if (teamFilter === 'all') return eligibleUsers;
-    return eligibleUsers.filter((u) => u.teamId === teamFilter);
-  }, [eligibleUsers, teamFilter]);
-
-  const teamTabs = [
-    { id: 'all', label: 'All' },
-    ...teams.map((t) => ({ id: t.id, label: t.name })),
-  ];
-
-  const pendingUser = pendingUserId ? findUser(pendingUserId) : null;
-
-  function confirmAssign(userId: string | null) {
-    const user = userId ? findUser(userId) : null;
-    if (user && (user.availability === 'busy' || user.availability === 'offline') && pendingUserId === null) {
-      setPendingUserId(userId);
-      return;
-    }
-    const teamId = user ? user.teamId : null;
-    onAssign(userId, teamId);
-    setPendingUserId(null);
-    onClose();
-  }
-
-  if (pendingUser) {
-    return (
-      <Popover
-        open={open}
-        title="Confirm Assignment"
-        onClose={() => { setPendingUserId(null); onClose(); }}
-        footer={
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button variant="secondary" size="sm" onClick={() => setPendingUserId(null)}>Back</Button>
-            <Button variant="primary" size="sm" onClick={() => confirmAssign(pendingUserId)}>
-              Assign Anyway
-            </Button>
-          </div>
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true); setShowAll(false);
+    const qs = contactId ? `?contactId=${encodeURIComponent(contactId)}` : '';
+    fetch(`/api/crm/team/assignable${qs}`, { credentials: 'same-origin' })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.error) {
+          setSource(d.source ?? 'all');
+          setZoneName(d.zoneName ?? null);
+          setMembers(d.members ?? []);
+          setAllMembers(d.allMembers ?? d.members ?? []);
         }
-      >
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-          <AlertTriangle size={16} style={{ color: 'var(--crm-warning)', flexShrink: 0, marginTop: 2 }} />
-          <div>
-            <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--crm-text-primary)', marginBottom: 4 }}>
-              {pendingUser.name} is {AVAILABILITY_LABEL[pendingUser.availability ?? 'offline'].toLowerCase()}
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--crm-text-secondary)', lineHeight: 1.4 }}>
-              {pendingUser.availability === 'offline'
-                ? `${pendingUser.name} is currently offline and may not respond promptly.`
-                : `${pendingUser.name} is currently handling ${MOCK_WORKLOAD[pendingUser.id] ?? 0} conversations.`}
-              {' '}Assign anyway?
-            </div>
-          </div>
-        </div>
-      </Popover>
-    );
-  }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [open, contactId]);
+
+  const list = showAll ? allMembers : members;
 
   return (
-    <Popover open={open} title="Assign Conversation" onClose={onClose}>
+    <Popover open={open} title="Assign conversation" onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {/* Current assignee */}
         {currentAssigneeId && (
@@ -131,11 +68,11 @@ export function AssignPopover({
               <UserCheck size={13} style={{ color: 'var(--crm-text-muted)' }} />
               <span style={{ fontSize: 12, color: 'var(--crm-text-secondary)' }}>Currently assigned to</span>
               <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--crm-text-primary)' }}>
-                {findUser(currentAssigneeId)?.name ?? 'Unknown'}
+                {allMembers.find((m) => m.id === currentAssigneeId)?.name ?? 'a member'}
               </span>
             </div>
             <button
-              onClick={() => confirmAssign(null)}
+              onClick={() => { onAssign(null, null); onClose(); }}
               style={{ fontSize: 11, color: 'var(--crm-danger)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
             >
               Unassign
@@ -143,95 +80,76 @@ export function AssignPopover({
           </div>
         )}
 
-        {/* Team filter tabs */}
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-          {teamTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setTeamFilter(tab.id)}
-              style={{
-                padding: '2px 8px', borderRadius: 999, fontSize: 11, cursor: 'pointer',
-                border: '1px solid var(--crm-border)',
-                background: teamFilter === tab.id ? 'var(--crm-text-brand)' : 'transparent',
-                color: teamFilter === tab.id ? 'var(--crm-on-dark)' : 'var(--crm-text-secondary)',
-                fontWeight: teamFilter === tab.id ? 600 : 400,
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Area context */}
+        {!loading && source === 'zone' && zoneName ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--crm-text-secondary)' }}>
+            <MapPin size={13} style={{ color: 'var(--crm-brand-600)' }} />
+            <span>Members for the <strong style={{ color: 'var(--crm-text-primary)' }}>{zoneName}</strong> area</span>
+          </div>
+        ) : !loading ? (
+          <div style={{ fontSize: 12, color: 'var(--crm-text-muted)' }}>All team members</div>
+        ) : null}
 
-        {/* User list */}
-        {filtered.length === 0 ? (
+        {/* Member list */}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--crm-text-muted)', fontSize: 12 }}>Loading members…</div>
+        ) : list.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--crm-text-muted)', fontSize: 12 }}>
             <Users size={20} style={{ display: 'block', margin: '0 auto 6px', opacity: 0.4 }} />
-            No eligible agents for this WhatsApp number.
+            No team members yet.
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, maxHeight: 280, overflowY: 'auto' }}>
-            {filtered.map((user: User) => {
-              const isCurrentAssignee = user.id === currentAssigneeId;
-              const workload = MOCK_WORKLOAD[user.id] ?? 0;
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, maxHeight: 300, overflowY: 'auto' }}>
+            {list.map((m) => {
+              const isCurrent = m.id === currentAssigneeId;
               return (
                 <button
-                  key={user.id}
-                  onClick={() => confirmAssign(user.id)}
-                  disabled={isCurrentAssignee}
+                  key={m.id}
+                  onClick={() => { if (!isCurrent) { onAssign(m.id, null); onClose(); } }}
+                  disabled={isCurrent}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px',
-                    borderRadius: 6, cursor: isCurrentAssignee ? 'default' : 'pointer',
+                    borderRadius: 8, cursor: isCurrent ? 'default' : 'pointer',
                     border: '1px solid transparent',
-                    background: isCurrentAssignee ? 'var(--crm-bg-secondary)' : 'transparent',
-                    borderColor: isCurrentAssignee ? 'var(--crm-border)' : 'transparent',
+                    background: isCurrent ? 'var(--crm-bg-secondary)' : 'transparent',
+                    borderColor: isCurrent ? 'var(--crm-border)' : 'transparent',
                     textAlign: 'left', width: '100%',
-                    opacity: user.availability === 'offline' ? 0.7 : 1,
                   }}
-                  onMouseOver={(e) => {
-                    if (!isCurrentAssignee) (e.currentTarget as HTMLButtonElement).style.background = 'var(--crm-bg-tertiary)';
-                  }}
-                  onMouseOut={(e) => {
-                    if (!isCurrentAssignee) (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                  }}
+                  onMouseOver={(e) => { if (!isCurrent) (e.currentTarget as HTMLButtonElement).style.background = 'var(--crm-bg-tertiary)'; }}
+                  onMouseOut={(e) => { if (!isCurrent) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
                 >
-                  <Avatar initials={nameInitials(user.name)} name={user.name} size="sm" />
-                  <div style={{ flex: 1 }}>
+                  <Avatar initials={nameInitials(m.name)} name={m.name} size="sm" />
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--crm-text-primary)' }}>{user.name}</span>
-                      {isCurrentAssignee && (
-                        <span style={{ fontSize: 10, color: 'var(--crm-text-brand)', fontWeight: 600 }}>current</span>
-                      )}
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--crm-text-primary)' }}>{m.name}</span>
+                      {isCurrent && <span style={{ fontSize: 10, color: 'var(--crm-text-brand)', fontWeight: 600 }}>current</span>}
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--crm-text-muted)' }}>{user.roleLabel}</div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <AvailabilityDot status={user.availability ?? 'offline'} />
-                      <span style={{ fontSize: 10, color: AVAILABILITY_COLOR[user.availability ?? 'offline'] }}>
-                        {AVAILABILITY_LABEL[user.availability ?? 'offline']}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 10, color: 'var(--crm-text-muted)' }}>
-                      {workload} open
-                    </div>
-                    {user.availability === 'offline' && (
-                      <WifiOff size={10} style={{ color: 'var(--crm-text-muted)' }} />
-                    )}
+                    <div style={{ fontSize: 11, color: 'var(--crm-text-muted)' }}>{memberSub(m)}</div>
                   </div>
                 </button>
               );
             })}
           </div>
         )}
+
+        {/* Show everyone (only when scoped to an area and there are more people) */}
+        {!loading && source === 'zone' && !showAll && allMembers.length > members.length ? (
+          <button
+            onClick={() => setShowAll(true)}
+            style={{ fontSize: 12, color: 'var(--crm-text-brand)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, textAlign: 'left', padding: '2px 4px' }}
+          >
+            Show all team members ({allMembers.length})
+          </button>
+        ) : null}
       </div>
-      <div style={{ borderTop: '1px solid var(--crm-border)', padding: '8px 12px', fontSize: 11, color: 'var(--crm-text-muted)' }}>
-        <a
-          href="/crm/team-access/people?sourceModule=inbox&returnTo=/inbox"
-          style={{ color: 'var(--crm-text-brand)', textDecoration: 'none' }}
-          onClick={(e) => { e.preventDefault(); navigate('/team-access/people?sourceModule=inbox&returnTo=/inbox'); }}
+
+      <div style={{ borderTop: '1px solid var(--crm-border)', padding: '10px 12px' }}>
+        <button
+          onClick={() => navigate('/team-access/people?sourceModule=inbox&returnTo=/inbox')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--crm-text-brand)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
-          Manage team &amp; access →
-        </a>
+          <UserPlus size={14} /> Add a team member
+        </button>
       </div>
     </Popover>
   );
