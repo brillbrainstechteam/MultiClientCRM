@@ -4,6 +4,7 @@ import TemplatesRepositoryScreen from './screens/TemplatesRepositoryScreen';
 import TemplateDetailScreen from './screens/TemplateDetailScreen';
 import TemplateComposerScreen from './screens/TemplateComposerScreen';
 import TemplateLibraryScreen from './screens/TemplateLibraryScreen';
+import ReadyLibraryScreen from './screens/ReadyLibraryScreen';
 import TemplateApprovalsScreen from './screens/TemplateApprovalsScreen';
 import TemplatePickerHostScreen from './screens/TemplatePickerHostScreen';
 
@@ -20,6 +21,7 @@ export function TemplatesRoutes() {
         <Route index element={<TemplatesRepositoryScreen />} />
         <Route path="new" element={<TemplateComposerScreen />} />
         <Route path="library" element={<TemplateLibraryScreen />} />
+        <Route path="ready" element={<ReadyLibraryScreen />} />
         <Route path="approvals" element={<TemplateApprovalsScreen />} />
         <Route path="picker" element={<TemplatePickerHostScreen />} />
         <Route path=":templateId" element={<TemplateDetailScreen />} />

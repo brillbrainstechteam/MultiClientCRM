@@ -1,0 +1,32 @@
+.rl { display: flex; flex-direction: column; gap: 18px; }
+.rl-muted { color: var(--crm-text-muted); font-size: 14px; }
+.rl-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.rl-search { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 220px; max-width: 380px; border: 1px solid var(--crm-border-subtle); border-radius: 9px; padding: 0 11px; color: var(--crm-text-muted); background: var(--crm-surface-raised); }
+.rl-search input { flex: 1; font: inherit; font-size: 14px; border: 0; outline: none; padding: 9px 0; background: none; color: var(--crm-text-primary); }
+
+.rl-cat__title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--crm-text-primary); margin: 0 0 12px; }
+.rl-cat__title span { font-size: 11.5px; font-weight: 700; color: var(--crm-text-secondary); background: var(--crm-surface-sunken); border-radius: 999px; padding: 2px 9px; }
+.rl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.rl-card { text-align: left; display: flex; flex-direction: column; gap: 6px; padding: 16px; border: 1px solid var(--crm-border-subtle); border-radius: 14px; background: var(--crm-surface-raised); cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
+.rl-card:hover { border-color: var(--crm-brand-600); box-shadow: 0 6px 20px rgba(16,185,129,.08); transform: translateY(-1px); }
+.rl-card__name { font-size: 14px; font-weight: 700; color: var(--crm-text-primary); }
+.rl-card__when { font-size: 12px; color: var(--crm-brand-700); }
+.rl-card__body { font-size: 12.5px; color: var(--crm-text-muted); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.rl-card__slug { font-size: 11px; color: var(--crm-text-secondary); background: var(--crm-surface-sunken); border-radius: 6px; padding: 3px 8px; align-self: flex-start; margin-top: 2px; word-break: break-all; }
+
+.rl-modal { position: fixed; inset: 0; z-index: 60; background: rgba(15,23,42,.5); display: grid; place-items: center; padding: 20px; }
+.rl-box { position: relative; width: min(620px, 100%); max-height: 90vh; overflow: auto; background: var(--crm-surface-raised); border-radius: 16px; padding: 24px; box-shadow: 0 30px 70px -20px rgba(0,0,0,.4); }
+.rl-x { position: absolute; top: 14px; right: 14px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--crm-border-subtle); background: var(--crm-surface-raised); color: var(--crm-text-secondary); cursor: pointer; }
+.rl-modal__title { font-size: 17px; font-weight: 700; color: var(--crm-text-primary); margin: 0 32px 2px 0; }
+.rl-modal__sub { font-size: 13px; color: var(--crm-text-muted); margin: 0 0 16px; }
+.rl-field { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--crm-text-muted); margin-bottom: 12px; }
+.rl-field input, .rl-field textarea { font: inherit; font-size: 14px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--crm-text-primary); border: 1px solid var(--crm-border-subtle); border-radius: 9px; padding: 10px 12px; background: var(--crm-surface-raised); }
+.rl-field textarea { resize: vertical; line-height: 1.5; white-space: pre-wrap; }
+.rl-field input:focus, .rl-field textarea:focus { outline: none; border-color: var(--crm-brand-600); }
+.rl-hint { font-size: 12px; color: var(--crm-text-muted); margin: 0 0 12px; }
+.rl-hint code, .rl-modal__title code { background: var(--crm-surface-sunken); border-radius: 4px; padding: 1px 5px; }
+.rl-err { font-size: 13px; color: var(--crm-danger); margin: 0 0 10px; }
+.rl-modal__foot { display: flex; justify-content: space-between; gap: 10px; }
+
+.rl-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 70; background: var(--crm-brand-700); color: #fff; font-size: 13.5px; font-weight: 600; padding: 11px 18px; border-radius: 10px; box-shadow: 0 12px 30px -8px rgba(0,0,0,.4); animation: rl-toast 3s ease forwards; }
+@keyframes rl-toast { 0% { opacity: 0; transform: translate(-50%, 8px); } 8%,82% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, 8px); } }
