@@ -27,7 +27,15 @@ function initials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-const ROLE_LABEL: Record<string, string> = { owner: 'Owner', manager: 'Manager', agent: 'Agent' };
+/** Human label for any stored role — base tiers get friendly names, custom
+ *  role slugs are title-cased (e.g. "field_sales" -> "Field Sales"). */
+function displayRole(dbRole: string): string {
+  if (dbRole === 'owner') return 'Owner';
+  if (dbRole === 'admin') return 'Admin';
+  if (dbRole === 'manager') return 'Manager';
+  if (dbRole === 'agent') return 'Team member';
+  return dbRole.split('_').filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Team member';
+}
 
 /**
  * Map a stored DB role to the CRM's three visibility roles.
@@ -98,7 +106,7 @@ export async function GET() {
       initials: initials(name),
       email: u.email,
       role,
-      roleLabel: u.role === 'admin' ? 'Admin' : (ROLE_LABEL[role] ?? 'Owner'),
+      roleLabel: displayRole(u.role),
       teamId: DEFAULT_TEAM_ID,
       branchId: DEFAULT_BRANCH_ID,
       permittedWhatsAppNumberIds: numberIds,

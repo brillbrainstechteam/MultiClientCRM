@@ -21,7 +21,7 @@ interface SecondaryNavItem {
 const items: SecondaryNavItem[] = [
   { label: 'Overview', to: '/team-access', icon: LayoutGrid, matchPrefix: '/team-access', end: true },
   { label: 'Members', to: '/team-access/people', icon: Users, matchPrefix: '/team-access/people', requires: 'viewPeople' },
-  { label: 'Zone routing', to: '/team-access/zones', icon: MapPin, matchPrefix: '/team-access/zones', requires: 'manageTeamsBranches' },
+  { label: 'Areas', to: '/team-access/zones', icon: MapPin, matchPrefix: '/team-access/zones', requires: 'manageTeamsBranches' },
   { label: 'Performance', to: '/team-access/performance', icon: ChartNoAxesCombined, matchPrefix: '/team-access/performance', requires: 'viewPerformance' },
 ];
 

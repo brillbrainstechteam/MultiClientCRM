@@ -9,7 +9,7 @@ import type { RoleKey } from '@crm/mock-data';
 const roleOptions = [
   { value: 'owner', label: 'Owner' },
   { value: 'manager', label: 'Manager' },
-  { value: 'agent', label: 'Agent' },
+  { value: 'agent', label: 'Team member' },
 ];
 
 const connectionOptions = [

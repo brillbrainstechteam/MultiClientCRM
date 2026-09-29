@@ -42,12 +42,12 @@ export default function OverviewScreen() {
     <div className="crm-team-overview">
       <PageHeader
         title="Team & Access"
-        description="Members, zone routing and calling performance"
+        description="Members, areas and calling performance"
         actions={
           canManage ? (
             <>
               <Button variant="secondary" iconLeft={<MapPin />} onClick={() => go('/team-access/zones')}>
-                Zone routing
+                Areas
               </Button>
               <Button variant="primary" iconLeft={<UserRoundPlus />} onClick={() => go('/team-access/people')}>
                 Add member
@@ -77,8 +77,8 @@ export default function OverviewScreen() {
           />
           <NavCard
             icon={<MapPin />}
-            title="Zone routing"
-            body="Map states & cities to zones and assign members. New contacts auto-route to their zone's member."
+            title="Areas"
+            body="Choose which team member handles leads from each state or city. New leads go to them automatically."
             onClick={() => go('/team-access/zones')}
           />
           {role !== 'agent' ? (
@@ -94,7 +94,7 @@ export default function OverviewScreen() {
 
       {role === 'agent' ? (
         <p className="crm-team-overview__note">
-          You’re signed in as <strong>{currentUser.name}</strong> (Agent). You see only the contacts assigned to you.
+          You’re signed in as <strong>{currentUser.name}</strong> (Team member). You see only the contacts assigned to you.
         </p>
       ) : null}
     </div>

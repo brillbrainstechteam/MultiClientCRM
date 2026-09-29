@@ -44,7 +44,7 @@ export default function ZonesConfigReal() {
   const patchZone = async (zoneId: string, body: Record<string, unknown>) => {
     const r = await fetch(`/api/crm/zones/${zoneId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(body) });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) { setToast(d.error ?? 'Could not update the zone.'); load(); return false; }
+    if (!r.ok) { setToast(d.error ?? 'Could not update the area.'); load(); return false; }
     load();
     return true;
   };
@@ -70,17 +70,17 @@ export default function ZonesConfigReal() {
     try {
       const r = await fetch('/api/crm/zones', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ name }) });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setToast(d.error ?? 'Could not add the zone.'); return; }
-      setToast(`Zone “${name}” added.`); setNewName(''); setAdding(false); load();
+      if (!r.ok) { setToast(d.error ?? 'Could not add the area.'); return; }
+      setToast(`Area “${name}” added.`); setNewName(''); setAdding(false); load();
     } finally { setBusy(false); }
   };
 
   const deleteZone = async (zone: Zone) => {
-    if (!window.confirm(`Delete the “${zone.name}” zone? Leads already routed keep their assignment.`)) return;
+    if (!window.confirm(`Delete the “${zone.name}” area? Leads already routed keep their assignment.`)) return;
     const r = await fetch(`/api/crm/zones/${zone.id}`, { method: 'DELETE', credentials: 'same-origin' });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) { setToast(d.error ?? 'Could not delete the zone.'); return; }
-    setToast(`Zone “${zone.name}” deleted.`); load();
+    if (!r.ok) { setToast(d.error ?? 'Could not delete the area.'); return; }
+    setToast(`Area “${zone.name}” deleted.`); load();
   };
 
   const saveName = async (zone: Zone) => {
@@ -95,22 +95,23 @@ export default function ZonesConfigReal() {
   return (
     <div className="zc">
       <PageHeader
-        title="Zone routing"
+        title="Areas"
+        description="Choose which team member handles leads from each area. New leads go to them automatically."
         actions={canEdit ? (
-          <Button variant="primary" onClick={() => setAdding((v) => !v)}><Plus size={16} /> Add zone</Button>
+          <Button variant="primary" onClick={() => setAdding((v) => !v)}><Plus size={16} /> Add area</Button>
         ) : undefined}
       />
 
       {adding && canEdit ? (
         <div className="zc-addbar">
-          <Input label="Zone name" hideLabel placeholder="e.g. Central, North-East, Metro" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') createZone(); }} />
-          <Button variant="primary" onClick={createZone} disabled={busy || !newName.trim()}>{busy ? 'Adding…' : 'Create zone'}</Button>
+          <Input label="Area name" hideLabel placeholder="e.g. Central, North-East, Metro" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') createZone(); }} />
+          <Button variant="primary" onClick={createZone} disabled={busy || !newName.trim()}>{busy ? 'Adding…' : 'Create area'}</Button>
           <Button variant="ghost" onClick={() => { setAdding(false); setNewName(''); }}>Cancel</Button>
         </div>
       ) : null}
 
       {loading ? <p className="zc-muted">Loading zones…</p> : zones.length === 0 ? (
-        <p className="zc-muted">No zones yet. {canEdit ? 'Add a zone to start routing leads by location.' : ''}</p>
+        <p className="zc-muted">No areas yet. {canEdit ? 'Add an area to start sending leads to the right team member.' : ''}</p>
       ) : (
         <div className="zc-grid">
           {zones.map((z) => {
@@ -129,13 +130,13 @@ export default function ZonesConfigReal() {
                     ) : (
                       <strong>
                         {z.name}
-                        {canEdit ? <button className="zc-iconbtn zc-iconbtn--sm" title="Rename zone" onClick={() => { setEditId(z.id); setEditName(z.name); }}><Pencil size={12} /></button> : null}
+                        {canEdit ? <button className="zc-iconbtn zc-iconbtn--sm" title="Rename area" onClick={() => { setEditId(z.id); setEditName(z.name); }}><Pencil size={12} /></button> : null}
                       </strong>
                     )}
                     <span className="zc-zone__sub">{z.states.length} state{z.states.length !== 1 ? 's' : ''} · {z.cities.length} cit{z.cities.length !== 1 ? 'ies' : 'y'}</span>
                   </div>
                   <span className={`zc-status${status.cls}`}>{status.text}</span>
-                  {canEdit ? <button className="zc-iconbtn zc-iconbtn--danger" title="Delete zone" onClick={() => deleteZone(z)}><Trash2 size={15} /></button> : null}
+                  {canEdit ? <button className="zc-iconbtn zc-iconbtn--danger" title="Delete area" onClick={() => deleteZone(z)}><Trash2 size={15} /></button> : null}
                 </header>
 
                 {/* Members — mapped right at the top so assignment is obvious. */}

@@ -4,8 +4,7 @@ import { prisma } from '@/lib/db';
 import { hashPassword } from '@/lib/auth/password';
 import { audit } from '@/lib/crm/audit';
 
-const ROLES = ['admin', 'manager', 'agent'];
-const DEPTS = ['sales', 'marketing', 'frontend_marketing', 'backend_marketing', 'support', 'other'];
+const slug = (s: string) => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40);
 
 /** Update a member: role, department, status (activate/disable), or reset password. Owner/admin only. */
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -22,8 +21,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
   const data: Record<string, unknown> = {};
-  if (ROLES.includes(str(b.role))) data.role = str(b.role);
-  if (DEPTS.includes(str(b.department))) data.teamFunction = str(b.department);
+  const roleIn = slug(str(b.role));
+  if (roleIn && roleIn !== 'owner') data.role = roleIn; // never promote to owner here
+  if ('department' in b) data.teamFunction = str(b.department) ? slug(str(b.department)) : null;
   if (b.status === 'active' || b.status === 'disabled') data.status = b.status;
   if (typeof b.password === 'string' && b.password.length >= 6) data.passwordHash = await hashPassword(b.password);
   if (Object.keys(data).length === 0) return NextResponse.json({ error: 'Nothing to update.' }, { status: 400 });

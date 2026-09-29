@@ -43,9 +43,9 @@ export const teamAccessPages: TeamAccessScreen[] = [
   {
     id: 'TEAM-S22',
     path: '/team-access/zones',
-    title: 'Zone routing',
+    title: 'Areas',
     surface: 'page',
-    purpose: 'Map states/cities to zones and assign members; new contacts auto-route to their zone member.',
+    purpose: 'Map states/cities to areas and assign members; new contacts auto-route to their area member.',
     batch: 6,
   },
   {

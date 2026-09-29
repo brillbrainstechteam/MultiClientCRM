@@ -4,8 +4,9 @@ import { prisma } from '@/lib/db';
 import { hashPassword } from '@/lib/auth/password';
 import { audit } from '@/lib/crm/audit';
 
-const ROLES = ['admin', 'manager', 'agent'];
-const DEPTS = ['sales', 'marketing', 'frontend_marketing', 'backend_marketing', 'support', 'other'];
+// Slugify a free-text role/department so custom values render cleanly
+// (e.g. "Field Sales" -> "field_sales", shown back as "Field Sales").
+const slug = (s: string) => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40);
 
 function serialize(u: { id: string; name: string; email: string; role: string; teamFunction: string | null; status: string; createdAt: Date }) {
   return { id: u.id, name: u.name, email: u.email, role: u.role, department: u.teamFunction, status: u.status, createdAt: u.createdAt.toISOString() };
@@ -57,8 +58,12 @@ export async function POST(req: Request) {
   const name = str(b?.name);
   const email = str(b?.email).toLowerCase();
   const password = typeof b?.password === 'string' ? b.password : '';
-  const role = ROLES.includes(str(b?.role)) ? str(b?.role) : 'agent';
-  const department = DEPTS.includes(str(b?.department)) ? str(b?.department) : null;
+  // Roles: base tiers (admin/manager/agent) or a custom title — but never a
+  // second `owner` (protected). Custom roles get team-member access (see
+  // normalizeRole in bootstrap). Departments are free-text labels.
+  let role = slug(str(b?.role)) || 'agent';
+  if (role === 'owner') role = 'agent';
+  const department = str(b?.department) ? slug(str(b?.department)) : null;
 
   if (!name) return NextResponse.json({ error: 'Name is required.' }, { status: 400 });
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return NextResponse.json({ error: 'Enter a valid email.' }, { status: 400 });
