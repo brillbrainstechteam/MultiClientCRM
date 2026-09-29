@@ -7,6 +7,8 @@ interface Kundli {
   productsServices: string[];
   onlinePresence: { website?: string; socials?: string[] };
   storePresence?: { totalCities: number | null; totalStores: number | null; byCity: { city: string; stores: number | null }[] };
+  establishedYear?: string; teamStrength?: string; googleRating?: string;
+  awards?: string[]; socialProfiles?: { platform: string; url?: string; followers?: string }[]; importantFestivals?: string[];
   recentSignals: string[]; likelyNeeds: string[]; talkingPoints: string[];
   suggestedScript: { opening: string; discoveryQuestions: string[]; valuePitch: string; objectionHandling: string[] };
   hinglishScript?: { opening: string; valuePitch: string };
@@ -89,9 +91,21 @@ export function KundliPanel({ contactId }: { contactId: string }) {
       <div style={sx.metaRow}>
         <Meta label="Industry" value={kundli.industry} />
         <Meta label="Size" value={kundli.sizeEstimate} />
+        {kundli.establishedYear && kundli.establishedYear !== 'unknown' ? <Meta label="Established" value={kundli.establishedYear} /> : null}
+        {kundli.teamStrength && kundli.teamStrength !== 'unknown' ? <Meta label="Team strength" value={kundli.teamStrength} /> : null}
+        {kundli.googleRating && kundli.googleRating !== 'unknown' ? <Meta label="Google rating" value={kundli.googleRating} /> : null}
         <Meta label="Best time / channel" value={kundli.bestTimeOrChannel || '—'} />
         {kundli.onlinePresence.website ? <Meta label="Website" value={kundli.onlinePresence.website} link /> : null}
       </div>
+
+      {kundli.socialProfiles && kundli.socialProfiles.length ? (
+        <Section title="Social presence">
+          <ul style={sx.ul}>{kundli.socialProfiles.map((s2, i) => <li key={i}>{s2.platform}{s2.followers ? ` — ${s2.followers} followers` : ''}{s2.url ? ` (${s2.url})` : ''}</li>)}</ul>
+        </Section>
+      ) : null}
+
+      {kundli.importantFestivals && kundli.importantFestivals.length ? <ListSection title="Important festivals & occasions" items={kundli.importantFestivals} /> : null}
+      {kundli.awards && kundli.awards.length ? <ListSection title="Awards & recognitions" items={kundli.awards} /> : null}
 
       {kundli.storePresence && (kundli.storePresence.totalStores !== null || kundli.storePresence.byCity.length > 0) ? (
         <Section title="Store presence">

@@ -33,6 +33,13 @@ export interface Kundli {
   productsServices: string[];
   onlinePresence: { website?: string; socials?: string[] };
   storePresence: StorePresence;
+  // Structured dossier facts (Prospects Tracker "Kundli" sheet).
+  establishedYear?: string;
+  teamStrength?: string;
+  googleRating?: string;
+  awards: string[];
+  socialProfiles: { platform: string; url?: string; followers?: string }[];
+  importantFestivals: string[];
   recentSignals: string[];
   likelyNeeds: string[];
   talkingPoints: string[];
@@ -80,6 +87,7 @@ function buildPrompt(input: KundliInput): string {
     '',
     'For storePresence, research how many physical stores/showrooms/branches the business runs and in which cities. Use numbers only where you are confident; use null when unknown — never guess counts.',
     'For hinglishScript, write a natural Hinglish (Hindi + English, in Roman script) version of the opening line and value pitch, the way an Indian sales rep would actually speak on a call.',
+    'For socialProfiles, list each social handle with its follower count where visible (e.g. "12.4k"). For importantFestivals, list the festivals/occasions most relevant to THIS jeweller for greetings & campaigns (e.g. Akshaya Tritiya, Dhanteras, Diwali, the regional new year, local temple festivals). Use "unknown"/[] when not confident.',
     'Return ONLY a JSON object (no markdown, no commentary) of EXACTLY this shape:',
     `{
   "companyOverview": string,
@@ -88,6 +96,12 @@ function buildPrompt(input: KundliInput): string {
   "productsServices": string[],
   "onlinePresence": { "website": string, "socials": string[] },
   "storePresence": { "totalCities": number | null, "totalStores": number | null, "byCity": [{ "city": string, "stores": number | null }] },
+  "establishedYear": string,
+  "teamStrength": string,
+  "googleRating": string,
+  "awards": string[],
+  "socialProfiles": [{ "platform": string, "url": string, "followers": string }],
+  "importantFestivals": string[],
   "recentSignals": string[],
   "likelyNeeds": string[],
   "talkingPoints": string[],
@@ -129,6 +143,17 @@ function coerce(text: string, generatedWith: string, extraSources: string[]): Ku
     productsServices: arr(o.productsServices),
     onlinePresence: { website: typeof presence.website === 'string' ? presence.website : undefined, socials: arr(presence.socials) },
     storePresence: { totalCities: num(sp.totalCities), totalStores: num(sp.totalStores), byCity },
+    establishedYear: str(o.establishedYear, ''),
+    teamStrength: str(o.teamStrength, ''),
+    googleRating: str(o.googleRating, ''),
+    awards: arr(o.awards),
+    socialProfiles: Array.isArray(o.socialProfiles)
+      ? (o.socialProfiles as unknown[]).map((r) => {
+          const row = (r ?? {}) as Record<string, unknown>;
+          return { platform: str(row.platform, ''), url: typeof row.url === 'string' ? row.url : undefined, followers: typeof row.followers === 'string' ? row.followers : undefined };
+        }).filter((r) => r.platform)
+      : [],
+    importantFestivals: arr(o.importantFestivals),
     recentSignals: arr(o.recentSignals),
     likelyNeeds: arr(o.likelyNeeds),
     talkingPoints: arr(o.talkingPoints),
