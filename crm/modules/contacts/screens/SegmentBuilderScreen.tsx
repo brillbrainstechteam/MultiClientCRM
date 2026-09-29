@@ -164,7 +164,7 @@ function SegmentBuilderForm({ existing }: { existing: Segment | undefined }) {
         <div className="crm-sb__main">
           <section className="crm-sb__card">
             <div className="crm-sb__row2">
-              <Input label="Segment name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. High-value · Delhi" />
+              <Input label="Segment name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Volume > 200 gms" />
               <Select
                 label="Scope — branch"
                 options={[{ value: ALL_SCOPE, label: 'All branches' }, ...(availableBranches.length ? availableBranches : branches).map((b) => ({ value: b.id, label: b.name }))]}

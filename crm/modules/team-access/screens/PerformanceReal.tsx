@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { PhoneCall, Contact, ClipboardList, CalendarClock, Download } from 'lucide-react';
 import { PageHeader } from '@crm/components';
-import { Button } from '@crm/design-system';
+import { Button, Select } from '@crm/design-system';
 import './PerformanceReal.css';
 
 interface Row {
@@ -35,6 +35,7 @@ export default function PerformanceReal() {
   const [range, setRange] = useState('');
   const [from, setFrom] = useState(() => iso(new Date(Date.now() - 30 * 864e5)));
   const [to, setTo] = useState(() => iso(new Date()));
+  const [assignee, setAssignee] = useState('');
 
   const load = useCallback(() => {
     setLoading(true);
@@ -45,13 +46,20 @@ export default function PerformanceReal() {
     fetch(`/api/crm/team/performance${qs}`, { credentials: 'same-origin' })
       .then((r) => r.json()).then((d) => { setData(d.error ? null : d); setLoading(false); })
       .catch(() => setLoading(false));
-    fetch(`/api/crm/reports/funnel${qs}`, { credentials: 'same-origin' })
+    const fp = new URLSearchParams(p);
+    if (assignee) fp.set('assignee', assignee);
+    fetch(`/api/crm/reports/funnel${fp.toString() ? `?${fp.toString()}` : ''}`, { credentials: 'same-origin' })
       .then((r) => r.json()).then((d) => setFunnel(d.error ? null : d))
       .catch(() => setFunnel(null));
-  }, [range, from, to]);
+  }, [range, from, to, assignee]);
   useEffect(() => { load(); }, [load]);
 
-  const t = data?.totals;
+  const shownRows = data ? (assignee ? data.rows.filter((r) => r.userId === assignee) : data.rows) : [];
+  const t = data
+    ? (assignee
+        ? shownRows.reduce((a, r) => ({ assignedContacts: a.assignedContacts + r.assignedContacts, calls: a.calls + r.calls, followUpInProgress: a.followUpInProgress + r.followUpInProgress, notInterested: a.notInterested + r.notInterested, enquiryReceived: a.enquiryReceived + r.enquiryReceived }), { assignedContacts: 0, calls: 0, followUpInProgress: 0, notInterested: 0, enquiryReceived: 0 })
+        : data.totals)
+    : undefined;
   const rangeLabel = range === 'custom' ? `${from} to ${to}` : (RANGES.find((r) => r.key === range)?.label ?? 'All time');
 
   const donut = useMemo(() => {
@@ -67,8 +75,9 @@ export default function PerformanceReal() {
 
   const bars = useMemo(() => {
     if (!data) return [];
-    return [...data.rows].sort((a, b) => b.assignedContacts - a.assignedContacts).slice(0, 8);
-  }, [data]);
+    const rows = assignee ? data.rows.filter((r) => r.userId === assignee) : data.rows;
+    return [...rows].sort((a, b) => b.assignedContacts - a.assignedContacts).slice(0, 8);
+  }, [data, assignee]);
   const maxAssigned = Math.max(1, ...bars.map((b) => b.assignedContacts));
 
   const exportCsv = () => {
@@ -76,7 +85,7 @@ export default function PerformanceReal() {
     const head = ['Member', 'Role', 'Department', 'Assigned', 'Calls done', 'Follow-up in progress', 'Next follow-up', 'Not interested', 'Enquiry received'];
     const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
     const lines = [head.map(esc).join(',')];
-    for (const r of data.rows) {
+    for (const r of shownRows) {
       lines.push([r.name, roleLabel(r.role), r.department ? dept(r.department) : '—', r.assignedContacts, r.calls, r.followUpInProgress, fmtDate(r.nextFollowUpAt), r.notInterested, r.enquiryReceived].map(esc).join(','));
     }
     lines.push(['TOTAL', '', '', t!.assignedContacts, t!.calls, t!.followUpInProgress, '', t!.notInterested, t!.enquiryReceived].map(esc).join(','));
@@ -96,6 +105,9 @@ export default function PerformanceReal() {
               <button key={r.key} className={`pf-range__btn${range === r.key ? ' pf-range__btn--on' : ''}`} onClick={() => setRange(r.key)}>{r.label}</button>
             ))}
           </div>
+          {data && data.rows.length > 1 ? (
+            <Select label="Assignee" hideLabel size="sm" options={[{ value: '', label: 'Everyone' }, ...data.rows.map((r) => ({ value: r.userId, label: r.name }))]} value={assignee} onChange={(e) => setAssignee(e.target.value)} />
+          ) : null}
           <Button variant="secondary" onClick={exportCsv} disabled={!data}><Download size={15} /> Download CSV</Button>
         </div>
       } />
@@ -192,7 +204,7 @@ export default function PerformanceReal() {
               <span className="pf-num">Not interested</span>
               <span className="pf-num">Enquiry received</span>
             </div>
-            {data.rows.map((r) => (
+            {shownRows.map((r) => (
               <div key={r.userId} className={`pf-row${r.status === 'disabled' ? ' pf-row--off' : ''}`}>
                 <div className="pf-member">
                   <span className="pf-ava">{r.name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()}</span>
@@ -206,7 +218,7 @@ export default function PerformanceReal() {
                 <span className="pf-num"><em className="pf-dot pf-dot--ok" />{r.enquiryReceived}</span>
               </div>
             ))}
-            {data.rows.length === 0 ? <div className="pf-empty">No members in scope.</div> : null}
+            {shownRows.length === 0 ? <div className="pf-empty">No members in scope.</div> : null}
           </div>
         </>
       )}

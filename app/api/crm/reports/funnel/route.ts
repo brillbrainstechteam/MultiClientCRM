@@ -21,12 +21,15 @@ export async function GET(req: Request) {
   const range = (from || to) ? { ...(from && !isNaN(from.getTime()) ? { gte: from } : {}), ...(to && !isNaN(to.getTime()) ? { lte: to } : {}) } : undefined;
 
   const vis = await visibleUserIds(user);
-  const ownerIn = vis === 'all' ? {} : { ownerId: { in: vis } };
+  // Owner/admin can narrow to one assignee; agents/managers stay scoped to theirs.
+  const assignee = searchParams.get('assignee');
+  const allowedAssignee = assignee && (vis === 'all' || vis.includes(assignee)) ? assignee : null;
+  const ownerIn = allowedAssignee ? { ownerId: allowedAssignee } : (vis === 'all' ? {} : { ownerId: { in: vis } });
   const base = { tenantId, ...ownerIn };
 
   const [reach, enquiries, activations, dataByZone, actByZone, dataByState, actByState, dataByCity, actByCity] = await Promise.all([
     prisma.crmContact.count({ where: { ...base, ...(range ? { createdAt: range } : {}) } }),
-    prisma.crmEnquiry.count({ where: { tenantId, ...(range ? { createdAt: range } : {}) } }),
+    prisma.crmEnquiry.count({ where: { tenantId, ...ownerIn, ...(range ? { createdAt: range } : {}) } }),
     prisma.crmContact.count({ where: { ...base, lifecycleStage: 'customer', ...(range ? { activatedAt: range } : { activatedAt: { not: null } }) } }),
     prisma.crmContact.groupBy({ by: ['zone'], where: base, _count: true }),
     prisma.crmContact.groupBy({ by: ['zone'], where: { ...base, lifecycleStage: 'customer' }, _count: true }),
