@@ -130,6 +130,7 @@ function ContactForm({
   const [reference, setReference] = useState(existing?.reference ?? '');
   const [marketingOwnerId, setMarketingOwnerId] = useState(existing?.marketingOwnerId ?? '');
   const [salesOwnerId, setSalesOwnerId] = useState(existing?.salesOwnerId ?? '');
+  const [whichExhibition, setWhichExhibition] = useState(existing?.whichExhibition ?? '');
   const [leadStatus, setLeadStatus] = useState<string>(existing?.leadStatus ?? 'new');
   const [businessValue, setBusinessValue] = useState<string>(existing?.businessValue ?? 'medium');
   const [source, setSource] = useState(existing?.source ?? 'WhatsApp enquiry');
@@ -201,6 +202,7 @@ function ContactForm({
         reference: reference.trim() || null,
         marketingOwnerId: marketingOwnerId || null,
         salesOwnerId: salesOwnerId || null,
+        whichExhibition: whichExhibition.trim() || null,
       },
     };
     setSubmitting(true);
@@ -365,6 +367,7 @@ function ContactForm({
         <Select label="Sales owner" options={[{ value: '', label: 'Unassigned' }, ...ownerOptions]} value={salesOwnerId} onChange={(e) => setSalesOwnerId(e.target.value)} />
         <Input label="Type of lead" value={typeOfLead} onChange={(e) => setTypeOfLead(e.target.value)} placeholder="e.g. New, Repeat, Reactivation" />
         <Input label="Reference" value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Who referred / how sourced" />
+        <Input label="Which exhibition" value={whichExhibition} onChange={(e) => setWhichExhibition(e.target.value)} placeholder="If met at an exhibition — name & month" />
         <Select label="Lead status" options={leadStatusOptions} value={leadStatus} onChange={(e) => setLeadStatus(e.target.value)} />
         <Select label="Business value" options={businessValueOptions} value={businessValue} onChange={(e) => setBusinessValue(e.target.value)} />
         <Select

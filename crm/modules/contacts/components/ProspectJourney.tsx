@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, ShieldCheck, Phone, FileText, Video, MonitorPlay, MapPin, Building2, Megaphone, ClipboardList, Star } from 'lucide-react';
+import { Check, ShieldCheck, Phone, FileText, Video, MonitorPlay, MapPin, Building2, Megaphone, ClipboardList, Star, MessageCircle, Heart, Image, PhoneCall } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { updateContact } from '@crm/app/crm-data';
 import type { Contact } from '@crm/mock-data';
@@ -16,6 +16,13 @@ const STEPS: { key: string; label: string; hint: string; icon: LucideIcon }[] = 
   { key: 'fieldVisit', label: 'Field visit done', hint: 'Visited at their location', icon: MapPin },
   { key: 'officeVisit', label: 'Office visit done', hint: 'They visited your office', icon: Building2 },
   { key: 'marketingCollateral', label: 'Marketing collateral sent', hint: 'Catalogue / campaign material', icon: Megaphone },
+];
+/** Post-exhibition WhatsApp nurture (Exhibition Visited Client Data sheet). */
+const EXHIBITION_STEPS: { key: string; label: string; hint: string; icon: LucideIcon }[] = [
+  { key: 'introMessage', label: 'Intro message sent', hint: 'WhatsApp intro after the stall visit', icon: MessageCircle },
+  { key: 'thankYou', label: 'Thank-you message', hint: 'Thank-you note on WhatsApp', icon: Heart },
+  { key: 'thankYouCreative', label: 'Thank-you creative', hint: 'Branded thank-you image/card', icon: Image },
+  { key: 'thankYouCall', label: 'Thank-you call', hint: 'Personal follow-up call', icon: PhoneCall },
 ];
 const fmt = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null);
 
@@ -49,6 +56,8 @@ export function ProspectJourney({ contact }: { contact: Contact }) {
   const daysToActivate = contact.activatedAt && contact.createdAt
     ? Math.max(0, Math.round((new Date(contact.activatedAt).getTime() - new Date(contact.createdAt).getTime()) / 864e5))
     : null;
+  const whichExhibition = (jp.whichExhibition as string) ?? '';
+  const isExhibition = /exhibition/i.test(contact.source ?? '') || !!whichExhibition;
 
   const doneCount = STEPS.filter((s) => journey[s.key]).length;
   const enquiryDone = contact.leadStatus === 'enquiry_generated';
@@ -101,6 +110,26 @@ export function ProspectJourney({ contact }: { contact: Contact }) {
           );
         })}
       </ol>
+
+      {isExhibition ? (
+        <div className="pj-exh">
+          <div className="pj-exh__head">Exhibition follow-up{whichExhibition ? ` · ${whichExhibition}` : ''}</div>
+          <ol className="pj-steps">
+            {EXHIBITION_STEPS.map((s) => {
+              const date = fmt(journey[s.key]);
+              const on = !!journey[s.key];
+              const Icon = s.icon;
+              return (
+                <li key={s.key} className={`pj-step${on ? ' pj-step--on' : ''}`}>
+                  <button className="pj-check" onClick={() => toggle(s.key)} disabled={busy === s.key} aria-pressed={on} title={on ? 'Mark not done' : 'Mark done'}>{on ? <Check size={15} /> : null}</button>
+                  <span className="pj-ic"><Icon size={16} /></span>
+                  <div className="pj-step__body"><strong>{s.label}</strong><span>{date ? `Done · ${date}` : s.hint}</span></div>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      ) : null}
 
       <div className={`pj-activation${activated ? ' pj-activation--on' : ''}`}>
         <div className="pj-activation__head">

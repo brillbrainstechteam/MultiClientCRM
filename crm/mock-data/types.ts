@@ -149,6 +149,8 @@ export interface Contact {
   dataManagerId?: string | null;
   marketingOwnerId?: string | null;
   salesOwnerId?: string | null;
+  whichExhibition?: string | null;
+  invoiceNo?: string | null;
   /** milestone key -> ISO date completed (null / absent = not done). */
   journey?: Record<string, string | null>;
 }

@@ -67,6 +67,8 @@ export function serializeCrmContact(c: CrmContact) {
     dataManagerId: (jp.dataManagerId as string) ?? null,
     marketingOwnerId: (jp.marketingOwnerId as string) ?? null,
     salesOwnerId: (jp.salesOwnerId as string) ?? null,
+    whichExhibition: (jp.whichExhibition as string) ?? null,
+    invoiceNo: (jp.invoiceNo as string) ?? null,
     journey: (jp.journey as Record<string, string | null>) ?? {},
   };
 }
