@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, CalendarClock, ChevronRight, X } from 'lucide-react';
+import { Phone, MapPin, CalendarClock, ChevronRight, X, BookOpen, Navigation } from 'lucide-react';
 import { PageHeader } from '@crm/components';
 import { Button, Badge } from '@crm/design-system';
 import { useWorkspace } from '@crm/app/workspace-context';
@@ -10,22 +10,31 @@ interface PlanContact {
   id: string; name: string; company: string | null; mobile: string;
   nextFollowUpAt: string | null; leadStatus: string; interestedIn: string | null;
   ownerId: string; ownerName: string | null; businessSegment: string | null; grade: string | null; preferredLanguage: string | null;
+  city?: string | null;
 }
 interface AssigneeRow { ownerId: string; ownerName: string | null; overdue: number; today: number; upcoming: number; total: number; }
 interface PlanData { scope: string; overdue: PlanContact[]; today: PlanContact[]; upcoming: PlanContact[]; counts: { overdue: number; today: number; upcoming: number }; assignees: AssigneeRow[]; }
 
+type Channel = 'call' | 'visit';
+
 const OUTCOMES = [
-  { key: 'follow_up', label: 'Follow-up in progress', tone: 'info' as const },
+  { key: 'interested', label: 'Interested', tone: 'brand' as const },
+  { key: 'enquiry_received', label: 'Enquiry generated', tone: 'success' as const },
+  { key: 'follow_up', label: 'Follow-up required', tone: 'info' as const },
   { key: 'not_interested', label: 'Not interested', tone: 'danger' as const },
-  { key: 'enquiry_received', label: 'Enquiry received', tone: 'success' as const },
+  { key: 'active_customer', label: 'Active customer', tone: 'success' as const },
 ];
 const SEGMENT: Record<string, string> = { chain_stores: 'Chain', corporate: 'Corporate', boutique: 'Boutique', exports: 'Exports', standalone: 'Standalone', small_store: 'Small store' };
+const mapsHref = (c: PlanContact) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([c.company ?? c.name, c.city].filter(Boolean).join(', '))}`;
 
-/** Datewise call plan (Phase 4) + call-outcome logging with sales handover (Phase 5). */
+/** Datewise activity plan — Telecalling and Field visits share the same daily
+ *  plan (overdue/today/upcoming by follow-up date). Each row studies the contact,
+ *  opens a call/route, and logs an outcome that updates the pipeline. */
 export default function CallPlanReal() {
   const { role } = useWorkspace();
   const navigate = useNavigate();
   const isAdmin = role === 'owner';
+  const [channel, setChannel] = useState<Channel>('call');
   const [data, setData] = useState<PlanData | null>(null);
   const [loading, setLoading] = useState(true);
   const [assignee, setAssignee] = useState<string | null>(null);
@@ -40,15 +49,31 @@ export default function CallPlanReal() {
   }, [assignee]);
   useEffect(() => { load(); }, [load]);
 
+  const total = data ? data.counts.overdue + data.counts.today + data.counts.upcoming : 0;
+
   return (
     <div className="cp">
-      <PageHeader title="Call plan" actions={<Button variant="ghost" onClick={() => navigate('/calling/history')}>Call history <ChevronRight size={15} /></Button>} />
+      <PageHeader
+        title="Activity plan"
+        description={channel === 'call' ? 'Plan and log your telecalling for the day' : 'Plan field visits by area and log what happened'}
+        actions={<Button variant="ghost" onClick={() => navigate('/calling/history')}>Activity history <ChevronRight size={15} /></Button>}
+      />
+
+      {/* Channel switch — one planner, two activities. */}
+      <div className="cp-channel" role="tablist" aria-label="Activity type">
+        <button role="tab" aria-selected={channel === 'call'} className={`cp-channel__btn${channel === 'call' ? ' cp-channel__btn--on' : ''}`} onClick={() => setChannel('call')}>
+          <Phone size={16} /> Telecalling
+        </button>
+        <button role="tab" aria-selected={channel === 'visit'} className={`cp-channel__btn${channel === 'visit' ? ' cp-channel__btn--on' : ''}`} onClick={() => setChannel('visit')}>
+          <MapPin size={16} /> Field visits
+        </button>
+      </div>
 
       {/* Admin: per-assignee overview */}
       {isAdmin && data && data.assignees.length > 0 ? (
         <div className="cp-assignees">
           <button className={`cp-assignee${assignee === null ? ' cp-assignee--on' : ''}`} onClick={() => setAssignee(null)}>
-            <strong>Everyone</strong><span>{data.counts.overdue + data.counts.today + data.counts.upcoming} to call</span>
+            <strong>Everyone</strong><span>{total} to {channel === 'call' ? 'call' : 'visit'}</span>
           </button>
           {data.assignees.map((a) => (
             <button key={a.ownerId} className={`cp-assignee${assignee === a.ownerId ? ' cp-assignee--on' : ''}`} onClick={() => setAssignee(a.ownerId)}>
@@ -59,23 +84,29 @@ export default function CallPlanReal() {
         </div>
       ) : null}
 
-      {loading ? <p className="cp-muted">Loading your call plan…</p> : !data ? <p className="cp-muted">Couldn’t load the plan.</p> : (
+      {loading ? <p className="cp-muted">Loading your plan…</p> : !data ? <p className="cp-muted">Couldn’t load the plan.</p> : (
         <>
-          <Bucket title="Overdue" tone="danger" items={data.overdue} showOwner={isAdmin && !assignee} onLog={setLogging} navigate={navigate} />
-          <Bucket title="Today" tone="info" items={data.today} showOwner={isAdmin && !assignee} onLog={setLogging} navigate={navigate} />
-          <Bucket title="Upcoming" tone="neutral" items={data.upcoming} showOwner={isAdmin && !assignee} onLog={setLogging} navigate={navigate} />
-          {data.overdue.length + data.today.length + data.upcoming.length === 0 ? (
-            <div className="cp-empty"><CalendarClock size={26} /><strong>No calls scheduled</strong><p>Assign contacts and set a follow-up date to build the plan.</p></div>
+          <Bucket title="Overdue" tone="danger" items={data.overdue} channel={channel} showOwner={isAdmin && !assignee} onLog={setLogging} navigate={navigate} />
+          <Bucket title="Today" tone="info" items={data.today} channel={channel} showOwner={isAdmin && !assignee} onLog={setLogging} navigate={navigate} />
+          <Bucket title="Upcoming" tone="neutral" items={data.upcoming} channel={channel} showOwner={isAdmin && !assignee} onLog={setLogging} navigate={navigate} />
+          {total === 0 ? (
+            <div className="cp-empty">
+              <CalendarClock size={26} />
+              <strong>No {channel === 'call' ? 'calls' : 'visits'} scheduled</strong>
+              <p>{channel === 'call'
+                ? 'Assign contacts and set a follow-up date to build the plan.'
+                : 'Assign contacts to a zone member and set a visit date to build the route.'}</p>
+            </div>
           ) : null}
         </>
       )}
 
-      {logging ? <OutcomeModal contact={logging} onClose={() => setLogging(null)} onDone={() => { setLogging(null); load(); }} /> : null}
+      {logging ? <OutcomeModal contact={logging} channel={channel} onClose={() => setLogging(null)} onDone={() => { setLogging(null); load(); }} /> : null}
     </div>
   );
 }
 
-function Bucket({ title, tone, items, showOwner, onLog, navigate }: { title: string; tone: 'danger' | 'info' | 'neutral'; items: PlanContact[]; showOwner: boolean; onLog: (c: PlanContact) => void; navigate: (to: string) => void }) {
+function Bucket({ title, tone, items, channel, showOwner, onLog, navigate }: { title: string; tone: 'danger' | 'info' | 'neutral'; items: PlanContact[]; channel: Channel; showOwner: boolean; onLog: (c: PlanContact) => void; navigate: (to: string) => void }) {
   if (items.length === 0) return null;
   return (
     <section className="cp-bucket">
@@ -87,7 +118,7 @@ function Bucket({ title, tone, items, showOwner, onLog, navigate }: { title: str
               <span className="cp-ava">{(c.company ?? c.name).slice(0, 2).toUpperCase()}</span>
               <div className="cp-row__id">
                 <strong>{c.company ?? c.name}</strong>
-                <span>{c.mobile}{c.interestedIn ? ` · ${c.interestedIn}` : ''}</span>
+                <span>{channel === 'visit' && c.city ? `${c.city} · ` : ''}{c.mobile}{c.interestedIn ? ` · ${c.interestedIn}` : ''}</span>
               </div>
               <div className="cp-row__meta">
                 {c.grade ? <span className="cp-chip">Grade {c.grade}</span> : null}
@@ -97,8 +128,11 @@ function Bucket({ title, tone, items, showOwner, onLog, navigate }: { title: str
                 {c.nextFollowUpAt ? <span className="cp-date">{new Date(c.nextFollowUpAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span> : null}
               </div>
             </button>
-            <a className="cp-call" href={`tel:+${c.mobile.replace(/\D/g, '')}`} title="Call"><Phone size={15} /></a>
-            <button className="cp-log" onClick={() => onLog(c)}>Log call</button>
+            <button className="cp-act cp-act--ghost" title="Study before you go" onClick={() => navigate(`/contacts/customer/${c.id}`)}><BookOpen size={15} /><span>Study</span></button>
+            {channel === 'call'
+              ? <a className="cp-act" href={`tel:+${c.mobile.replace(/\D/g, '')}`} title="Call"><Phone size={15} /><span>Call</span></a>
+              : <a className="cp-act" href={mapsHref(c)} target="_blank" rel="noreferrer" title="Directions"><Navigation size={15} /><span>Route</span></a>}
+            <button className="cp-log" onClick={() => onLog(c)}>{channel === 'call' ? 'Log call' : 'Log visit'}</button>
           </div>
         ))}
       </div>
@@ -106,23 +140,24 @@ function Bucket({ title, tone, items, showOwner, onLog, navigate }: { title: str
   );
 }
 
-function OutcomeModal({ contact, onClose, onDone }: { contact: PlanContact; onClose: () => void; onDone: () => void }) {
-  const [outcome, setOutcome] = useState<string>('follow_up');
+function OutcomeModal({ contact, channel, onClose, onDone }: { contact: PlanContact; channel: Channel; onClose: () => void; onDone: () => void }) {
+  const [outcome, setOutcome] = useState<string>('interested');
   const [note, setNote] = useState('');
   const [nextDate, setNextDate] = useState('');
   const [product, setProduct] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const verb = channel === 'call' ? 'call' : 'visit';
 
   const submit = async () => {
     setBusy(true); setErr(null);
     try {
-      const body: Record<string, unknown> = { contactId: contact.id, outcome, note };
+      const body: Record<string, unknown> = { contactId: contact.id, outcome, note, channel };
       if (outcome === 'follow_up' && nextDate) body.nextFollowUpAt = nextDate;
       if (outcome === 'enquiry_received') body.enquiry = { product, requirements: note };
       const r = await fetch('/api/crm/calls/outcome', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(body) });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.error ?? 'Could not log the call.'); return; }
+      if (!r.ok) { setErr(d.error ?? `Could not log the ${verb}.`); return; }
       onDone();
     } finally { setBusy(false); }
   };
@@ -131,8 +166,8 @@ function OutcomeModal({ contact, onClose, onDone }: { contact: PlanContact; onCl
     <div className="cp-modal" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="cp-modal__box" onClick={(e) => e.stopPropagation()}>
         <button className="cp-modal__x" onClick={onClose} aria-label="Close"><X size={18} /></button>
-        <h3 className="cp-modal__title">Log call — {contact.company ?? contact.name}</h3>
-        <p className="cp-modal__sub">{contact.mobile}</p>
+        <h3 className="cp-modal__title">Log {verb} — {contact.company ?? contact.name}</h3>
+        <p className="cp-modal__sub">{channel === 'visit' && contact.city ? `${contact.city} · ` : ''}{contact.mobile}</p>
 
         <div className="cp-out">
           {OUTCOMES.map((o) => (
@@ -146,15 +181,16 @@ function OutcomeModal({ contact, onClose, onDone }: { contact: PlanContact; onCl
           </label>
         ) : null}
         {outcome === 'follow_up' ? (
-          <label className="cp-field"><span>Next follow-up date</span>
+          <label className="cp-field"><span>Next {verb} date</span>
             <input type="date" value={nextDate} onChange={(e) => setNextDate(e.target.value)} />
           </label>
         ) : null}
-        <label className="cp-field"><span>Call note</span>
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder="What was discussed…" />
+        <label className="cp-field"><span>{channel === 'visit' ? 'Visit note' : 'Call note'}</span>
+          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder={channel === 'visit' ? 'What was shown, their response, next step…' : 'What was discussed…'} />
         </label>
 
-        {outcome === 'enquiry_received' ? <p className="cp-hint">This will create an enquiry and hand it to the Sales team.</p> : null}
+        {outcome === 'enquiry_received' ? <p className="cp-hint">This creates an enquiry and hands it to the Sales team.</p> : null}
+        {outcome === 'active_customer' ? <p className="cp-hint">This marks the contact as an active customer.</p> : null}
         {err ? <p className="cp-err">{err}</p> : null}
         <div className="cp-modal__foot">
           <Button variant="ghost" onClick={onClose} disabled={busy}>Cancel</Button>

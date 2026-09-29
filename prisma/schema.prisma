@@ -672,6 +672,7 @@ model CrmCallLog {
   provider       String?
   providerCallId String?
   status         String   @default("queued")          // queued | ringing | answered | no_answer | busy | failed | completed
+  channel        String   @default("call")             // call | visit (field marketing)
   startedAt      DateTime?
   durationSec    Int?
   recordingUrl   String?

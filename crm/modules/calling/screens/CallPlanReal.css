@@ -1,6 +1,18 @@
 .cp { display: flex; flex-direction: column; gap: 18px; }
 .cp-muted { color: var(--crm-text-muted); font-size: 14px; }
 
+/* channel switch */
+.cp-channel { display: inline-flex; gap: 4px; padding: 4px; background: var(--crm-surface-sunken); border-radius: 12px; align-self: flex-start; }
+.cp-channel__btn { display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: 13.5px; font-weight: 600; color: var(--crm-text-secondary); background: none; border: 0; border-radius: 9px; padding: 8px 16px; cursor: pointer; transition: background .15s, color .15s, box-shadow .15s; }
+.cp-channel__btn--on { background: var(--crm-surface-raised); color: var(--crm-brand-700); box-shadow: 0 1px 2px rgba(15,23,42,.1); }
+
+/* labelled row actions (Study / Call / Route) */
+.cp-act { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 9px; flex: none; border: 1px solid var(--crm-border-subtle); color: var(--crm-brand-700); background: var(--crm-surface-raised); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; text-decoration: none; }
+.cp-act:hover { border-color: var(--crm-brand-600); }
+.cp-act--ghost { color: var(--crm-text-secondary); }
+.cp-act--ghost:hover { color: var(--crm-brand-700); }
+@media (max-width: 900px) { .cp-act span { display: none; } .cp-act { padding: 0; width: 34px; justify-content: center; } }
+
 .cp-assignees { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
 .cp-assignee { text-align: left; background: var(--crm-surface-raised); border: 1px solid var(--crm-border-subtle); border-radius: 12px; padding: 12px 14px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
 .cp-assignee:hover { border-color: var(--crm-brand-600); }
@@ -42,6 +54,7 @@
 .cp-out__opt--info.cp-out__opt--on { border-color: #2563eb; box-shadow: 0 0 0 2px #eff6ff inset; }
 .cp-out__opt--danger.cp-out__opt--on { border-color: var(--crm-danger); box-shadow: 0 0 0 2px var(--crm-danger-tint) inset; }
 .cp-out__opt--success.cp-out__opt--on { border-color: var(--crm-brand-600); box-shadow: 0 0 0 2px var(--crm-brand-50) inset; }
+.cp-out__opt--brand.cp-out__opt--on { border-color: var(--crm-brand-600); box-shadow: 0 0 0 2px var(--crm-brand-50) inset; }
 .cp-field { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--crm-text-muted); margin-bottom: 12px; }
 .cp-field input, .cp-field textarea { font: inherit; font-size: 14px; font-weight: 500; color: var(--crm-text-primary); border: 1px solid var(--crm-border-subtle); border-radius: 9px; padding: 9px 11px; background: var(--crm-surface-raised); }
 .cp-field input:focus, .cp-field textarea:focus { outline: none; border-color: var(--crm-brand-600); }

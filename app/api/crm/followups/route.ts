@@ -31,7 +31,7 @@ export async function GET(req: Request) {
       take: 500,
       select: {
         id: true, name: true, company: true, mobile: true, nextFollowUpAt: true, leadStatus: true,
-        interestedIn: true, ownerId: true, kamUserId: true, businessSegment: true, grade: true, preferredLanguage: true,
+        interestedIn: true, ownerId: true, kamUserId: true, businessSegment: true, grade: true, preferredLanguage: true, city: true,
       },
     }),
     prisma.user.findMany({ where: { tenantId: user.tenantId }, select: { id: true, name: true } }),
@@ -43,7 +43,7 @@ export async function GET(req: Request) {
     nextFollowUpAt: c.nextFollowUpAt ? c.nextFollowUpAt.toISOString() : null,
     leadStatus: c.leadStatus, interestedIn: c.interestedIn,
     ownerId: c.ownerId, ownerName: nameById.get(c.ownerId) ?? null,
-    businessSegment: c.businessSegment, grade: c.grade, preferredLanguage: c.preferredLanguage,
+    businessSegment: c.businessSegment, grade: c.grade, preferredLanguage: c.preferredLanguage, city: c.city,
   });
 
   const overdue = rows.filter((c) => c.nextFollowUpAt! < startOfToday).map(map);

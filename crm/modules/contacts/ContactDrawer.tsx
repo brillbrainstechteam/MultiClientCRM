@@ -14,7 +14,7 @@ import { findContact, users, type Contact } from '@crm/mock-data';
 import { duplicateClusters } from '@crm/mock-data';
 import { createContact, updateContact } from '@crm/app/crm-data';
 import { ConsentBadge, StageBadge } from './components';
-import { distinctSources } from './contact-selectors';
+import { contactSourceOptions } from './contact-selectors';
 
 /**
  * CON-S19 — Add / Edit Contact drawer. Mounted once in the Contacts layout and
@@ -222,7 +222,7 @@ function ContactForm({
       : 'Create a new contact. A valid WhatsApp mobile and a name or company are required.';
 
   const ownerOptions = users.map((u) => ({ value: u.id, label: `${u.name} — ${u.roleLabel}` }));
-  const sourceOptions = distinctSources().map((s) => ({ value: s, label: s }));
+  const sourceOptions = contactSourceOptions();
 
   if (saveSuccess) {
     return (

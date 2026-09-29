@@ -70,7 +70,7 @@ export const navItems: NavItem[] = [
   },
   {
     key: 'calling',
-    label: 'Calling',
+    label: 'Calling & Visits',
     path: '/calling',
     icon: PhoneCall,
     group: 'work',

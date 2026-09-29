@@ -13,12 +13,14 @@ import { audit } from '@/lib/crm/audit';
  * Body: { contactId, outcome: 'follow_up'|'not_interested'|'enquiry_received',
  *         note?, nextFollowUpAt?, enquiry?: { product, requirements } }
  */
-const OUTCOMES = ['follow_up', 'not_interested', 'enquiry_received'] as const;
+const OUTCOMES = ['interested', 'follow_up', 'not_interested', 'enquiry_received', 'active_customer'] as const;
 type Outcome = (typeof OUTCOMES)[number];
 const LEAD_STATUS: Record<Outcome, string> = {
+  interested: 'interested',
   follow_up: 'connected',
   not_interested: 'not_interested',
   enquiry_received: 'enquiry_generated',
+  active_customer: 'engaged',
 };
 
 export async function POST(req: Request) {
@@ -42,16 +44,17 @@ export async function POST(req: Request) {
 
   const nextFollowUpAt = outcome === 'follow_up' && typeof b?.nextFollowUpAt === 'string' && b.nextFollowUpAt
     ? new Date(b.nextFollowUpAt) : null;
+  const channel = b?.channel === 'visit' ? 'visit' : 'call';
 
-  // 1) Call log.
+  // 1) Activity log (call or field visit).
   await prisma.crmCallLog.create({
     data: {
       tenantId: user.tenantId, contactId, mobile: contact.mobile, direction: 'outbound',
-      status: 'completed', disposition: outcome, summary: note || null, byUserId: user.id, startedAt: new Date(),
+      status: 'completed', channel, disposition: outcome, summary: note || null, byUserId: user.id, startedAt: new Date(),
     },
   });
 
-  // 2) Contact update.
+  // 2) Contact update. "Active customer" promotes the lifecycle stage.
   await prisma.crmContact.update({
     where: { id: contactId },
     data: {
@@ -60,6 +63,7 @@ export async function POST(req: Request) {
       lastConnectAt: new Date(),
       lastActivityAt: new Date(),
       ...(note ? { lastFeedback: note } : {}),
+      ...(outcome === 'active_customer' ? { lifecycleStage: 'customer', lifecycleState: 'active' } : {}),
       nextFollowUpAt: outcome === 'follow_up' ? (nextFollowUpAt && !isNaN(nextFollowUpAt.getTime()) ? nextFollowUpAt : contact.nextFollowUpAt) : null,
     },
   });
@@ -78,7 +82,7 @@ export async function POST(req: Request) {
     const created = await prisma.crmEnquiry.create({
       data: {
         tenantId: user.tenantId, contactId, enquiryNo: `ENQ-${String(count + 1).padStart(4, '0')}`,
-        source: 'call', isNew: contact.lifecycleStage !== 'customer',
+        source: channel === 'visit' ? 'field_visit' : 'call', isNew: contact.lifecycleStage !== 'customer',
         product: str(enq.product), description: str(enq.requirements) ?? (note || null),
         status: 'pending', ownerId: salesUser?.id ?? contact.kamUserId ?? null,
       },

@@ -148,9 +148,44 @@ export function filterContacts(scope: ContactScope, filters: ContactFilters): Co
   });
 }
 
+/**
+ * Canonical acquisition sources offered in the Add/Edit contact form. Ordered by
+ * how B2B jewellery clients actually acquire leads (field/offline first).
+ */
+export const CONTACT_SOURCES: string[] = [
+  'Field marketing',
+  'Google Business',
+  'Exhibitions',
+  'Office walk-in',
+  'Calling',
+  'Jewellery association',
+  'Website',
+  'WhatsApp',
+  'Referral',
+  'WhatsApp enquiry',
+  'Instagram',
+  'Facebook',
+  'Manual entry',
+  'Import',
+];
+
 /** Distinct source values present in the data (for filter dropdowns). */
 export function distinctSources(): string[] {
   return [...new Set(contacts.map((c) => c.source))].sort();
+}
+
+/** Source options for the contact form: the canonical list plus any custom
+ *  values already present in the data (so nothing is ever lost). */
+export function contactSourceOptions(): { value: string; label: string }[] {
+  const seen = new Set<string>();
+  const out: { value: string; label: string }[] = [];
+  for (const s of [...CONTACT_SOURCES, ...distinctSources()]) {
+    const key = s.trim().toLowerCase();
+    if (!s.trim() || seen.has(key)) continue;
+    seen.add(key);
+    out.push({ value: s, label: s });
+  }
+  return out;
 }
 
 export const consentOptions: { value: ConsentState; label: string }[] = [
