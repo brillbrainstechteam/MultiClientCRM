@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useScopedHref } from '@crm/app/use-scoped-href';
+import { useWorkspace } from '@crm/app/workspace-context';
 import {
   Badge,
   Button,
@@ -108,8 +109,11 @@ function ContactForm({
 }) {
   const navigate = useNavigate();
   const scopedHref = useScopedHref();
+  const { workspace } = useWorkspace();
 
-  const [customerType, setCustomerType] = useState<'b2b' | 'b2c'>(existing?.customerType ?? 'b2b');
+  // Contact "type" is an account-level property (set at signup), not per contact.
+  // A B2C account captures individuals; a B2B/both account captures businesses.
+  const customerType: 'b2b' | 'b2c' = workspace.businessModel === 'b2c' ? 'b2c' : 'b2b';
   const [name, setName] = useState(existing?.name ?? '');
   const [company, setCompany] = useState(existing?.company ?? '');
   const [contactPerson, setContactPerson] = useState(existing?.contactPerson ?? '');
@@ -308,20 +312,6 @@ function ContactForm({
           </div>
         </div>
       ) : null}
-
-      {/* Customer type — drives which fields are mandatory (req 7,8). */}
-      <div className="crm-ov-segment" role="group" aria-label="Customer type" style={{ marginBottom: 'var(--crm-space-4)' }}>
-        {(['b2b', 'b2c'] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            className={customerType === t ? 'crm-ov-segment__btn crm-ov-segment__btn--active' : 'crm-ov-segment__btn'}
-            onClick={() => setCustomerType(t)}
-          >
-            {t === 'b2b' ? 'Business (B2B)' : 'Individual (B2C)'}
-          </button>
-        ))}
-      </div>
 
       <div className="crm-contact-form">
         {customerType === 'b2b' ? (

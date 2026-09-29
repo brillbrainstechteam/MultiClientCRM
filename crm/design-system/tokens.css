@@ -23,10 +23,10 @@
   --crm-green-tint: #ecfdf5;    /* Primary Light / mint */
   --crm-green-border: #a7f3d0;
 
-  --crm-gold: #f59e0b;          /* Accent — amber */
-  --crm-gold-dark: #d97706;
-  --crm-gold-tint: #fef3c7;
-  --crm-gold-border: #fcd9a5;
+  --crm-gold: #6366f1;          /* Accent — indigo (was amber) */
+  --crm-gold-dark: #4f46e5;
+  --crm-gold-tint: #eef2ff;
+  --crm-gold-border: #c7d2fe;
 
   --crm-canvas: #f8fafc;        /* Neutral 50 — cool page ground */
   --crm-cream: #f1f5f9;         /* soft cool grey supporting surface */

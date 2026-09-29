@@ -123,6 +123,7 @@ export async function GET() {
   return NextResponse.json({
     name: businessName,
     plan: sessionUser.tenant.plan ?? 'trial',
+    businessModel: sessionUser.tenant.businessModel ?? 'b2b',
     currentUserId,
     currentUserRole,
     branches,

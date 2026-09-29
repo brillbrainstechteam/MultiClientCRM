@@ -219,7 +219,7 @@ export function findTeam(teamId: string): Team | undefined {
 export function setWorkspaceData(next: {
   branches?: Branch[]; whatsappNumbers?: WhatsAppNumber[]; teams?: Team[]; users?: User[];
   name?: string; branchIds?: string[]; whatsappNumberIds?: string[]; plan?: Workspace['plan'];
-  currentUserId?: string | null; currentUserRole?: string;
+  currentUserId?: string | null; currentUserRole?: string; businessModel?: string;
 }): void {
   if (next.branches) branches = next.branches;
   if (next.whatsappNumbers) whatsappNumbers = next.whatsappNumbers;
@@ -229,6 +229,9 @@ export function setWorkspaceData(next: {
   if (next.branchIds) workspace = { ...workspace, branchIds: next.branchIds };
   if (next.whatsappNumberIds) workspace = { ...workspace, whatsappNumberIds: next.whatsappNumberIds };
   if (next.plan) workspace = { ...workspace, plan: next.plan };
+  if (next.businessModel && ['b2b', 'b2c', 'both'].includes(next.businessModel)) {
+    workspace = { ...workspace, businessModel: next.businessModel as Workspace['businessModel'] };
+  }
   if (next.currentUserId !== undefined) currentUserId = next.currentUserId;
   if (next.currentUserRole && ['owner', 'manager', 'agent'].includes(next.currentUserRole)) {
     currentUserRole = next.currentUserRole as User['role'];

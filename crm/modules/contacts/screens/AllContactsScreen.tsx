@@ -16,12 +16,11 @@ import {
   type Column,
 } from '@crm/design-system';
 import { findUser, users, type Contact } from '@crm/mock-data';
-import { ConsentBadge, ContactIdentity, contentStateView, CustomerTypeBadge, LeadStatusBadge, LifecycleBadge, SalesTierBadge } from '../components';
+import { ConsentBadge, ContactIdentity, contentStateView, LeadStatusBadge, LifecycleBadge, SalesTierBadge } from '../components';
 import { assignZone } from '../zones/zone-assignment';
 import { getContactZone, useContactZones } from '../zones/contact-zone-store';
 import {
   consentOptions,
-  customerTypeFilterOptions,
   distinctSources,
   filterContacts,
   leadStatusFilterOptions,
@@ -129,7 +128,6 @@ export default function AllContactsScreen() {
       render: (c) => <ContactIdentity contact={c} to={scopedHref(`/contacts/customer/${c.id}`)} />,
       width: '24%',
     },
-    { key: 'type', header: 'Type', render: (c) => <CustomerTypeBadge type={c.customerType} /> },
     { key: 'leadStatus', header: 'Lead status', render: (c) => <LeadStatusBadge status={c.leadStatus} /> },
     { key: 'lifecycle', header: 'Lifecycle', render: (c) => <LifecycleBadge stage={c.lifecycleStage} state={c.lifecycleState} /> },
     { key: 'consent', header: 'Consent', render: (c) => <ConsentBadge consent={c.consent} /> },
@@ -248,14 +246,6 @@ export default function AllContactsScreen() {
             options={[{ value: '', label: 'All lifecycle' }, ...lifecycleFilterOptions]}
             value={filters.lifecycle ?? ''}
             onChange={(e) => setParam('lifecycle', e.target.value)}
-          />
-          <Select
-            label="Type"
-            hideLabel
-            size="sm"
-            options={[{ value: '', label: 'All types' }, ...customerTypeFilterOptions]}
-            value={filters.customerType ?? ''}
-            onChange={(e) => setParam('customerType', e.target.value)}
           />
           <Select
             label="Consent"

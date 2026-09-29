@@ -53,6 +53,8 @@ export interface Workspace {
   name: string;
   legalName: string;
   plan: 'trial' | 'starter' | 'growth' | 'advanced' | 'enterprise';
+  /** Account selling model, set at signup — drives contact fields. */
+  businessModel?: 'b2b' | 'b2c' | 'both';
   enabledModules: ModuleKey[];
   branchIds: string[];
   whatsappNumberIds: string[];

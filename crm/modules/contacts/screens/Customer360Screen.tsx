@@ -25,7 +25,6 @@ import {
 import {
   ConsentBadge,
   contentStateView,
-  CustomerTypeBadge,
   LeadStatusBadge,
   LifecycleBadge,
   SalesTierBadge,
@@ -189,7 +188,6 @@ export default function Customer360Screen() {
             <span>· {contact.city}</span>
           </div>
           <div className="crm-c360__chips">
-            <CustomerTypeBadge type={contact.customerType} />
             <LeadStatusBadge status={contact.leadStatus} />
             <LifecycleBadge stage={contact.lifecycleStage} state={contact.lifecycleState} />
             <ConsentBadge consent={contact.consent} />
@@ -218,7 +216,6 @@ export default function Customer360Screen() {
         {activeTab === 'profile' ? (
           <FieldGrid
             fields={[
-              ['Type', (contact.customerType ?? 'b2b').toUpperCase()],
               ['Full name', contact.name],
               ['Company', contact.company ?? notSet()],
               ['Contact person', contact.contactPerson ?? notSet()],

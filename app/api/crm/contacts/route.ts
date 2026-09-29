@@ -21,7 +21,10 @@ export async function POST(req: Request) {
   const arr = (v: unknown) => (Array.isArray(v) ? v.map(String).map((s) => s.trim()).filter(Boolean) : []);
   const dateOf = (v: unknown) => { const s = str(v); const d = s ? new Date(s) : null; return d && !isNaN(d.getTime()) ? d : null; };
 
-  const customerType = str(b?.customerType, 'b2b') === 'b2c' ? 'b2c' : 'b2b';
+  // Contact type follows the ACCOUNT's selling model (set at signup), not a
+  // per-contact choice: a B2C account records individuals, a B2B/both account
+  // records businesses.
+  const customerType = user.tenant.businessModel === 'b2c' ? 'b2c' : 'b2b';
   const name = str(b?.name);
   const company = str(b?.company) || null;
   const contactPerson = str(b?.contactPerson) || null;
