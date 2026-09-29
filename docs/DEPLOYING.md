@@ -32,3 +32,19 @@ The number's token lives **in the database** (encrypted on `WhatsAppAccount`) �
 3. Confirm every check is green at `/diagnostics/whatsapp`.
 
 No env change and no redeploy. `WHATSAPP_TEST_TOKEN` is read only by `/api/dev/connect-test`, a local-dev shortcut that is **disabled in production** (it would overwrite the stored token with whatever the env holds).
+
+## File storage (showroom photos)
+Uploaded photos are kept in object storage and only a pointer row (`CrmFile`) goes in the database. Two drivers, picked by env — nothing is tied to the current host:
+
+| Driver | Use when | Env |
+|---|---|---|
+| `local` | Running on our own VPS | `STORAGE_DRIVER=local`, `STORAGE_DIR=/var/lib/talktrack/uploads` |
+| `s3` | MinIO on the VPS, or cloud credits (Cloudflare R2, Backblaze B2, AWS S3) | `STORAGE_DRIVER=s3` + `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT` (MinIO/R2), `S3_FORCE_PATH_STYLE=true` (MinIO) |
+
+With `STORAGE_DRIVER` unset the app uses S3 when `S3_BUCKET` is set and local disk otherwise.
+
+Two things to get right on the VPS:
+1. **`STORAGE_DIR` must live outside the deploy directory** (e.g. `/var/lib/talktrack/uploads`) and be writable by the app's user, or a redeploy deletes every uploaded photo.
+2. **Back it up with the database.** A `CrmFile` row without its bytes is a broken image, so the uploads directory (or bucket) and Postgres have to be backed up together.
+
+Files are served through `/api/crm/files/<id>`, which checks the signed-in user's workspace — buckets stay private, and no public URLs are handed out. Each row records the driver that stored it, so moving from local disk to S3 later can be done gradually without breaking existing photos.

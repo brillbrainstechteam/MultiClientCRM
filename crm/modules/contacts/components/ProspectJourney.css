@@ -30,3 +30,20 @@
 .pj-toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--crm-text-secondary); cursor: pointer; }
 .pj-toggle input { width: 16px; height: 16px; accent-color: var(--crm-brand-600); }
 .pj-note { margin: 16px 0 0; font-size: 12.5px; color: var(--crm-text-muted); }
+
+/* "Suggest message" — opens the ready template for a human to send. */
+.pj-suggest {
+  flex: none;
+  align-self: center;
+  margin-left: auto;
+  padding: 5px 10px;
+  border: 1px solid var(--crm-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--crm-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pj-suggest:hover { border-color: var(--crm-green, #1f9d55); color: var(--crm-green-dark, #1f9d55); }

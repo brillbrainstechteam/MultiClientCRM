@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Check, ShieldCheck, Phone, FileText, Video, MonitorPlay, MapPin, Building2, Megaphone, ClipboardList, Star, MessageCircle, Heart, Image, PhoneCall } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { updateContact } from '@crm/app/crm-data';
+import { templateForStep } from './journey-templates';
+import { SuggestMessageModal } from './SuggestMessageModal';
 import type { Contact } from '@crm/mock-data';
 import './ProspectJourney.css';
 
@@ -29,6 +31,8 @@ const fmt = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString('en
 export function ProspectJourney({ contact }: { contact: Contact }) {
   const [journey, setJourney] = useState<Record<string, string | null>>(contact.journey ?? {});
   const [busy, setBusy] = useState<string | null>(null);
+  // Which step's suggested message is open. A person reads and sends it; we never send.
+  const [suggest, setSuggest] = useState<{ key: string; label: string } | null>(null);
   const jp = (contact.jewelleryProfile ?? {}) as Record<string, unknown>;
   const [welcomeKit, setWelcomeKit] = useState<boolean>(!!jp.welcomeKitSent);
   const [broadcast, setBroadcast] = useState<boolean>(!!contact.inBroadcastList);
@@ -93,6 +97,9 @@ export function ProspectJourney({ contact }: { contact: Contact }) {
                 <strong>{s.label}</strong>
                 <span>{date ? `Done · ${date}` : s.hint}</span>
               </div>
+              {templateForStep(s.key) ? (
+                <button className="pj-suggest" onClick={() => setSuggest({ key: s.key, label: s.label })}>Suggest message</button>
+              ) : null}
             </li>
           );
         })}
@@ -124,6 +131,9 @@ export function ProspectJourney({ contact }: { contact: Contact }) {
                   <button className="pj-check" onClick={() => toggle(s.key)} disabled={busy === s.key} aria-pressed={on} title={on ? 'Mark not done' : 'Mark done'}>{on ? <Check size={15} /> : null}</button>
                   <span className="pj-ic"><Icon size={16} /></span>
                   <div className="pj-step__body"><strong>{s.label}</strong><span>{date ? `Done · ${date}` : s.hint}</span></div>
+                  {templateForStep(s.key) ? (
+                    <button className="pj-suggest" onClick={() => setSuggest({ key: s.key, label: s.label })}>Suggest message</button>
+                  ) : null}
                 </li>
               );
             })}
@@ -144,6 +154,15 @@ export function ProspectJourney({ contact }: { contact: Contact }) {
           <label className="pj-toggle"><input type="checkbox" checked={broadcast} onChange={(e) => setBroadcastFlag(e.target.checked)} /> Added to broadcast list</label>
         </div>
       </div>
+
+      <SuggestMessageModal
+        open={!!suggest}
+        stepLabel={suggest?.label ?? ''}
+        template={suggest ? templateForStep(suggest.key) : null}
+        contactName={contact.name}
+        contactMobile={contact.mobile}
+        onClose={() => setSuggest(null)}
+      />
 
       <p className="pj-note">Tap a step to record it. Enquiry &amp; activation update automatically as the deal progresses.</p>
     </div>

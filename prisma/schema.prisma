@@ -1021,3 +1021,27 @@ model NotificationEvent {
   @@index([tenantId, createdAt])
   @@index([tenantId, readAt])
 }
+
+/// A stored file (showroom photos on Customer 360 today). Bytes live in object
+/// storage — local disk on our VPS, or any S3-compatible bucket — never in the
+/// database; this row records where they are and who they belong to.
+model CrmFile {
+  id           String   @id @default(cuid())
+  tenantId     String
+  /// Owning contact (showroom gallery). Null for workspace-level files.
+  contactId    String?
+  kind         String   @default("showroom")
+  /// Which driver holds the bytes: local | s3. Kept per-row so a storage move
+  /// can be done gradually without breaking links to already-uploaded files.
+  driver       String
+  storageKey   String
+  fileName     String
+  mimeType     String
+  size         Int
+  caption      String?
+  uploadedById String?
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId, contactId])
+  @@index([tenantId, kind])
+}
