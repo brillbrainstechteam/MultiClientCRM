@@ -56,10 +56,13 @@ export function AssignPopover({
   const [teamFilter, setTeamFilter] = useState<string>('all');
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
 
-  const eligibleUsers = useMemo(() =>
-    users.filter((u) => u.permittedWhatsAppNumberIds.includes(conversationNumberId)),
-    [conversationNumberId],
-  );
+  const eligibleUsers = useMemo(() => {
+    // Prefer members permitted on this conversation's WhatsApp number, but fall
+    // back to the whole team when none match (e.g. the number id isn't on anyone's
+    // permit list yet) so assignment is never left with an empty list.
+    const permitted = users.filter((u) => u.permittedWhatsAppNumberIds?.includes(conversationNumberId));
+    return permitted.length > 0 ? permitted : users;
+  }, [conversationNumberId]);
 
   const filtered = useMemo(() => {
     if (teamFilter === 'all') return eligibleUsers;
