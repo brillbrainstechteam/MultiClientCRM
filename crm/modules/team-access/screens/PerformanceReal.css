@@ -11,6 +11,30 @@
 .pf-datefield input { font: inherit; font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--crm-text-primary); border: 1px solid var(--crm-border-subtle); border-radius: 8px; padding: 7px 10px; background: var(--crm-surface-raised); }
 .pf-datefield input:focus { outline: none; border-color: var(--crm-brand-600); box-shadow: 0 0 0 3px var(--crm-brand-50); }
 
+/* --- funnel + geo --- */
+.pf-funnelwrap { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 6fr); gap: 14px; }
+.pf-funnel { display: flex; align-items: stretch; gap: 8px; flex-wrap: wrap; }
+.pf-fstage { flex: 1; min-width: 90px; display: flex; flex-direction: column; gap: 2px; padding: 16px 14px; border-radius: 12px; }
+.pf-fstage--a { background: var(--crm-info-50, #eff6ff); }
+.pf-fstage--b { background: var(--crm-gold-tint, #eef2ff); }
+.pf-fstage--c { background: var(--crm-brand-50, #ecfdf5); }
+.pf-fstage__val { font-size: 26px; font-weight: 800; color: var(--crm-text-primary); line-height: 1; }
+.pf-fstage__label { font-size: 12px; font-weight: 600; color: var(--crm-text-muted); }
+.pf-farrow { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 2px; }
+.pf-farrow strong { font-size: 14px; color: var(--crm-brand-700); }
+.pf-farrow span { font-size: 10px; color: var(--crm-text-muted); text-transform: uppercase; letter-spacing: .03em; }
+
+.pf-geohead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.pf-geohead .pf-card__title { margin: 0; }
+.pf-geo { display: flex; flex-direction: column; gap: 9px; max-height: 260px; overflow: auto; }
+.pf-georow { display: grid; grid-template-columns: 110px 1fr auto; align-items: center; gap: 10px; }
+.pf-georow__label { font-size: 13px; color: var(--crm-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-georow__bar { height: 10px; border-radius: 999px; background: var(--crm-surface-sunken); overflow: hidden; }
+.pf-georow__fill { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--crm-brand-500, #10b981), var(--crm-brand-600, #059669)); min-width: 3px; }
+.pf-georow__val { font-size: 12.5px; font-weight: 700; color: var(--crm-text-primary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pf-georow__val em { font-style: normal; font-weight: 600; color: var(--crm-text-muted); }
+@media (max-width: 980px) { .pf-funnelwrap { grid-template-columns: 1fr; } }
+
 /* --- charts --- */
 .pf-charts { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 14px; }
 .pf-card { background: var(--crm-surface-raised); border: 1px solid var(--crm-border-subtle); border-radius: 16px; padding: 18px 20px; }

@@ -11,6 +11,9 @@ interface Row {
 }
 interface Totals { assignedContacts: number; calls: number; followUpInProgress: number; notInterested: number; enquiryReceived: number; }
 interface Perf { scope: string; rows: Row[]; totals: Totals; }
+interface GeoRow { label: string; data: number; activated: number; pct: number; }
+interface Funnel { reach: number; enquiries: number; activations: number; enquiryRate: number; closureRate: number; }
+interface FunnelData { funnel: Funnel; byZone: GeoRow[]; byState: GeoRow[]; byCity: GeoRow[]; }
 
 const RANGES = [
   { key: '', label: 'All time' },
@@ -26,6 +29,8 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
  *  (the API scopes it). Range filter (incl. custom), outcome charts and CSV export. */
 export default function PerformanceReal() {
   const [data, setData] = useState<Perf | null>(null);
+  const [funnel, setFunnel] = useState<FunnelData | null>(null);
+  const [geoDim, setGeoDim] = useState<'byZone' | 'byState' | 'byCity'>('byZone');
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState('');
   const [from, setFrom] = useState(() => iso(new Date(Date.now() - 30 * 864e5)));
@@ -40,6 +45,9 @@ export default function PerformanceReal() {
     fetch(`/api/crm/team/performance${qs}`, { credentials: 'same-origin' })
       .then((r) => r.json()).then((d) => { setData(d.error ? null : d); setLoading(false); })
       .catch(() => setLoading(false));
+    fetch(`/api/crm/reports/funnel${qs}`, { credentials: 'same-origin' })
+      .then((r) => r.json()).then((d) => setFunnel(d.error ? null : d))
+      .catch(() => setFunnel(null));
   }, [range, from, to]);
   useEffect(() => { load(); }, [load]);
 
@@ -107,6 +115,41 @@ export default function PerformanceReal() {
             <Tile icon={CalendarClock} label="Follow-up in progress" value={t!.followUpInProgress} />
             <Tile icon={ClipboardList} label="Enquiries received" value={t!.enquiryReceived} tone="ok" />
           </div>
+
+          {funnel ? (
+            <div className="pf-funnelwrap">
+              <section className="pf-card">
+                <h3 className="pf-card__title">Marketing funnel <span className="pf-card__sub">Reach → Enquiry → Activation</span></h3>
+                <div className="pf-funnel">
+                  <FunnelStage label="New reach" value={funnel.funnel.reach} tone="a" />
+                  <FunnelArrow pct={funnel.funnel.enquiryRate} caption="enquiry rate" />
+                  <FunnelStage label="New enquiries" value={funnel.funnel.enquiries} tone="b" />
+                  <FunnelArrow pct={funnel.funnel.closureRate} caption="closure %" />
+                  <FunnelStage label="New activations" value={funnel.funnel.activations} tone="c" />
+                </div>
+              </section>
+
+              <section className="pf-card">
+                <div className="pf-geohead">
+                  <h3 className="pf-card__title">Data vs activated</h3>
+                  <div className="pf-range">
+                    {([['byZone', 'Zone'], ['byState', 'State'], ['byCity', 'City']] as const).map(([k, l]) => (
+                      <button key={k} className={`pf-range__btn${geoDim === k ? ' pf-range__btn--on' : ''}`} onClick={() => setGeoDim(k)}>{l}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="pf-geo">
+                  {funnel[geoDim].length === 0 ? <p className="pf-muted">No data in scope.</p> : funnel[geoDim].map((g) => (
+                    <div key={g.label} className="pf-georow">
+                      <span className="pf-georow__label" title={g.label}>{g.label}</span>
+                      <span className="pf-georow__bar"><span className="pf-georow__fill" style={{ width: `${g.pct}%` }} /></span>
+                      <span className="pf-georow__val">{g.activated}/{g.data} <em>· {g.pct}%</em></span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          ) : null}
 
           <div className="pf-charts">
             <section className="pf-card">
@@ -188,6 +231,18 @@ function Donut({ segments, center, caption }: { segments: { label: string; value
       <text x={cx} y={cy + 16} textAnchor="middle" className="pf-donut__cap">{caption}</text>
     </svg>
   );
+}
+
+function FunnelStage({ label, value, tone }: { label: string; value: number; tone: 'a' | 'b' | 'c' }) {
+  return (
+    <div className={`pf-fstage pf-fstage--${tone}`}>
+      <span className="pf-fstage__val">{value}</span>
+      <span className="pf-fstage__label">{label}</span>
+    </div>
+  );
+}
+function FunnelArrow({ pct, caption }: { pct: number; caption: string }) {
+  return <div className="pf-farrow"><strong>{pct}%</strong><span>{caption}</span></div>;
 }
 
 function Tile({ icon: Icon, label, value, tone }: { icon: React.ComponentType<{ size?: number }>; label: string; value: number | string; tone?: 'ok' }) {
