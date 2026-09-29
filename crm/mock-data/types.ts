@@ -143,6 +143,14 @@ export interface Contact {
   inBroadcastList?: boolean;
   inCommunity?: boolean;
   jewelleryProfile?: Record<string, unknown> | null;
+  // --- Prospect journey + funnel ownership (Prospects Tracker) ---
+  typeOfLead?: string | null;
+  reference?: string | null;
+  dataManagerId?: string | null;
+  marketingOwnerId?: string | null;
+  salesOwnerId?: string | null;
+  /** milestone key -> ISO date completed (null / absent = not done). */
+  journey?: Record<string, string | null>;
 }
 
 /* ------------------------------------------------------------------------- */

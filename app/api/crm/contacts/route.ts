@@ -99,6 +99,7 @@ export async function POST(req: Request) {
           clientCode: str(b?.clientCode) || null,
           pan: str(b?.pan) || null,
           kamUserId: str(b?.kamUserId) || null,
+          ...(b?.jewelleryProfile && typeof b.jewelleryProfile === 'object' ? { jewelleryProfile: b.jewelleryProfile as object } : {}),
           branchId: str(b?.branchId, 'branch_main'),
           primaryWhatsAppNumberId: str(b?.primaryWhatsAppNumberId),
         },

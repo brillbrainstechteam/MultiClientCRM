@@ -126,6 +126,10 @@ function ContactForm({
   const [tags, setTags] = useState(existing?.tags.join(', ') ?? '');
   const [productInterests, setProductInterests] = useState(existing?.productInterests?.join(', ') ?? '');
   const [ownerId, setOwnerId] = useState(existing?.ownerId ?? users[0].id);
+  const [typeOfLead, setTypeOfLead] = useState(existing?.typeOfLead ?? '');
+  const [reference, setReference] = useState(existing?.reference ?? '');
+  const [marketingOwnerId, setMarketingOwnerId] = useState(existing?.marketingOwnerId ?? '');
+  const [salesOwnerId, setSalesOwnerId] = useState(existing?.salesOwnerId ?? '');
   const [leadStatus, setLeadStatus] = useState<string>(existing?.leadStatus ?? 'new');
   const [businessValue, setBusinessValue] = useState<string>(existing?.businessValue ?? 'medium');
   const [source, setSource] = useState(existing?.source ?? 'WhatsApp enquiry');
@@ -190,6 +194,14 @@ function ContactForm({
       clientCode: clientCode.trim() || null,
       pan: pan.trim() || null,
       interestedIn: interestedIn.trim() || null,
+      // Prospect funnel: type of lead, reference, and the marketing/sales owner
+      // split (stored in the flexible jewelleryProfile JSON bucket).
+      jewelleryProfile: {
+        typeOfLead: typeOfLead.trim() || null,
+        reference: reference.trim() || null,
+        marketingOwnerId: marketingOwnerId || null,
+        salesOwnerId: salesOwnerId || null,
+      },
     };
     setSubmitting(true);
     try {
@@ -348,7 +360,11 @@ function ContactForm({
         ) : null}
         <Input label="Product interests" value={productInterests} onChange={(e) => setProductInterests(e.target.value)} hint="Comma-separated" />
         <Input label="Tags" value={tags} onChange={(e) => setTags(e.target.value)} hint="Comma-separated" />
-        <Select label="Owner" options={ownerOptions} value={ownerId} onChange={(e) => setOwnerId(e.target.value)} />
+        <Select label="Owner (data manager)" options={ownerOptions} value={ownerId} onChange={(e) => setOwnerId(e.target.value)} />
+        <Select label="Marketing owner" options={[{ value: '', label: 'Unassigned' }, ...ownerOptions]} value={marketingOwnerId} onChange={(e) => setMarketingOwnerId(e.target.value)} />
+        <Select label="Sales owner" options={[{ value: '', label: 'Unassigned' }, ...ownerOptions]} value={salesOwnerId} onChange={(e) => setSalesOwnerId(e.target.value)} />
+        <Input label="Type of lead" value={typeOfLead} onChange={(e) => setTypeOfLead(e.target.value)} placeholder="e.g. New, Repeat, Reactivation" />
+        <Input label="Reference" value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Who referred / how sourced" />
         <Select label="Lead status" options={leadStatusOptions} value={leadStatus} onChange={(e) => setLeadStatus(e.target.value)} />
         <Select label="Business value" options={businessValueOptions} value={businessValue} onChange={(e) => setBusinessValue(e.target.value)} />
         <Select

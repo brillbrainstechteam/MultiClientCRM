@@ -6,6 +6,7 @@ import type { CrmContact } from '@prisma/client';
  * geography, interests). Shared by the bootstrap and contact APIs.
  */
 export function serializeCrmContact(c: CrmContact) {
+  const jp = (c.jewelleryProfile ?? {}) as Record<string, unknown>;
   return {
     id: c.id,
     name: c.name,
@@ -60,5 +61,12 @@ export function serializeCrmContact(c: CrmContact) {
     inBroadcastList: c.inBroadcastList,
     inCommunity: c.inCommunity,
     jewelleryProfile: c.jewelleryProfile ?? null,
+    // --- Prospect journey + funnel ownership (Prospects Tracker, stored in JSON) ---
+    typeOfLead: (jp.typeOfLead as string) ?? null,
+    reference: (jp.reference as string) ?? null,
+    dataManagerId: (jp.dataManagerId as string) ?? null,
+    marketingOwnerId: (jp.marketingOwnerId as string) ?? null,
+    salesOwnerId: (jp.salesOwnerId as string) ?? null,
+    journey: (jp.journey as Record<string, string | null>) ?? {},
   };
 }

@@ -34,6 +34,7 @@ import {
 import { consentLabel, salesTierLabel, leadStatusLabel, lifecycleLabel } from '../contact-labels';
 import { can, canViewField, dealValueFor } from '../permissions';
 import { KundliPanel } from '../components/KundliPanel';
+import { ProspectJourney } from '../components/ProspectJourney';
 import { EnquiriesPanel } from '../components/EnquiriesPanel';
 
 const SEGMENT_LABEL: Record<string, string> = {
@@ -45,6 +46,7 @@ const yn = (v?: boolean) => (v ? 'Yes' : 'No');
 
 const tabs: TabItem[] = [
   { id: 'profile', label: 'Profile' },
+  { id: 'journey', label: 'Journey' },
   { id: 'sales', label: 'Sales' },
   { id: 'jewellery', label: 'Jewellery' },
   { id: 'enquiries', label: 'Enquiries' },
@@ -225,6 +227,8 @@ export default function Customer360Screen() {
               ['State', contact.state ?? notSet()],
               ['Pincode', contact.pincode ?? notSet()],
               ['GSTIN', contact.gstin ?? notSet()],
+              ['Type of lead', contact.typeOfLead ?? notSet()],
+              ['Reference', contact.reference ?? notSet()],
               ['Product interests', contact.productInterests && contact.productInterests.length ? contact.productInterests.join(', ') : notSet()],
               ['Tags', contact.tags.length ? contact.tags.join(', ') : notSet()],
             ]}
@@ -255,6 +259,8 @@ export default function Customer360Screen() {
                 ['Grade (ABCD)', contact.grade ?? notSet()],
                 ['Preferred language', contact.preferredLanguage ?? notSet()],
                 ['Key account manager', contact.kamUserId ? (findUser(contact.kamUserId)?.name ?? contact.kamUserId) : notSet()],
+                ['Marketing owner', contact.marketingOwnerId ? (findUser(contact.marketingOwnerId)?.name ?? contact.marketingOwnerId) : notSet()],
+                ['Sales owner', contact.salesOwnerId ? (findUser(contact.salesOwnerId)?.name ?? contact.salesOwnerId) : notSet()],
                 ['Client code', contact.clientCode ?? notSet()],
                 ['PAN', contact.pan ?? notSet()],
                 ['Website', contact.website ?? notSet()],
@@ -327,6 +333,10 @@ export default function Customer360Screen() {
               ['Last activity', formatDateTime(contact.lastActivityAt)],
             ]}
           />
+        ) : null}
+
+        {activeTab === 'journey' ? (
+          <ProspectJourney contact={contact} />
         ) : null}
 
         {activeTab === 'kundli' ? (

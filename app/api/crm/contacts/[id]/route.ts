@@ -40,10 +40,26 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const data: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(body)) {
     if (!EDITABLE.has(k)) continue;
+    if (k === 'jewelleryProfile') continue; // merged below, never replaced wholesale
     if (ARRAY_FIELDS.has(k)) { data[k] = Array.isArray(v) ? v.map(String) : []; }
     else if (DATE_FIELDS.has(k)) { const d = v ? new Date(String(v)) : null; data[k] = d && !isNaN(d.getTime()) ? d : null; }
     else if (BOOL_FIELDS.has(k)) { data[k] = Boolean(v); }
     else { data[k] = v; }
+  }
+
+  // jewelleryProfile is a flexible JSON bucket (type of lead, reference, funnel
+  // owners, and the prospect-journey milestone dates). MERGE it so a partial
+  // patch never clobbers other keys, and mirror the journey into the legacy
+  // boolean checkpoints the older UI still reads.
+  if (body.jewelleryProfile && typeof body.jewelleryProfile === 'object') {
+    const cur = (existing.jewelleryProfile ?? {}) as Record<string, unknown>;
+    const inc = body.jewelleryProfile as Record<string, unknown>;
+    const journey = { ...((cur.journey as Record<string, unknown>) ?? {}), ...((inc.journey as Record<string, unknown>) ?? {}) };
+    const merged = { ...cur, ...inc, journey };
+    data.jewelleryProfile = merged;
+    data.dataVerified = !!journey.dataVerified;
+    data.introCallDone = !!journey.introCall;
+    data.officeVisitDone = !!journey.officeVisit;
   }
   data.lastActivityAt = new Date();
 
