@@ -15,14 +15,21 @@ export interface EnquiryDTO {
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  pending: 'Pending', images_sent: 'Images sent', converted: 'Converted', lost: 'Lost', cancelled: 'Cancelled',
+  pending: 'Pending', images_sent: 'Images sent', selection_pending: 'Selection pending',
+  ready_stock_order: 'Ready-stock order', customised_order: 'Customised order',
+  converted: 'Activated', lost: 'Lost', cancelled: 'Cancelled',
 };
 const STATUS_TONE: Record<string, string> = {
-  pending: 'warn', images_sent: 'info', converted: 'ok', lost: 'bad', cancelled: 'muted',
+  pending: 'warn', images_sent: 'info', selection_pending: 'warn',
+  ready_stock_order: 'info', customised_order: 'info', converted: 'ok', lost: 'bad', cancelled: 'muted',
 };
+// Funnel: pending → images sent → selection pending → order (ready/customised) → activated.
 const NEXT_ACTIONS: Record<string, { to: string; label: string }[]> = {
-  pending: [{ to: 'images_sent', label: 'Mark images sent' }, { to: 'converted', label: 'Won' }, { to: 'lost', label: 'Lost' }],
-  images_sent: [{ to: 'converted', label: 'Won' }, { to: 'lost', label: 'Lost' }],
+  pending: [{ to: 'images_sent', label: 'Mark images sent' }, { to: 'selection_pending', label: 'Selection pending' }, { to: 'lost', label: 'Lost' }],
+  images_sent: [{ to: 'selection_pending', label: 'Selection pending' }, { to: 'lost', label: 'Lost' }],
+  selection_pending: [{ to: 'ready_stock_order', label: 'Ready-stock order' }, { to: 'customised_order', label: 'Customised order' }, { to: 'lost', label: 'Lost' }],
+  ready_stock_order: [{ to: 'converted', label: 'Activate (order received)' }, { to: 'lost', label: 'Lost' }],
+  customised_order: [{ to: 'converted', label: 'Activate (order received)' }, { to: 'lost', label: 'Lost' }],
 };
 
 export function EnquiriesPanel({ contactId, conversationId, compact }: { contactId: string; conversationId?: string; compact?: boolean }) {

@@ -33,6 +33,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   const updated = await prisma.crmEnquiry.update({ where: { id }, data });
+
+  // Converting an enquiry activates the linked contact (prospect -> customer),
+  // stamping the activation date so "days taken to activate" can be reported.
+  if (data.status === 'converted' && existing.contactId) {
+    const contact = await prisma.crmContact.findFirst({ where: { id: existing.contactId, tenantId: user.tenantId }, select: { lifecycleStage: true, activatedAt: true } });
+    if (contact && contact.lifecycleStage !== 'customer') {
+      await prisma.crmContact.update({
+        where: { id: existing.contactId },
+        data: { lifecycleStage: 'customer', lifecycleState: 'active', activatedAt: contact.activatedAt ?? new Date(), lastActivityAt: new Date() },
+      });
+    }
+  }
   return NextResponse.json(serializeEnquiry(updated));
 }
 

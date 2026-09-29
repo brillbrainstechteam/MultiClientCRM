@@ -19,4 +19,12 @@
 .pj-step__body span { font-size: 12.5px; color: var(--crm-text-muted); }
 .pj-step--on .pj-step__body span { color: var(--crm-brand-700); }
 .pj-step--derived { opacity: .95; }
+.pj-activation { margin-top: 18px; border: 1px solid var(--crm-border-subtle); border-radius: 14px; padding: 14px 16px; }
+.pj-activation--on { border-color: var(--crm-brand-200, #a7f3d0); background: var(--crm-brand-50); }
+.pj-activation__head { display: flex; align-items: flex-start; gap: 10px; color: var(--crm-brand-700); }
+.pj-activation__head strong { display: block; font-size: 14px; color: var(--crm-text-primary); }
+.pj-activation__head span { font-size: 12.5px; color: var(--crm-text-muted); }
+.pj-activation__toggles { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--crm-border-subtle); }
+.pj-toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--crm-text-secondary); cursor: pointer; }
+.pj-toggle input { width: 16px; height: 16px; accent-color: var(--crm-brand-600); }
 .pj-note { margin: 16px 0 0; font-size: 12.5px; color: var(--crm-text-muted); }

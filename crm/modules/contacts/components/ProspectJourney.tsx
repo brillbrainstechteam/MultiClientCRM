@@ -22,6 +22,9 @@ const fmt = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString('en
 export function ProspectJourney({ contact }: { contact: Contact }) {
   const [journey, setJourney] = useState<Record<string, string | null>>(contact.journey ?? {});
   const [busy, setBusy] = useState<string | null>(null);
+  const jp = (contact.jewelleryProfile ?? {}) as Record<string, unknown>;
+  const [welcomeKit, setWelcomeKit] = useState<boolean>(!!jp.welcomeKitSent);
+  const [broadcast, setBroadcast] = useState<boolean>(!!contact.inBroadcastList);
 
   const toggle = async (key: string) => {
     const done = !journey[key];
@@ -34,6 +37,18 @@ export function ProspectJourney({ contact }: { contact: Contact }) {
       setJourney(journey); // revert
     } finally { setBusy(null); }
   };
+
+  const setWelcome = async (v: boolean) => {
+    setWelcomeKit(v);
+    try { await updateContact(contact.id, { jewelleryProfile: { welcomeKitSent: v ? new Date().toISOString() : null } } as Partial<Contact>); } catch { setWelcomeKit(!v); }
+  };
+  const setBroadcastFlag = async (v: boolean) => {
+    setBroadcast(v);
+    try { await updateContact(contact.id, { inBroadcastList: v } as Partial<Contact>); } catch { setBroadcast(!v); }
+  };
+  const daysToActivate = contact.activatedAt && contact.createdAt
+    ? Math.max(0, Math.round((new Date(contact.activatedAt).getTime() - new Date(contact.createdAt).getTime()) / 864e5))
+    : null;
 
   const doneCount = STEPS.filter((s) => journey[s.key]).length;
   const enquiryDone = contact.leadStatus === 'enquiry_generated';
@@ -86,6 +101,21 @@ export function ProspectJourney({ contact }: { contact: Contact }) {
           );
         })}
       </ol>
+
+      <div className={`pj-activation${activated ? ' pj-activation--on' : ''}`}>
+        <div className="pj-activation__head">
+          <Star size={16} />
+          <div>
+            <strong>{activated ? 'Active customer' : 'Not yet activated'}</strong>
+            <span>{activated ? `Activated ${fmt(contact.activatedAt) ?? ''}${daysToActivate !== null ? ` · ${daysToActivate} day${daysToActivate === 1 ? '' : 's'} to activate` : ''}` : 'Activates automatically when an enquiry is won.'}</span>
+          </div>
+        </div>
+        <div className="pj-activation__toggles">
+          <label className="pj-toggle"><input type="checkbox" checked={welcomeKit} onChange={(e) => setWelcome(e.target.checked)} /> Welcome kit sent</label>
+          <label className="pj-toggle"><input type="checkbox" checked={broadcast} onChange={(e) => setBroadcastFlag(e.target.checked)} /> Added to broadcast list</label>
+        </div>
+      </div>
+
       <p className="pj-note">Tap a step to record it. Enquiry &amp; activation update automatically as the deal progresses.</p>
     </div>
   );
