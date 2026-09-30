@@ -35,9 +35,23 @@ rollback propagates in minutes rather than hours.
 ```bash
 ssh root@<VPS_IP>
 
-# Docker, if not already installed
-command -v docker || curl -fsSL https://get.docker.com | sh
-docker --version && docker compose version
+# Is Docker already here?
+command -v docker && docker compose version
+
+# If not, install from Docker's own apt repository. (The get.docker.com
+# convenience script is quicker, but Docker say it "isn't recommended for
+# production environments" — it installs dependencies without asking and can
+# jump major versions on a box that is also running your other apps.)
+. /etc/os-release                      # sets $ID (debian|ubuntu) and $VERSION_CODENAME
+apt update && apt install -y ca-certificates curl
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL "https://download.docker.com/linux/$ID/gpg" -o /etc/apt/keyrings/docker.asc
+chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/$ID $VERSION_CODENAME stable"   > /etc/apt/sources.list.d/docker.list
+apt update && apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+docker --version && docker compose version   # both must print a version
+systemctl is-active docker                   # expect: active
 
 # App directory and the uploads volume (1001 = the uid the container runs as)
 mkdir -p /srv /var/lib/talktrack/uploads
