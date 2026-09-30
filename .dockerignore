@@ -1,0 +1,17 @@
+# Secrets must never be baked into an image.
+.env
+.env.*
+!.env.example
+
+# Rebuilt inside the image; copying them is slow and can poison the build.
+node_modules
+.next
+out
+
+.git
+.gitignore
+*.log
+npm-debug.log*
+.vscode
+.idea
+.DS_Store

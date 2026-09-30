@@ -8,6 +8,9 @@ FROM node:22-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache openssl
 COPY package.json package-lock.json ./
+# package.json's postinstall runs `prisma generate`, so the schema has to be
+# present before npm ci — otherwise the install fails looking for it.
+COPY prisma ./prisma
 RUN npm ci
 
 FROM node:22-alpine AS builder
@@ -19,10 +22,8 @@ COPY . .
 # Public values are compiled into the browser bundle — they are not secrets.
 ARG NEXT_PUBLIC_META_APP_ID
 ARG NEXT_PUBLIC_META_CONFIG_ID
-ARG NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_META_APP_ID=$NEXT_PUBLIC_META_APP_ID \
     NEXT_PUBLIC_META_CONFIG_ID=$NEXT_PUBLIC_META_CONFIG_ID \
-    NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
     NEXT_TELEMETRY_DISABLED=1
 
 RUN npx prisma generate && npx next build

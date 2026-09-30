@@ -17,7 +17,6 @@ services:
       args:
         NEXT_PUBLIC_META_APP_ID: ${NEXT_PUBLIC_META_APP_ID}
         NEXT_PUBLIC_META_CONFIG_ID: ${NEXT_PUBLIC_META_CONFIG_ID}
-        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
     image: talktrack-crm:latest
     container_name: talktrack-crm
     restart: unless-stopped
