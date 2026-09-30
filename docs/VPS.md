@@ -11,6 +11,21 @@ job — doing both at once means two things can break at the same time.
 CloudPanel's nginx fronts it as a **Reverse Proxy** site, so TalkTrack sits
 beside the other apps on the box instead of competing for ports 80/443.
 
+## This box at a glance (surveyed 30 Sep 2026)
+
+Ubuntu 24.04, 96GB disk, 7.8GB RAM, Docker 29.7 already installed. CloudPanel
+serves every site from `/home/<site-user>/htdocs/<domain>`, with nginx on
+80/443 and CloudPanel itself on 8443.
+
+**Ports already taken:** 3000, 3001, 8000 (Next apps), 8001, 8100, 7000, 9000
+(Node apps), 5432 + 55432 (Postgres), 3306 (MySQL), 6379 (Redis), 6081
+(Varnish), 8080 (nginx), 11211 (memcached). TalkTrack therefore uses
+**`APP_PORT=3002`** — check it is still free before deploying:
+
+```bash
+ss -tlnp | grep -E ':3002' || echo "3002 is free"
+```
+
 ## 0. Two settings that will break everything if you get them wrong
 
 1. **`SESSION_SECRET` must be copied from Vercel exactly.** Stored WhatsApp
@@ -54,7 +69,7 @@ docker --version && docker compose version   # both must print a version
 systemctl is-active docker                   # expect: active
 
 # App directory and the uploads volume (1001 = the uid the container runs as)
-mkdir -p /srv /var/lib/talktrack/uploads
+mkdir -p /home/talktrackcrm/app /var/lib/talktrack/uploads
 chown -R 1001:1001 /var/lib/talktrack
 ```
 
@@ -64,18 +79,17 @@ The repo is private, so use a GitHub **personal access token** (or add a deploy
 key first):
 
 ```bash
-cd /srv
-git clone https://<GITHUB_TOKEN>@github.com/brillbrainstechteam/MultiClientCRM.git talktrack
-cd /srv/talktrack
+git clone https://<GITHUB_TOKEN>@github.com/brillbrainstechteam/MultiClientCRM.git /home/talktrackcrm/app
+cd /home/talktrackcrm/app
 ```
 
 ## 4. Environment file
 
 Copy the **Production** values out of Vercel (Project → Settings → Environment
-Variables) into `/srv/talktrack/.env.production`:
+Variables) into `/home/talktrackcrm/app/.env.production`:
 
 ```bash
-nano /srv/talktrack/.env.production
+nano /home/talktrackcrm/app/.env.production
 ```
 
 | Key | Notes |
@@ -96,16 +110,16 @@ nano /srv/talktrack/.env.production
 `WHATSAPP_TEST_*` are local-dev only; leave them out.
 
 ```bash
-chmod 600 /srv/talktrack/.env.production
+chmod 600 /home/talktrackcrm/app/.env.production
 ```
 
 ## 5. Build, migrate, start
 
-Run these from `/srv/talktrack`. `--env-file` matters: it feeds both the
+Run these from `/home/talktrackcrm/app`. `--env-file` matters: it feeds both the
 container environment and the `${...}` build args.
 
 ```bash
-cd /srv/talktrack
+cd /home/talktrackcrm/app
 docker compose --env-file .env.production -f deploy/docker-compose.vps.yml build
 
 # migrate-if-prod.mjs only fires on Vercel, so migrations are explicit here.
@@ -127,7 +141,7 @@ CloudPanel → **Sites → Add Site → Create a Reverse Proxy**:
 | Field | Value |
 |---|---|
 | Domain Name | `talktrackcrm.brillbrainsconsultants.com` |
-| Reverse Proxy URL | `http://127.0.0.1:3000` |
+| Reverse Proxy URL | `http://127.0.0.1:3002` (must match `APP_PORT`) |
 | Site User | `talktrack` |
 | Site User Password | generate and save it |
 
@@ -180,7 +194,7 @@ DNS moves.
 
 ## 9. After the move
 
-- **Updates:** `cd /srv/talktrack && ./deploy/deploy.sh` (pull, rebuild, migrate, restart).
+- **Updates:** `cd /home/talktrackcrm/app && ./deploy/deploy.sh` (pull, rebuild, migrate, restart).
 - **Logs:** `docker compose --env-file .env.production -f deploy/docker-compose.vps.yml logs -f talktrack`
 - **Back up `/var/lib/talktrack/uploads` with the database.** A `CrmFile` row
   whose bytes are gone is a broken image.
