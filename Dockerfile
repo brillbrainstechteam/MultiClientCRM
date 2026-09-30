@@ -42,6 +42,9 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# .bin is where npx finds the prisma CLI — without it "npx prisma migrate
+# deploy" inside this container tries to download Prisma from npm instead.
+COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
 
 USER app
 EXPOSE 3000
