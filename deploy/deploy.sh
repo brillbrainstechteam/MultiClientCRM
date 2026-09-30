@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Update TalkTrack CRM on the VPS: pull, rebuild, migrate, restart.
-# Usage:  cd /srv/talktrack && ./deploy/deploy.sh
+# Usage:  cd /home/talktrackcrm/app && ./deploy/deploy.sh
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
