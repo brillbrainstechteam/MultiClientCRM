@@ -91,6 +91,7 @@ nano /srv/talktrack/.env.production
 | `PLACES_API_KEY`, `PROSPECTING_TENANTS` | Find New Businesses |
 | `STORAGE_DRIVER=local` | showroom photos |
 | `STORAGE_DIR=/var/lib/talktrack/uploads` | must match the volume above |
+| `APP_PORT` | optional; host port for the container (default 3000). Set it if 3000 is already taken on the box — the CloudPanel Reverse Proxy URL must use the same number. |
 
 `WHATSAPP_TEST_*` are local-dev only; leave them out.
 
