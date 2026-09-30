@@ -135,3 +135,12 @@
 .crm-prospect__table th, .crm-prospect__table td { text-align: left; padding: 9px 14px; border-top: 1px solid var(--crm-border-subtle); }
 .crm-prospect__addr { color: var(--crm-text-muted); max-width: 320px; }
 @media (max-width: 900px) { .crm-prospect__form { grid-template-columns: repeat(2, 1fr); } }
+
+/* "More import actions" — stacked, full-width so each action reads as a row. */
+.crm-hub__more {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2, 8px);
+  min-width: 260px;
+}
+.crm-hub__more > button { justify-content: flex-start; width: 100%; }
