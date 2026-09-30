@@ -11,6 +11,21 @@ job — doing both at once means two things can break at the same time.
 CloudPanel's nginx fronts it as a **Reverse Proxy** site, so TalkTrack sits
 beside the other apps on the box instead of competing for ports 80/443.
 
+## Status: migrated 30 Sep 2026
+
+TalkTrack runs on the VPS. `talktrackcrm.brillbrainsconsultants.com` → `187.127.176.187`,
+**DNS-only (grey cloud)** with a CloudPanel **Let's Encrypt** certificate (issued
+30 Sep, renews automatically) — the same pattern as every other site on this box.
+Vercel is kept deployed purely as a rollback: set the A record back to
+`76.76.21.21` and it takes effect within the TTL.
+
+**Deploying changed.** Pushing to GitHub no longer deploys anything. To ship:
+
+```bash
+ssh root@187.127.176.187
+cd /home/talktrackcrm/app && ./deploy/deploy.sh
+```
+
 ## This box at a glance (surveyed 30 Sep 2026)
 
 Ubuntu 24.04, 96GB disk, 7.8GB RAM, Docker 29.7 already installed. CloudPanel
