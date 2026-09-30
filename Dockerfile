@@ -30,7 +30,9 @@ RUN npx prisma generate && npx next build
 FROM node:22-alpine AS runner
 WORKDIR /app
 # Fixed uid so the host uploads directory can be chowned to a known owner.
-RUN apk add --no-cache openssl && addgroup -S -g 1001 app && adduser -S -u 1001 app -G app
+# 10001 deliberately avoids the 1000-1999 range CloudPanel uses for site users
+# (uid 1001 on this box is CloudPanel's own "clp" account).
+RUN apk add --no-cache openssl && addgroup -S -g 10001 app && adduser -S -u 10001 app -G app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 
 # Standalone bundles only the files the server actually needs.

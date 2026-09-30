@@ -68,9 +68,9 @@ apt update && apt install -y docker-ce docker-ce-cli containerd.io docker-buildx
 docker --version && docker compose version   # both must print a version
 systemctl is-active docker                   # expect: active
 
-# App directory and the uploads volume (1001 = the uid the container runs as)
+# App directory and the uploads volume (10001 = the uid the container runs as)
 mkdir -p /home/talktrackcrm/app /var/lib/talktrack/uploads
-chown -R 1001:1001 /var/lib/talktrack
+chown -R 10001:10001 /var/lib/talktrack
 ```
 
 ## 3. Clone the repository
