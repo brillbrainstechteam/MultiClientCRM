@@ -75,13 +75,55 @@ chown -R 1001:1001 /var/lib/talktrack
 
 ## 3. Clone the repository
 
-The repo is private, so use a GitHub **personal access token** (or add a deploy
-key first):
+The repo is private. Prefer a **deploy key** over a token: it is scoped to this
+one repository, can be read-only, does not expire, and carries none of a
+person's account access. A token in the clone URL also ends up in plaintext in
+`.git/config` on the server.
+
+**On the VPS — make the key:**
+```bash
+ssh-keygen -t ed25519 -C "talktrack-vps" -f /root/.ssh/talktrack_deploy -N ""
+ssh-keyscan github.com >> /root/.ssh/known_hosts     # avoids the interactive prompt
+cat /root/.ssh/talktrack_deploy.pub                   # copy this line
+```
+
+**On GitHub:** repo → **Settings → Deploy keys → Add deploy key**. Paste the
+public key, title `talktrack-vps`, and **leave "Allow write access" unticked** —
+the server only ever pulls.
+
+**Back on the VPS — teach SSH which key to use, then clone:**
+```bash
+cat >> /root/.ssh/config <<'EOF'
+Host github-talktrack
+  HostName github.com
+  User git
+  IdentityFile /root/.ssh/talktrack_deploy
+  IdentitiesOnly yes
+EOF
+chmod 600 /root/.ssh/config
+
+git clone git@github-talktrack:brillbrainstechteam/MultiClientCRM.git /home/talktrackcrm/app
+cd /home/talktrackcrm/app
+```
+
+This is also what makes `./deploy/deploy.sh` work later — its `git pull` needs
+credentials that do not expire.
+
+<details>
+<summary>Alternative: fine-grained personal access token</summary>
+
+GitHub → your avatar → **Settings → Developer settings → Personal access tokens
+→ Fine-grained tokens → Generate new token**. Resource owner
+`brillbrainstechteam`, **Only select repositories → MultiClientCRM**,
+Repository permissions → **Contents: Read-only**. Then:
 
 ```bash
 git clone https://<GITHUB_TOKEN>@github.com/brillbrainstechteam/MultiClientCRM.git /home/talktrackcrm/app
-cd /home/talktrackcrm/app
 ```
+
+The token is stored in `.git/config`; it also expires, and `deploy.sh` will stop
+pulling when it does.
+</details>
 
 ## 4. Environment file
 
