@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { MapPin, Plus, SlidersHorizontal, X } from 'lucide-react';
+import { Download, MapPin, Plus, SlidersHorizontal, X } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@crm/components';
 import { useScopedHref } from '@crm/app/use-scoped-href';
@@ -208,6 +208,11 @@ export default function AllContactsScreen() {
             >
               Advanced filter
             </Button>
+            {can(role, 'export') ? (
+              <Button variant="secondary" iconLeft={<Download />} onClick={() => openOverlay({ drawer: 'export' })}>
+                Export
+              </Button>
+            ) : null}
             <Button
               variant="primary"
               iconLeft={<Plus />}
@@ -329,7 +334,7 @@ export default function AllContactsScreen() {
               Stage
             </Button>
             {can(role, 'export') ? (
-              <Button variant="ghost" size="sm" onClick={() => openOverlay({ drawer: 'export', count: String(selected.size) })}>
+              <Button variant="ghost" size="sm" onClick={() => openOverlay({ drawer: 'export', count: String(selected.size), selectedIds: [...selected].join(',') })}>
                 Export
               </Button>
             ) : null}

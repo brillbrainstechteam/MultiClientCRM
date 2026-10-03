@@ -13,10 +13,12 @@ import {
   Textarea,
   Toast,
 } from '@crm/design-system';
-import { findContact, findSegment, findUser, users } from '@crm/mock-data';
+import { contacts, findContact, findSegment, findUser, users, type Contact } from '@crm/mock-data';
 import { bulkContacts } from '@crm/app/crm-data';
+import { useWorkspace } from '@crm/app/workspace-context';
 import { ConsentBadge, StageBadge } from '../components';
-import { consentOptions, distinctSources } from '../contact-selectors';
+import { consentOptions, distinctSources, filterContacts, type ContactFilters } from '../contact-selectors';
+import { buildVcf } from '../vcf';
 import { useZones } from '../zones/zone-store';
 import { assignZone, summarizeAssignments } from '../zones/zone-assignment';
 import { setContactZones, type ContactZoneAssignment } from '../zones/contact-zone-store';
@@ -532,30 +534,80 @@ function StageFollowupDrawer({
   );
 }
 
-/* ---- CON-S16 Export ----------------------------------------------------- */
-const EXPORT_FIELDS = [
-  { key: 'name', label: 'Name', sensitive: false },
-  { key: 'mobile', label: 'WhatsApp mobile', sensitive: true },
-  { key: 'email', label: 'Email', sensitive: true },
-  { key: 'company', label: 'Company', sensitive: false },
-  { key: 'stage', label: 'Stage', sensitive: false },
-  { key: 'owner', label: 'Owner', sensitive: false },
+/* ---- CON-S16 Export (real CSV / VCF download) --------------------------- */
+const EXPORT_FIELDS: { key: string; label: string; sensitive?: boolean; get: (c: Contact) => string }[] = [
+  { key: 'name', label: 'Name', get: (c) => c.name ?? '' },
+  { key: 'company', label: 'Company', get: (c) => c.company ?? '' },
+  { key: 'contactPerson', label: 'Contact person', get: (c) => c.contactPerson ?? '' },
+  { key: 'mobile', label: 'WhatsApp mobile', sensitive: true, get: (c) => c.mobile ?? '' },
+  { key: 'email', label: 'Email', sensitive: true, get: (c) => c.email ?? '' },
+  { key: 'city', label: 'City', get: (c) => c.city ?? '' },
+  { key: 'state', label: 'State', get: (c) => c.state ?? '' },
+  { key: 'zone', label: 'Zone', get: (c) => c.zone ?? '' },
+  { key: 'pincode', label: 'Pincode', get: (c) => c.pincode ?? '' },
+  { key: 'leadStatus', label: 'Lead status', get: (c) => c.leadStatus ?? '' },
+  { key: 'lifecycleStage', label: 'Lifecycle', get: (c) => c.lifecycleStage ?? '' },
+  { key: 'source', label: 'Source', get: (c) => c.source ?? '' },
+  { key: 'consent', label: 'Consent', get: (c) => c.consent ?? '' },
+  { key: 'salesTier', label: 'Sales tier', get: (c) => c.salesTier ?? '' },
+  { key: 'owner', label: 'Owner', get: (c) => (c.ownerId ? findUser(c.ownerId)?.name ?? '' : '') },
+  { key: 'tags', label: 'Tags', get: (c) => (Array.isArray(c.tags) ? c.tags.join('; ') : '') },
 ];
+const DEFAULT_FIELDS = ['name', 'company', 'mobile', 'email', 'city', 'state', 'leadStatus', 'source', 'owner'];
+const csvCell = (v: string) => `"${v.replace(/"/g, '""')}"`;
 
 function ExportDrawer({ count, onClose, onApply }: { count: string | null; onClose: () => void; onApply: (m: string) => void }) {
+  const [searchParams] = useSearchParams();
+  const { branchId, whatsappNumberId } = useWorkspace();
   const [scope, setScope] = useState(count ? 'selected' : 'filtered');
   const [format, setFormat] = useState('csv');
-  const [fields, setFields] = useState<Set<string>>(new Set(['name', 'mobile', 'stage', 'owner']));
-  const estimated = scope === 'selected' ? Number(count ?? 0) : scope === 'filtered' ? 12 : 12;
-  const sensitiveSelected = [...fields].some((f) => EXPORT_FIELDS.find((x) => x.key === f)?.sensitive);
+  const [fields, setFields] = useState<Set<string>>(new Set(DEFAULT_FIELDS));
+
+  // Resolve the rows to export from the LIVE data + current URL filters/selection.
+  const rowsFor = (which: string): Contact[] => {
+    if (which === 'selected') {
+      const ids = new Set((searchParams.get('selectedIds') ?? '').split(',').filter(Boolean));
+      return contacts.filter((c) => ids.has(c.id));
+    }
+    if (which === 'all') return contacts;
+    // filtered: mirror All Contacts' filter set
+    const scopeObj = { branchId: branchId === 'all' ? null : branchId, whatsappNumberId: whatsappNumberId === 'all' ? null : whatsappNumberId };
+    const f: ContactFilters = {
+      q: searchParams.get('q'), stage: searchParams.get('stage'), leadStatus: searchParams.get('leadStatus'),
+      lifecycle: searchParams.get('lifecycle'), customerType: searchParams.get('customerType'),
+      consent: searchParams.get('consent'), ownerId: searchParams.get('ownerId'), source: searchParams.get('source'),
+    };
+    return filterContacts(scopeObj, f);
+  };
+  const estimated = rowsFor(scope).length;
+  const chosen = EXPORT_FIELDS.filter((f) => fields.has(f.key));
+  const sensitiveSelected = chosen.some((f) => f.sensitive);
 
   const toggle = (key: string) =>
-    setFields((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+    setFields((prev) => { const next = new Set(prev); next.has(key) ? next.delete(key) : next.add(key); return next; });
+
+  const download = (filename: string, text: string, mime: string) => {
+    const blob = new Blob(['﻿' + text], { type: `${mime};charset=utf-8;` });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const doExport = () => {
+    const rows = rowsFor(scope);
+    if (rows.length === 0) { onApply('No contacts match — nothing to export.'); return; }
+    const stamp = new Date().toISOString().slice(0, 10);
+    if (format === 'vcf') {
+      download(`talktrack-contacts-${stamp}.vcf`, buildVcf(rows), 'text/vcard');
+    } else {
+      const cols = chosen.length ? chosen : EXPORT_FIELDS.filter((f) => DEFAULT_FIELDS.includes(f.key));
+      const header = cols.map((c) => csvCell(c.label)).join(',');
+      const lines = rows.map((r) => cols.map((c) => csvCell(c.get(r))).join(','));
+      download(`talktrack-contacts-${stamp}.csv`, [header, ...lines].join('\r\n'), 'text/csv');
+    }
+    onApply(`Exported ${rows.length} contact${rows.length === 1 ? '' : 's'} as ${format === 'vcf' ? 'vCard' : 'CSV'}.`);
+  };
 
   return (
     <Drawer
@@ -565,35 +617,33 @@ function ExportDrawer({ count, onClose, onApply }: { count: string | null; onClo
       onClose={onClose}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={() => onApply(`Export ready · ${estimated} contacts as ${format.toUpperCase()}`)}>
-            Export
-          </Button>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" onClick={doExport} disabled={estimated === 0}>Export {estimated}</Button>
         </>
       }
     >
       <div className="crm-ov-form">
         <Select label="Scope" options={[{ value: 'selected', label: `Selected contacts${count ? ` (${count})` : ''}`, disabled: !count }, { value: 'filtered', label: 'Current filtered list' }, { value: 'all', label: 'Entire allowed database' }]} value={scope} onChange={(e) => setScope(e.target.value)} />
-        <Select label="Format" options={[{ value: 'csv', label: 'CSV' }, { value: 'excel', label: 'Excel' }, { value: 'vcf', label: 'VCF' }]} value={format} onChange={(e) => setFormat(e.target.value)} />
+        <Select label="Format" options={[{ value: 'csv', label: 'CSV (Excel-compatible)' }, { value: 'vcf', label: 'vCard (.vcf)' }]} value={format} onChange={(e) => setFormat(e.target.value)} />
       </div>
 
-      <div className="crm-ov-fields">
-        <span className="crm-ov-summary__label">Fields</span>
-        {EXPORT_FIELDS.map((f) => (
-          <Checkbox key={f.key} label={f.sensitive ? `${f.label} (sensitive)` : f.label} checked={fields.has(f.key)} onChange={() => toggle(f.key)} />
-        ))}
-      </div>
+      {format === 'csv' ? (
+        <div className="crm-ov-fields">
+          <span className="crm-ov-summary__label">Fields</span>
+          {EXPORT_FIELDS.map((f) => (
+            <Checkbox key={f.key} label={f.sensitive ? `${f.label} (sensitive)` : f.label} checked={fields.has(f.key)} onChange={() => toggle(f.key)} />
+          ))}
+        </div>
+      ) : <p className="crm-ov-muted">vCard exports name, company, mobile, email and city.</p>}
 
       {sensitiveSelected ? (
         <div className="crm-ov-banner crm-ov-banner--warn">
           <TriangleAlert aria-hidden="true" />
-          <span>Sensitive fields are included. The export will be logged and may be masked by policy.</span>
+          <span>Sensitive fields (mobile / email) are included in this export.</span>
         </div>
       ) : null}
 
-      <p className="crm-ov-muted">Estimated {estimated} records.</p>
+      <p className="crm-ov-muted">{estimated} record{estimated === 1 ? '' : 's'} will be exported.</p>
     </Drawer>
   );
 }
