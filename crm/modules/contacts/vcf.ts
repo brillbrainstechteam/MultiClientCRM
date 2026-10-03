@@ -38,6 +38,31 @@ function parseLine(line: string): { field: string; params: string; value: string
   return { field, params, value };
 }
 
+/**
+ * Reverse of esc(). vCard escapes \, comma, semicolon and newline; without
+ * this a name like "Shah, Rahul" comes back carrying a literal backslash.
+ */
+function unesc(v: string): string {
+  return v.replace(/\\([\\,;nN])/g, (_m, ch: string) => (ch === 'n' || ch === 'N' ? '\n' : ch));
+}
+
+/**
+ * Split a structured value (ORG, ADR, N) on its separator, ignoring escaped
+ * ones — splitting raw would truncate "Mehta & Sons; Jaipur" at the semicolon.
+ */
+function splitEscaped(value: string, sep: string): string[] {
+  const out: string[] = [];
+  let cur = '';
+  for (let i = 0; i < value.length; i++) {
+    const c = value[i];
+    if (c === '\\' && i + 1 < value.length) { cur += c + value[i + 1]; i++; continue; }
+    if (c === sep) { out.push(cur); cur = ''; continue; }
+    cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+
 export function parseVcf(text: string): VcfContact[] {
   const lines = unfold(text);
   const cards: VcfContact[] = [];
@@ -58,20 +83,20 @@ export function parseVcf(text: string): VcfContact[] {
     const p = parseLine(line);
     if (!p) continue;
     switch (p.field) {
-      case 'FN': cur.name = p.value; break;
-      case 'N': if (!cur.name) cur.name = p.value.split(';').filter(Boolean).reverse().join(' ').trim(); break;
-      case 'ORG': cur.company = p.value.split(';')[0].trim(); break;
-      case 'EMAIL': if (!cur.email) cur.email = p.value; break;
+      case 'FN': cur.name = unesc(p.value); break;
+      case 'N': if (!cur.name) cur.name = splitEscaped(p.value, ';').map(unesc).filter(Boolean).reverse().join(' ').trim(); break;
+      case 'ORG': cur.company = unesc(splitEscaped(p.value, ';')[0] ?? '').trim(); break;
+      case 'EMAIL': if (!cur.email) cur.email = unesc(p.value); break;
       case 'TEL': {
         // Prefer a CELL/MOBILE number; otherwise keep the first seen.
-        if (/CELL|MOBILE/.test(p.params)) cur.mobile = p.value;
-        else if (!preferredTel) preferredTel = p.value;
+        if (/CELL|MOBILE/.test(p.params)) cur.mobile = unesc(p.value);
+        else if (!preferredTel) preferredTel = unesc(p.value);
         break;
       }
       case 'ADR': {
         // ADR structured: ;;street;locality;region;postal;country
-        const parts = p.value.split(';');
-        if (parts[3]) cur.city = parts[3].trim();
+        const parts = splitEscaped(p.value, ';');
+        if (parts[3]) cur.city = unesc(parts[3]).trim();
         break;
       }
       default: break;
