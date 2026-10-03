@@ -1,19 +1,12 @@
+import { useEffect } from 'react';
 import { ArrowLeft, ArrowRight, RotateCcw, Upload } from 'lucide-react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useScopedHref } from '@crm/app/use-scoped-href';
-import { Button } from '@crm/design-system';
-import { WizardShell } from '@crm/design-system';
+import { Button, WizardShell } from '@crm/design-system';
 import type { ImportMethod } from '@crm/mock-data';
-import {
-  ExtractStep,
-  MapStep,
-  MethodStep,
-  PreviewStep,
-  ProcessingStep,
-  ResultsStep,
-  SourceStep,
-  ValidateStep,
-} from './steps';
+import { MethodStep } from './steps';
+import { MapFields, Preview, Processing, Results, SourcePick, Validate } from './wizard-steps';
+import { mappedRows, resetJob, useImportJob, validateRows } from './import-job-store';
 import {
   sequenceFor,
   stepFromPath,
@@ -22,25 +15,35 @@ import {
   type StepId,
 } from './import-flow';
 
-const NEW_JOB_ID = 'imp-20260810-01';
 const SCOPE_KEYS = ['role', 'branchId', 'whatsappNumberId'] as const;
+
+/** Methods whose real home is the Imports hub, not this wizard. */
+const HUB_METHODS: ImportMethod[] = ['google', 'sheets', 'intelligent'];
 
 /**
  * The one Import Wizard container. Rendered for every `/contacts/imports/new/*`
- * step; it derives the current step from the URL, sequences steps by method
- * (Intelligent → extraction; others → mapping) and owns Back/Continue/Cancel.
- * State variants are read from `?state=` so each is reproducible by URL.
+ * step; it derives the current step from the URL and sequences steps by method.
+ *
+ * The run itself (file, rows, mapping, result) lives in import-job-store rather
+ * than component state, because each step is a separate route and this
+ * component remounts on every navigation.
  */
 export function ImportWizard() {
   const location = useLocation();
   const navigate = useNavigate();
   const scopedHref = useScopedHref();
   const [searchParams, setSearchParams] = useSearchParams();
+  const job = useImportJob();
 
-  const method = (searchParams.get('method') as ImportMethod | null) ?? null;
-  const state = searchParams.get('state');
-  const googleConnected = searchParams.get('googleAuth') === 'connected';
+  const urlMethod = (searchParams.get('method') as ImportMethod | null) ?? null;
 
+  // The hub links straight into the wizard with ?method=…; starting a different
+  // method must clear whatever the previous run loaded.
+  useEffect(() => {
+    if (urlMethod && urlMethod !== job.method) resetJob(urlMethod);
+  }, [urlMethod, job.method]);
+
+  const method = job.method ?? urlMethod;
   const sequence = sequenceFor(method);
   const rawStep = stepFromPath(location.pathname);
   // Normalise a map/extract mismatch to the method's actual third step.
@@ -54,7 +57,7 @@ export function ImportWizard() {
 
   const steps = sequence.map((id) => ({ id, label: stepLabels[id] }));
 
-  /** Navigate to a step, carrying scope + method + google auth, dropping state. */
+  /** Navigate to a step, carrying scope + method. */
   const goStep = (id: StepId) => {
     const params = new URLSearchParams();
     for (const key of SCOPE_KEYS) {
@@ -62,7 +65,6 @@ export function ImportWizard() {
       if (value) params.set(key, value);
     }
     if (method) params.set('method', method);
-    if (googleConnected) params.set('googleAuth', 'connected');
     navigate(`${stepPaths[id]}?${params.toString()}`);
   };
 
@@ -77,20 +79,18 @@ export function ImportWizard() {
       return next;
     });
 
-  const openGoogle = () =>
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('modal', 'google-contacts');
-      return next;
-    });
+  /* ---- Continue rules, derived from the actual run -------------------- */
+  const rows = job.rows.length ? mappedRows(job) : [];
+  const mapped = new Set(Object.values(job.mapping).filter(Boolean));
+  const hasRequiredMapping = mapped.has('name') && mapped.has('mobile');
+  const issues = rows.length ? validateRows(rows) : null;
 
-  /* ---- Continue-enabled rules per step -------------------------------- */
   const continueDisabled =
     (currentStep === 'method' && !method) ||
-    (currentStep === 'source' &&
-      (state === 'invalid-file' ||
-        ((method === 'google' || method === 'sheets') && !googleConnected))) ||
-    (currentStep === 'mapping' && state === 'incomplete-mapping');
+    (currentStep === 'source' && (!job.rows.length || (method ? HUB_METHODS.includes(method) : false))) ||
+    ((currentStep === 'mapping' || currentStep === 'extraction') && !hasRequiredMapping) ||
+    (currentStep === 'validation' && (!issues || issues.importable === 0)) ||
+    (currentStep === 'preview' && job.busy);
 
   return (
     <WizardShell
@@ -109,19 +109,18 @@ export function ImportWizard() {
       case 'method':
         return <MethodStep method={method} onPick={pickMethod} />;
       case 'source':
-        return <SourceStep method={method ?? 'csv'} state={state} googleConnected={googleConnected} onOpenGoogle={openGoogle} />;
+        return <SourcePick job={job} />;
       case 'mapping':
-        return <MapStep state={state} />;
       case 'extraction':
-        return <ExtractStep state={state} />;
+        return <MapFields job={job} />;
       case 'validation':
-        return <ValidateStep state={state} />;
+        return <Validate job={job} />;
       case 'preview':
-        return <PreviewStep />;
+        return <Preview job={job} />;
       case 'processing':
-        return <ProcessingStep state={state} jobId={NEW_JOB_ID} />;
+        return <Processing job={job} />;
       case 'results':
-        return <ResultsStep state={state} />;
+        return <Results job={job} />;
       default:
         return null;
     }
@@ -129,24 +128,14 @@ export function ImportWizard() {
 
   function renderFooter() {
     if (currentStep === 'processing') {
-      if (state === 'fatal') {
+      if (job.error) {
         return (
           <>
             <Button variant="secondary" iconLeft={<ArrowLeft />} onClick={() => goStep('preview')}>
               Back to preview
             </Button>
-            <span />
-          </>
-        );
-      }
-      if (state === 'recoverable-failure') {
-        return (
-          <>
-            <Button variant="secondary" iconLeft={<ArrowLeft />} onClick={() => goStep('preview')}>
-              Back to preview
-            </Button>
-            <Button variant="primary" iconLeft={<RotateCcw />} onClick={() => goStep('processing')}>
-              Retry
+            <Button variant="primary" iconLeft={<RotateCcw />} onClick={() => goStep('preview')}>
+              Try again
             </Button>
           </>
         );
@@ -154,8 +143,8 @@ export function ImportWizard() {
       return (
         <>
           <span />
-          <Button variant="primary" iconRight={<ArrowRight />} onClick={() => goStep('results')}>
-            View results
+          <Button variant="primary" iconRight={<ArrowRight />} disabled={job.busy || !job.result} onClick={() => goStep('results')}>
+            {job.busy ? 'Importing…' : 'View results'}
           </Button>
         </>
       );
@@ -164,15 +153,19 @@ export function ImportWizard() {
     if (currentStep === 'results') {
       return (
         <>
-          <Button variant="secondary" iconLeft={<RotateCcw />} onClick={() => goStep('method')}>
+          <Button
+            variant="secondary"
+            iconLeft={<RotateCcw />}
+            onClick={() => { resetJob(null); goStep('method'); }}
+          >
             Start another
           </Button>
           <div className="crm-wizard__footer-actions">
-            <Button variant="secondary" onClick={() => navigate(scopedHref(`/contacts/imports/jobs/${NEW_JOB_ID}`))}>
-              Open import job
+            <Button variant="secondary" onClick={() => navigate(scopedHref('/contacts/imports'))}>
+              Import history
             </Button>
-            <Button variant="primary" onClick={() => navigate(scopedHref('/contacts/all', { source: 'Walk-in register' }))}>
-              View imported contacts
+            <Button variant="primary" onClick={() => navigate(scopedHref('/contacts/all'))}>
+              View contacts
             </Button>
           </div>
         </>
@@ -198,7 +191,7 @@ export function ImportWizard() {
           disabled={continueDisabled}
           onClick={() => (isPreview ? goStep('processing') : goNext())}
         >
-          {isPreview ? 'Start import' : 'Continue'}
+          {isPreview ? `Import ${issues?.importable ?? 0} contact${issues?.importable === 1 ? '' : 's'}` : 'Continue'}
         </Button>
       </>
     );

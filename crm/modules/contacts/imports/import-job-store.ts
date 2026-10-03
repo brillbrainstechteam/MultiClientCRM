@@ -96,6 +96,9 @@ const ALIASES: Record<string, string> = {
   name: 'name', fullname: 'name', customername: 'name', partyname: 'name', firmname: 'name',
   mobile: 'mobile', mobileno: 'mobile', mobilenumber: 'mobile', phone: 'mobile', phoneno: 'mobile',
   contactno: 'mobile', contactnumber: 'mobile', whatsapp: 'mobile', whatsappnumber: 'mobile',
+  // Our own downloaded template uses these exact labels — they must map, or the
+  // first import a user tries stalls on the required-field check.
+  whatsappmobile: 'mobile', whatsappno: 'mobile',
   company: 'company', companyname: 'company', shopname: 'company', businessname: 'company',
   contactperson: 'contactPerson', person: 'contactPerson', ownername: 'contactPerson',
   email: 'email', emailid: 'email', mailid: 'email',
@@ -105,7 +108,7 @@ const ALIASES: Record<string, string> = {
   website: 'website', site: 'website', url: 'website',
   clientcode: 'clientCode', code: 'clientCode',
   source: 'source', leadsource: 'source', tags: 'tags', tag: 'tags',
-  grade: 'grade', abcd: 'grade', category: 'grade',
+  grade: 'grade', abcd: 'grade', gradeabcd: 'grade', category: 'grade',
   businesssegment: 'businessSegment', segment: 'businessSegment', contacttype: 'businessSegment',
   typeofcustomer: 'businessSegment', type: 'businessSegment',
   preferredlanguage: 'preferredLanguage', language: 'preferredLanguage',
