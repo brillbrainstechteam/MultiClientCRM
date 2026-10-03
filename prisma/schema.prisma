@@ -548,6 +548,24 @@ model CrmEnquiry {
   @@index([conversationId])
 }
 
+// Import run history (Contacts → Imports & Sync). One row per import so the hub
+// shows real jobs, not fixtures.
+model CrmImportJob {
+  id              String   @id @default(cuid())
+  tenantId        String
+  source          String   @default("Import")   // CSV upload | OCR scan | vCard | Google Contacts | Wizard
+  fileName        String?
+  total           Int      @default(0)
+  created         Int      @default(0)
+  updated         Int      @default(0)
+  skipped         Int      @default(0)
+  status          String   @default("completed") // completed | partial | failed
+  createdByUserId String?
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+}
+
 // Planned marketing activities shown on the Campaigns planning calendar
 // (field marketing, telecalling, campaign, exhibition). Festivals are static.
 model CrmPlanEvent {

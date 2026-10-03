@@ -10,22 +10,26 @@ import {
   Smartphone,
   Upload,
 } from 'lucide-react';
-import { useRef, useState, type ChangeEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@crm/components';
 import { useScopedHref } from '@crm/app/use-scoped-href';
 import { Badge, Button, ConfirmDialog, Popover, Toast } from '@crm/design-system';
-import { contacts, importJobs, type ImportMethod } from '@crm/mock-data';
-import { ImportRow } from '../components';
+import { contacts, type ImportMethod } from '@crm/mock-data';
 import { GoogleSyncPanel } from '../GoogleSyncPanel';
 import { methodLabels } from '../imports/import-flow';
 import { downloadTemplate } from '../imports/import-template';
 import { parseCsv, importContacts } from '@crm/app/crm-data';
 import { parseVcf, buildVcf } from '../vcf';
 
+interface ImportJobDTO {
+  id: string; source: string; fileName: string | null;
+  total: number; created: number; updated: number; skipped: number; status: string; createdAt: string;
+}
+
 /**
- * CON-S07 — Imports & Sync Hub. Import methods, connected-source status, import
- * history (each row → CON-S08) and a sample template download.
+ * CON-S07 — Imports & Sync Hub. Import methods, connected-source status, real
+ * import history and a sample template download.
  */
 export default function ImportsHubScreen() {
   const navigate = useNavigate();
@@ -43,6 +47,11 @@ export default function ImportsHubScreen() {
   // Candidates (from OCR or vCard) awaiting review before import (req 15).
   const [scanned, setScanned] = useState<Array<Record<string, string>> | null>(null);
   const [scanSource, setScanSource] = useState('OCR scan');
+  // Real import history (replaces fixtures).
+  const [jobs, setJobs] = useState<ImportJobDTO[]>([]);
+  const loadJobs = () => fetch('/api/crm/contacts/import', { credentials: 'same-origin' })
+    .then((r) => r.json()).then((d) => setJobs(d.jobs ?? [])).catch(() => {});
+  useEffect(() => { loadJobs(); }, []);
 
   /** vCard (.vcf) import: parse client-side, then review before importing. */
   const onVcfChosen = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -81,8 +90,9 @@ export default function ImportsHubScreen() {
     try {
       const rows = parseCsv(await file.text());
       if (rows.length === 0) { setResult('No valid rows found in that file.'); return; }
-      const r = await importContacts(rows, 'skip');
+      const r = await importContacts(rows, 'skip', { source: 'CSV upload', fileName: file.name });
       setResult(`Imported ${r.created} new · ${r.updated} updated · ${r.skipped} skipped.`);
+      loadJobs();
     } catch {
       setResult('Import failed. Check the file and try again.');
     } finally {
@@ -129,8 +139,9 @@ export default function ImportsHubScreen() {
     setScanned(null);
     setImporting(true);
     try {
-      const r = await importContacts(rows.map((c) => ({ ...c, source: scanSource })), 'skip');
+      const r = await importContacts(rows.map((c) => ({ ...c, source: scanSource })), 'skip', { source: scanSource });
       setResult(`Imported ${r.created} new · ${r.updated} updated · ${r.skipped} skipped (${scanSource}).`);
+      loadJobs();
     } catch {
       setResult('Import failed after scan.');
     } finally {
@@ -226,11 +237,24 @@ export default function ImportsHubScreen() {
       <section className="crm-hub__section">
         <div className="crm-hub__history-head">
           <h2 className="crm-hub__title">Import history</h2>
-          <Badge tone="neutral">{importJobs.length} jobs</Badge>
+          <Badge tone="neutral">{jobs.length} job{jobs.length === 1 ? '' : 's'}</Badge>
         </div>
         <div className="crm-hub__history">
-          {importJobs.map((job) => (
-            <ImportRow key={job.id} job={job} />
+          {jobs.length === 0 ? (
+            <p className="crm-hub__history-empty">No imports yet. Upload a CSV, scan a card, or import a .vcf to get started.</p>
+          ) : jobs.map((job) => (
+            <div key={job.id} className="crm-hub__job">
+              <div className="crm-hub__job-main">
+                <strong>{job.source}{job.fileName ? ` · ${job.fileName}` : ''}</strong>
+                <span>{new Date(job.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              <div className="crm-hub__job-stats">
+                <Badge tone="success">{job.created} new</Badge>
+                {job.updated > 0 ? <Badge tone="info">{job.updated} updated</Badge> : null}
+                {job.skipped > 0 ? <Badge tone="neutral">{job.skipped} skipped</Badge> : null}
+                <Badge tone={job.status === 'completed' ? 'success' : job.status === 'failed' ? 'danger' : 'warning'}>{job.status}</Badge>
+              </div>
+            </div>
           ))}
         </div>
       </section>

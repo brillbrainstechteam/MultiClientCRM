@@ -157,17 +157,19 @@ export function parseCsv(text: string): Array<Record<string, string>> {
   });
 }
 
-/** Import many contacts at once; returns how many were created vs skipped. */
+/** Import many contacts at once; returns how many were created vs skipped.
+ *  `meta` labels the import run (source + file name) for the history hub. */
 export async function importContacts(
   rows: Array<Record<string, unknown>>,
   onDuplicate: 'skip' | 'update',
-): Promise<{ created: number; updated: number; skipped: number }> {
+  meta?: { source?: string; fileName?: string },
+): Promise<{ created: number; updated: number; skipped: number; jobId?: string }> {
   const res = await jsonOrThrow(await fetch('/api/crm/contacts/import', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ rows, onDuplicate }),
+    body: JSON.stringify({ rows, onDuplicate, source: meta?.source, fileName: meta?.fileName }),
     credentials: 'same-origin',
   }));
   await refreshAndNotify();
-  return res as { created: number; updated: number; skipped: number };
+  return res as { created: number; updated: number; skipped: number; jobId?: string };
 }
