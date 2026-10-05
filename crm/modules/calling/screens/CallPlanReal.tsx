@@ -138,7 +138,7 @@ function Bucket({ title, tone, items, channel, showOwner, onLog, navigate }: { t
                 {c.nextFollowUpAt ? <span className="cp-date">{new Date(c.nextFollowUpAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span> : null}
               </div>
             </button>
-            <button className="cp-act cp-act--ghost" title="Study before you go" onClick={() => navigate(`/contacts/customer/${c.id}`)}><BookOpen size={15} /><span>Study</span></button>
+            <button className="cp-act cp-act--ghost" title={channel === 'visit' ? 'Pre-visit brief' : 'Pre-call brief'} onClick={() => navigate(`/contacts/customer/${c.id}?tab=kundli`)}><BookOpen size={15} /><span>Study</span></button>
             {channel === 'call'
               ? <a className="cp-act" href={`tel:+${c.mobile.replace(/\D/g, '')}`} title="Call"><Phone size={15} /><span>Call</span></a>
               : <a className="cp-act" href={mapsHref(c)} target="_blank" rel="noreferrer" title="Directions"><Navigation size={15} /><span>Route</span></a>}

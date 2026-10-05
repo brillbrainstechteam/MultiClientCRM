@@ -25,19 +25,38 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   // Stage 1 ("identity") spends one or two searches checking we have the right
   // business; stage 2 only runs once that holds up, so a wrong match costs a
-  // fraction of a full brief.
-  const body = (await req.json().catch(() => ({}))) as { mode?: string };
+  // fraction of a full brief. `refresh` forces a new call; otherwise an already
+  // cached result that satisfies the requested mode is served WITHOUT paying for
+  // a model call again.
+  const body = (await req.json().catch(() => ({}))) as { mode?: string; refresh?: boolean };
   const mode = body.mode === 'full' ? 'full' : 'identity';
+  const refresh = body.refresh === true;
 
   const c = await prisma.crmContact.findFirst({
     where: { id, tenantId: user.tenantId },
     select: {
       name: true, company: true, contactPerson: true, city: true, state: true, mobile: true,
       customerType: true, lifecycleStage: true, productInterests: true, tags: true,
-      website: true, pincode: true, kundli: true,
+      website: true, pincode: true, kundli: true, kundliGeneratedAt: true,
     },
   });
   if (!c) return NextResponse.json({ error: 'Contact not found.' }, { status: 404 });
+
+  // Cache-first: a stored brief already covers an identity request, and a stored
+  // FULL brief covers a full request. Only a forced refresh (or upgrading an
+  // identity-only cache to a full brief) actually calls the model again.
+  const cached = (c.kundli ?? null) as ({ identityOnly?: boolean } & Record<string, unknown>) | null;
+  if (!refresh && cached) {
+    const cachedIsFull = cached.identityOnly !== true;
+    if (mode === 'identity' || cachedIsFull) {
+      return NextResponse.json({
+        kundli: cached,
+        generatedAt: c.kundliGeneratedAt ? c.kundliGeneratedAt.toISOString() : null,
+        cached: true,
+      });
+    }
+  }
+
   // Nothing to search on means nothing to pay for.
   if (!(c.company || c.name) || !c.city) {
     return NextResponse.json(

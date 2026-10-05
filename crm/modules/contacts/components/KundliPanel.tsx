@@ -81,12 +81,14 @@ export function KundliPanel({ contactId }: { contactId: string }) {
     return () => { cancelled = true; };
   }, [contactId]);
 
-  const run = useCallback(async (mode: 'identity' | 'full') => {
+  // `force` (Refresh) bypasses the cache and pays for a fresh model call; every
+  // other call is cache-first on the server, so re-opening a brief is free.
+  const run = useCallback(async (mode: 'identity' | 'full', force = false) => {
     setBusy(mode); setError('');
     try {
       const res = await fetch(`/api/crm/contacts/${contactId}/kundli`, {
         method: 'POST', credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode }),
+        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode, refresh: force }),
       });
       const d = await res.json();
       if (!res.ok) { setError(d.error ?? 'Could not research this contact.'); return; }
@@ -287,7 +289,7 @@ export function KundliPanel({ contactId }: { contactId: string }) {
           {generatedAt ? `Researched ${new Date(generatedAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}
           {kundli.generatedWith ? ` · ${kundli.generatedWith}` : ''}
         </span>
-        <Button variant="secondary" size="sm" disabled={busy !== null} onClick={() => void run(kundli.identityOnly ? 'identity' : 'full')}>
+        <Button variant="secondary" size="sm" disabled={busy !== null} onClick={() => void run(kundli.identityOnly ? 'identity' : 'full', true)} title="Run a fresh search (uses a paid lookup)">
           {busy ? 'Working…' : 'Refresh'}
         </Button>
       </div>
