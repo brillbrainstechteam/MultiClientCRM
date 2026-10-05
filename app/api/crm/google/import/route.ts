@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
+import { prisma } from '@/lib/db';
 import { getValidConnection, listGoogleContacts } from '@/lib/crm/google';
 import { importContactRows } from '@/lib/crm/import-contacts';
 
@@ -20,6 +21,14 @@ export async function POST() {
       rows.map((r) => ({ ...r, source: 'Google Contacts' })),
       'skip',
     );
+    // Record the run so it shows in the Imports & Sync history like every other means.
+    await prisma.crmImportJob.create({
+      data: {
+        tenantId: user.tenantId, source: 'Google Contacts', fileName: null,
+        total: rows.length, created: result.created, updated: result.updated, skipped: result.skipped,
+        status: 'completed', createdByUserId: user.id,
+      },
+    });
     return NextResponse.json({ ...result, found: rows.length });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Google import failed.' }, { status: 502 });

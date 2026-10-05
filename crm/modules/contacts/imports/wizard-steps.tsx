@@ -250,6 +250,10 @@ export function Preview({ job }: { job: ImportJob }) {
 
 /* ---- Processing --------------------------------------------------------- */
 
+const WIZARD_SOURCE: Record<string, string> = {
+  csv: 'CSV import', sheets: 'Google Sheets', mobile: 'Mobile export', vcf: 'vCard', intelligent: 'Scan',
+};
+
 export function Processing({ job }: { job: ImportJob }) {
   const started = useRef(false);
 
@@ -259,7 +263,10 @@ export function Processing({ job }: { job: ImportJob }) {
     if (started.current || job.result || !job.rows.length) return;
     started.current = true;
     setJob({ busy: true, error: '' });
-    importContacts(mappedRows(job), job.onDuplicate)
+    importContacts(mappedRows(job), job.onDuplicate, {
+      source: WIZARD_SOURCE[job.method ?? ''] ?? 'Import wizard',
+      fileName: job.fileName || undefined,
+    })
       .then((result) => setJob({ result, busy: false }))
       .catch((e: Error) => setJob({ busy: false, error: e.message || 'Import failed.' }));
   }, [job]);
