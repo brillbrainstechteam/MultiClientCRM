@@ -42,3 +42,22 @@
 .pl-actions { display: flex; justify-content: flex-end; gap: 10px; }
 
 @media (max-width: 560px) { .pl-foot__fields { flex-direction: column; } }
+
+/* The date input is styled by .pl-field above, but the assignee uses the design
+   system's Select — which brought its own height, so the two sat mismatched.
+   Give the select the same box as the input and let both fill the row. */
+.pl-field select {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  width: 100%;
+  color: var(--crm-text-primary);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: 9px;
+  padding: 9px 11px;
+  background: var(--crm-surface-raised);
+}
+.pl-field select:focus { outline: none; border-color: var(--crm-brand-600); }
+/* The Select renders its own wrapper; stop it shrinking inside the field. */
+.pl-field > div { width: 100%; }
+.pl-field--sm { min-width: 0; }
