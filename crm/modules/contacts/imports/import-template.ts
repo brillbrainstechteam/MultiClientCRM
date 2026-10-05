@@ -36,7 +36,7 @@ export const templateFields: TemplateField[] = [
   { key: 'companyAnniversary', label: 'Company Anniversary', required: false, example: '2004-11-20', help: 'YYYY-MM-DD — powers anniversary wishes/offers.' },
   { key: 'nextFollowUpAt', label: 'Next Follow-up', required: false, example: '2026-10-05', help: 'YYYY-MM-DD — appears in the follow-up queue.' },
   { key: 'interestedIn', label: 'Interested In', required: false, example: 'Antique bridal sets', help: 'What the client is looking for.' },
-  { key: 'tags', label: 'Tags', required: false, example: 'bulk-buyer; festive-2026', help: 'Separate multiple tags with a semicolon.' },
+  { key: 'tags', label: 'Tags', required: false, example: 'bulk-buyer; festive-2026; north-zone', help: 'Several tags in one cell — separate with a comma or semicolon.' },
   { key: 'source', label: 'Source', required: false, example: 'Exhibition — GJS', help: 'Where the contact came from.' },
   { key: 'notes', label: 'Notes', required: false, example: 'Met at GJS April; wants antique kada designs', help: 'Free text.' },
 ];

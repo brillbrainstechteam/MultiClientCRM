@@ -127,7 +127,7 @@ export function MapFields({ job }: { job: ImportJob }) {
     <div className="iw">
       <h3 className="iw__title">Map your columns</h3>
       <p className="iw__sub">
-        Recognised columns are matched already. Name and Mobile are required — rows missing either are skipped.
+        Recognised columns are matched already. Name and Mobile are required — rows missing either are skipped. Several columns can feed Tags, and anything you keep as a custom field stays on the contact.
       </p>
       <div className="iw__scroll">
         <table className="iw__map">
@@ -149,7 +149,7 @@ export function MapFields({ job }: { job: ImportJob }) {
                     >
                       <option value="">Do not import</option>
                       {TARGET_FIELDS.map((f) => (
-                        <option key={f.value} value={f.value} disabled={taken.has(f.value) && job.mapping[h] !== f.value}>
+                        <option key={f.value} value={f.value} disabled={f.value !== 'tags' && f.value !== CUSTOM_FIELD && taken.has(f.value) && job.mapping[h] !== f.value}>
                           {f.label}
                         </option>
                       ))}

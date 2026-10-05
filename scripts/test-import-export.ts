@@ -18,6 +18,7 @@ import {
 } from '../crm/modules/contacts/imports/import-job-store';
 import { buildTemplateCsv } from '../crm/modules/contacts/imports/import-template';
 import { normMobile, isScientificNotation } from '../lib/crm/mobile';
+import { parseTags, mergeTags } from '../lib/crm/tags';
 import { sniffColumn, CUSTOM_FIELD } from '../crm/modules/contacts/imports/import-job-store';
 
 let passed = 0;
@@ -206,6 +207,33 @@ const kept = customMapped[0]?.customFields as Record<string, string> | undefined
 check('unmapped column is kept as a custom field', Boolean(kept), JSON.stringify(customMapped[0]));
 check('custom value survives', kept?.['Ledger Balance'] === '15000', JSON.stringify(kept));
 check('custom column does not pollute real fields', !('Ledger Balance' in (customMapped[0] ?? {})));
+
+/* ---- 8. Tags ------------------------------------------------------------- */
+section('Tags');
+
+check('semicolon separated', JSON.stringify(parseTags('bulk-buyer; festive')) === JSON.stringify(['bulk-buyer', 'festive']));
+check('comma separated (what people actually type)', JSON.stringify(parseTags('bulk-buyer, festive')) === JSON.stringify(['bulk-buyer', 'festive']), JSON.stringify(parseTags('bulk-buyer, festive')));
+check('pipe separated', JSON.stringify(parseTags('a|b')) === JSON.stringify(['a', 'b']));
+check('mixed separators', JSON.stringify(parseTags('a, b; c|d')) === JSON.stringify(['a', 'b', 'c', 'd']));
+check('blanks and spacing dropped', JSON.stringify(parseTags(' a ,, b ')) === JSON.stringify(['a', 'b']));
+check('case-insensitive de-dupe keeps first spelling', JSON.stringify(parseTags('VIP, vip, Vip')) === JSON.stringify(['VIP']), JSON.stringify(parseTags('VIP, vip, Vip')));
+check('empty cell gives no tags', parseTags('').length === 0);
+
+check('update merges instead of replacing', JSON.stringify(mergeTags(['existing'], ['new'])) === JSON.stringify(['existing', 'new']));
+check('merge does not duplicate', JSON.stringify(mergeTags(['VIP'], ['vip', 'bulk'])) === JSON.stringify(['VIP', 'bulk']), JSON.stringify(mergeTags(['VIP'], ['vip', 'bulk'])));
+
+// A quoted cell holding commas is one CSV field, then several tags.
+const tagRows = parseCsv(['Full Name*,WhatsApp Mobile*,Tags', 'Rahul,9810011234,"bulk-buyer, festive-2026"'].join(String.fromCharCode(10)));
+const tagMapped = mappedRows(jobFrom(tagRows));
+check('quoted multi-tag cell stays one column', String(tagMapped[0]?.tags ?? '').includes('bulk-buyer'), JSON.stringify(tagMapped[0]));
+check('and yields several tags', parseTags(tagMapped[0]?.tags).length === 2, JSON.stringify(parseTags(tagMapped[0]?.tags)));
+
+// Clients often spread tags across columns instead of one cell.
+const multiCol = parseCsv(['Full Name*,WhatsApp Mobile*,Tag 1,Tag 2', 'Rahul,9810011234,vip,north-zone'].join(String.fromCharCode(10)));
+const multiJob = jobFrom(multiCol);
+const multiMapped = mappedRows(multiJob);
+check('two tag columns both map to tags', Object.values(multiJob.mapping).filter((v) => v === 'tags').length === 2, JSON.stringify(multiJob.mapping));
+check('both columns end up as tags', parseTags(multiMapped[0]?.tags).length === 2, JSON.stringify(multiMapped[0]));
 
 /* ---- summary -------------------------------------------------------------- */
 console.log(`\n${passed} passed, ${failures.length} failed`);

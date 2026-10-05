@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { normMobile } from './mobile';
+import { mergeTags, parseTags } from './tags';
 import { ensureZones, matchZone } from '@/lib/crm/zone-routing';
 
 export type ImportRow = Record<string, unknown>;
@@ -44,8 +45,12 @@ export async function importContactRows(
   rows: ImportRow[],
   onDuplicate: OnDuplicate = 'skip',
 ): Promise<ImportResult> {
-  const existing = await prisma.crmContact.findMany({ where: { tenantId }, select: { id: true, mobile: true } });
-  const byMobile = new Map(existing.map((c) => [c.mobile, c.id]));
+  // Existing tags come along so an update can merge rather than overwrite them.
+  const existing = await prisma.crmContact.findMany({
+    where: { tenantId },
+    select: { id: true, mobile: true, tags: true },
+  });
+  const byMobile = new Map(existing.map((c) => [c.mobile, { id: c.id, tags: c.tags }]));
 
   // Load zones once so each new row can be routed City→State→Zone→member
   // without a per-row query. Best-effort: if routing fails, import continues.
@@ -75,7 +80,8 @@ export async function importContactRows(
       branchId: str(r.branchId) || 'branch_main',
       primaryWhatsAppNumberId: str(r.primaryWhatsAppNumberId),
       createdSource: str(r.importSource) || src,
-      tags: str(r.tags) ? String(r.tags).split(/[;|]/).map((t) => t.trim()).filter(Boolean) : [],
+      // One cell can carry several tags, separated however the client writes them.
+      tags: parseTags(r.tags),
       // The client's own columns, kept verbatim rather than dropped.
       ...(r.customFields && typeof r.customFields === 'object' && Object.keys(r.customFields as object).length
         ? { customFields: r.customFields as object }
@@ -102,10 +108,15 @@ export async function importContactRows(
       ...(parseDate(r.nextFollowUpAt || r['Next Follow Up'] || r.nextFollowUp) ? { nextFollowUpAt: parseDate(r.nextFollowUpAt || r['Next Follow Up'] || r.nextFollowUp) } : {}),
     };
 
-    const dupId = byMobile.get(mobile);
-    if (dupId) {
+    const dup = byMobile.get(mobile);
+    if (dup) {
       if (onDuplicate === 'update') {
-        await prisma.crmContact.update({ where: { id: dupId }, data: { ...fields, lastActivityAt: new Date() } });
+        // Tags are additive: an import should never drop labels the team already
+        // applied to a contact.
+        await prisma.crmContact.update({
+          where: { id: dup.id },
+          data: { ...fields, tags: mergeTags(dup.tags, fields.tags), lastActivityAt: new Date() },
+        });
         updated++;
       } else skipped++;
       continue;
@@ -124,7 +135,7 @@ export async function importContactRows(
     await prisma.crmContact.create({
       data: { id: `contact_${Math.random().toString(36).slice(2, 10)}`, tenantId, mobile, ...createFields } as never,
     });
-    byMobile.set(mobile, 'new');
+    byMobile.set(mobile, { id: 'new', tags: fields.tags });
     created++;
   }
 

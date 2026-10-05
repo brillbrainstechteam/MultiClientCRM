@@ -161,10 +161,13 @@ export function guessMapping(headers: string[], rows: Record<string, string>[] =
   const used = new Set<string>();
   const out: Record<string, string> = {};
 
-  // Pass 1: headers we recognise outright.
+  // Pass 1: headers we recognise outright. A trailing number is dropped on the
+  // second try, so "Tag 1" / "Phone 2" match the same alias as "Tag" / "Phone".
   for (const h of headers) {
-    const guess = ALIASES[key(h)];
-    if (guess && !used.has(guess)) { out[h] = guess; used.add(guess); }
+    const k = key(h);
+    const guess = ALIASES[k] ?? ALIASES[k.replace(/\d+$/, '')];
+    // tags is the one field several columns may share (Tag 1, Tag 2, …).
+    if (guess && (guess === 'tags' || !used.has(guess))) { out[h] = guess; used.add(guess); }
     else out[h] = '';
   }
 
@@ -191,6 +194,8 @@ export function mappedRows(j: ImportJob): Record<string, unknown>[] {
       const v = (row[header] ?? '').trim();
       if (!v) continue;
       if (field === CUSTOM_FIELD) custom[header] = v;
+      // Several tag columns combine into one cell the importer then splits.
+      else if (field === 'tags') out.tags = out.tags ? `${out.tags};${v}` : v;
       else out[field] = v;
     }
     if (Object.keys(custom).length) out.customFields = custom;
