@@ -144,3 +144,14 @@
   min-width: 260px;
 }
 .crm-hub__more > button { justify-content: flex-start; width: 100%; }
+
+/* Group heading inside the More popover, so an export never reads as an import. */
+.crm-hub__more-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--crm-text-secondary);
+  margin-top: 4px;
+}
+.crm-hub__more-label:first-child { margin-top: 0; }

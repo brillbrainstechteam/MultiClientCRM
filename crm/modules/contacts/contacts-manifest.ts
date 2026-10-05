@@ -84,7 +84,7 @@ export const contactPages: ContactScreen[] = [
   {
     id: 'CON-S07',
     path: '/contacts/imports',
-    title: 'Imports & Sync Hub',
+    title: 'Import & Export Hub',
     surface: 'page',
     purpose: 'Import methods, connected sources, import history and template download.',
     batch: 3,

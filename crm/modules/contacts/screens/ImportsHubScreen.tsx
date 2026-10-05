@@ -176,18 +176,18 @@ export default function ImportsHubScreen() {
         />
       ) : null}
       <PageHeader
-        title="Imports & Sync"
+        title="Import & Export"
         actions={
           <>
             {/* Kept mounted outside the popover so the refs stay valid. */}
             <input ref={fileRef} type="file" accept=".csv,text/csv" hidden onChange={onCsvChosen} />
             <input ref={scanRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" hidden onChange={onScanChosen} />
             <input ref={vcfRef} type="file" accept=".vcf,text/vcard,text/x-vcard" hidden onChange={onVcfChosen} />
+            <Button variant="secondary" iconLeft={<Download />} onClick={() => downloadTemplate('csv')}>
+              Download template
+            </Button>
             <Button variant="secondary" iconLeft={<Upload />} disabled={importing} onClick={() => fileRef.current?.click()}>
               {importing ? 'Importing…' : 'Upload CSV'}
-            </Button>
-            <Button variant="secondary" iconLeft={<Plus />} onClick={() => setSearchParams((p) => { const n = new URLSearchParams(p); n.set('drawer', 'contact'); n.set('mode', 'add'); return n; })}>
-              Add manually
             </Button>
             <Button variant="secondary" iconLeft={<MoreHorizontal />} onClick={() => setMoreOpen(true)}>
               More
@@ -199,19 +199,22 @@ export default function ImportsHubScreen() {
         }
       />
 
-      <Popover open={moreOpen} title="More import actions" onClose={() => setMoreOpen(false)}>
+      <Popover open={moreOpen} title="More actions" onClose={() => setMoreOpen(false)}>
         <div className="crm-hub__more">
-          <Button variant="secondary" iconLeft={<Download />} onClick={() => { setMoreOpen(false); downloadTemplate('csv'); }}>
-            Download import template
+          <span className="crm-hub__more-label">Import</span>
+          <Button variant="secondary" iconLeft={<Plus />} onClick={() => { setMoreOpen(false); setSearchParams((p) => { const n = new URLSearchParams(p); n.set('drawer', 'contact'); n.set('mode', 'add'); return n; }); }}>
+            Add a contact manually
           </Button>
           <Button variant="secondary" iconLeft={<ScanLine />} disabled={scanning} onClick={() => { setMoreOpen(false); scanRef.current?.click(); }}>
             {scanning ? 'Scanning…' : 'Scan card / photo / PDF'}
           </Button>
           <Button variant="secondary" iconLeft={<FileText />} onClick={() => { setMoreOpen(false); vcfRef.current?.click(); }}>
-            Import .vcf
+            Import a .vcf file
           </Button>
+
+          <span className="crm-hub__more-label">Export</span>
           <Button variant="secondary" iconLeft={<Download />} onClick={() => { setMoreOpen(false); onExportVcf(); }}>
-            Export vCard
+            Export all contacts as vCard
           </Button>
         </div>
       </Popover>

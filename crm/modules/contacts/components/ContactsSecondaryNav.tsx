@@ -29,7 +29,7 @@ const items: SecondaryNavItem[] = [
   { label: 'Overview', to: '/contacts', icon: LayoutGrid, matchPrefix: '/contacts', end: true },
   { label: 'All Contacts', to: '/contacts/all', icon: Users, matchPrefix: '/contacts/all' },
   { label: 'Segments', to: '/contacts/segments', icon: Layers, matchPrefix: '/contacts/segments' },
-  { label: 'Imports & Sync', to: '/contacts/imports', icon: Upload, matchPrefix: '/contacts/imports', requires: 'manageImports' },
+  { label: 'Import & Export', to: '/contacts/imports', icon: Upload, matchPrefix: '/contacts/imports', requires: 'manageImports' },
   { label: 'Find New Businesses', to: '/contacts/prospecting', icon: Binoculars, matchPrefix: '/contacts/prospecting', requires: 'manageImports' },
   {
     label: 'Data Quality',
