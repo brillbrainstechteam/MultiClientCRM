@@ -86,3 +86,36 @@
   border-top-left-radius: 0;
   border-top-right-radius: 0;
 }
+
+/* ---- Scrolling behaviour -------------------------------------------------
+   Wide tables (the call queue especially) ran off the right edge with the
+   action column unreachable, and scrolling the page took the column headers
+   away with it. The table scrolls inside its own container, the header stays
+   put, and the scrollbar is left visible so it is obvious the row continues. */
+
+.crm-table__scroll {
+  /* Keep the sideways scroll inside the table instead of nudging the page. */
+  overscroll-behavior-x: contain;
+  scrollbar-color: var(--crm-border-strong, #c3ccd4) transparent;
+}
+.crm-table__scroll::-webkit-scrollbar { height: 11px; }
+.crm-table__scroll::-webkit-scrollbar-track { background: transparent; }
+.crm-table__scroll::-webkit-scrollbar-thumb {
+  background: var(--crm-border-strong, #c3ccd4);
+  border-radius: 999px;
+  border: 3px solid var(--crm-card, #fff);
+}
+.crm-table__scroll::-webkit-scrollbar-thumb:hover { background: var(--crm-text-secondary, #6b7a88); }
+
+/* Column names remain readable however far down the page you are. */
+.crm-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--crm-table-header-band);
+}
+
+/* One value per line: a wrapped "10 Aug, 11:00 am" was making rows three times
+   taller than they needed to be. Long text scrolls sideways instead. */
+.crm-table__cell { white-space: nowrap; }
+.crm-table__cell--wrap { white-space: normal; }
