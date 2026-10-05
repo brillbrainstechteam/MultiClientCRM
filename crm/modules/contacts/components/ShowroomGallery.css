@@ -40,3 +40,5 @@
 }
 .sg-del:hover { background: rgba(180, 40, 40, 0.9); }
 .sg-del:disabled { opacity: 0.5; cursor: default; }
+
+.sg-actions { display: flex; gap: 8px; flex-wrap: wrap; }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ImagePlus, Trash2 } from 'lucide-react';
+import { ImagePlus, Trash2, Globe } from 'lucide-react';
 import { Button } from '@crm/design-system';
 import './ShowroomGallery.css';
 
@@ -78,6 +78,23 @@ export function ShowroomGallery({ contactId, contactName }: { contactId: string;
     }
   };
 
+  const fetchFromGoogle = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/crm/contacts/${contactId}/store-photos`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: '{}',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Could not fetch store photos.');
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not fetch store photos.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const remove = async (image: GalleryImage) => {
     setBusy(true);
     try {
@@ -102,9 +119,14 @@ export function ShowroomGallery({ contactId, contactName }: { contactId: string;
             {images.length ? `${images.length} photo${images.length === 1 ? '' : 's'} of ${contactName}'s showroom` : `Store fronts, counters and displays for ${contactName}`}
           </p>
         </div>
-        <Button variant="secondary" iconLeft={<ImagePlus />} disabled={busy || !!blocked} onClick={() => fileInput.current?.click()}>
-          {busy ? 'Uploading…' : 'Add photos'}
-        </Button>
+        <div className="sg-actions">
+          <Button variant="secondary" iconLeft={<Globe />} disabled={busy || !!blocked} onClick={() => void fetchFromGoogle()}>
+            {busy ? 'Working…' : 'Fetch from Google'}
+          </Button>
+          <Button variant="secondary" iconLeft={<ImagePlus />} disabled={busy || !!blocked} onClick={() => fileInput.current?.click()}>
+            {busy ? 'Uploading…' : 'Add photos'}
+          </Button>
+        </div>
         <input
           ref={fileInput}
           type="file"
