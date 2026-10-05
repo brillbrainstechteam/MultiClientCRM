@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, FileSpreadsheet, Upload } from 'lucide-react';
-import { Button } from '@crm/design-system';
+import { AlertTriangle, CheckCircle2, FileSpreadsheet, UploadCloud } from 'lucide-react';
 import { parseCsv, importContacts } from '@crm/app/crm-data';
 import { parseVcf } from '../vcf';
 import {
@@ -77,24 +76,41 @@ export function SourcePick({ job }: { job: ImportJob }) {
 
   return (
     <div className="iw">
-      <h3 className="iw__title">Upload your file</h3>
+      <input ref={fileRef} type="file" accept={accept} hidden onChange={(e) => void onFile(e.target.files?.[0])} />
+
+      <button
+        type="button"
+        className="iw__drop"
+        disabled={job.busy}
+        onClick={() => fileRef.current?.click()}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => { e.preventDefault(); void onFile(e.dataTransfer.files?.[0]); }}
+      >
+        <UploadCloud size={30} aria-hidden="true" />
+        <strong>
+          {job.busy ? 'Reading your file…' : wantsVcf ? 'Upload a .vcf file' : 'Upload your CSV or Excel file'}
+        </strong>
+        <span>Click to choose, or drag the file here</span>
+      </button>
+
       <p className="iw__sub">
         {wantsVcf
-          ? 'A .vcf (vCard) export from a phone or address book.'
-          : 'A CSV with a header row. The template on Imports & Sync has the exact columns.'}
+          ? 'A vCard export from a phone or address book.'
+          : 'Any spreadsheet works — columns are matched automatically, and anything we cannot place is kept as a custom field. Excel: use File → Save As → CSV first.'}
       </p>
-
-      <input ref={fileRef} type="file" accept={accept} hidden onChange={(e) => void onFile(e.target.files?.[0])} />
-      <Button variant="primary" iconLeft={<Upload />} disabled={job.busy} onClick={() => fileRef.current?.click()}>
-        {job.busy ? 'Reading…' : 'Choose file'}
-      </Button>
 
       {job.error ? <p className="iw__error"><AlertTriangle size={15} /> {job.error}</p> : null}
 
       {job.rows.length ? (
         <p className="iw__ok">
-          <CheckCircle2 size={15} /> <strong>{job.fileName}</strong> — {job.rows.length} row
-          {job.rows.length === 1 ? '' : 's'}, {job.headers.length} column{job.headers.length === 1 ? '' : 's'}
+          <CheckCircle2 size={15} />
+          <span>
+            <strong>{job.fileName}</strong> — {job.rows.length} row{job.rows.length === 1 ? '' : 's'},{' '}
+            {job.headers.length} column{job.headers.length === 1 ? '' : 's'}
+          </span>
+          <button type="button" className="iw__relink" onClick={() => fileRef.current?.click()}>
+            Choose a different file
+          </button>
         </p>
       ) : null}
     </div>

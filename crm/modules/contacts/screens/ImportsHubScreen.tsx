@@ -19,6 +19,7 @@ import { contacts, type ImportMethod } from '@crm/mock-data';
 import { GoogleSyncPanel } from '../GoogleSyncPanel';
 import { methodLabels } from '../imports/import-flow';
 import { downloadTemplate } from '../imports/import-template';
+import { resetJob } from '../imports/import-job-store';
 import { parseCsv, importContacts } from '@crm/app/crm-data';
 import { parseVcf, buildVcf } from '../vcf';
 
@@ -152,8 +153,13 @@ export default function ImportsHubScreen() {
     }
   };
 
-  const startImport = (method?: ImportMethod) =>
+  // The wizard keeps its run in a module-level store (its steps are separate
+  // routes), so starting a new import must clear the previous file — otherwise
+  // the Source step opens already "loaded" with the last upload.
+  const startImport = (method?: ImportMethod) => {
+    resetJob(method ?? null);
     navigate(scopedHref('/contacts/imports/new/method', method ? { method } : undefined));
+  };
 
   const methods: { id: ImportMethod; icon: ReactNode; blurb: string }[] = [
     { id: 'csv', icon: <FileSpreadsheet />, blurb: 'Upload a CSV or Excel export.' },
