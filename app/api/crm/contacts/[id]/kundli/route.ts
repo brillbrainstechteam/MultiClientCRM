@@ -18,30 +18,44 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 }
 
 /** Generate (or refresh) the kundli for a contact and cache it. */
-export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
   const { id } = await params;
+
+  // Stage 1 ("identity") spends one or two searches checking we have the right
+  // business; stage 2 only runs once that holds up, so a wrong match costs a
+  // fraction of a full brief.
+  const body = (await req.json().catch(() => ({}))) as { mode?: string };
+  const mode = body.mode === 'full' ? 'full' : 'identity';
 
   const c = await prisma.crmContact.findFirst({
     where: { id, tenantId: user.tenantId },
     select: {
       name: true, company: true, contactPerson: true, city: true, state: true, mobile: true,
       customerType: true, lifecycleStage: true, productInterests: true, tags: true,
+      website: true, pincode: true, kundli: true,
     },
   });
   if (!c) return NextResponse.json({ error: 'Contact not found.' }, { status: 404 });
+  // Nothing to search on means nothing to pay for.
+  if (!(c.company || c.name) || !c.city) {
+    return NextResponse.json(
+      { error: 'Add a business name and city to this contact first — there is nothing to research without them.' },
+      { status: 400 },
+    );
+  }
 
   try {
     const kundli = await generateKundli({
       company: c.company, contactPerson: c.contactPerson, name: c.name, city: c.city, state: c.state,
       mobile: c.mobile, customerType: c.customerType,
       relationship: c.lifecycleStage === 'customer' ? 'customer' : 'prospect',
-      productInterests: c.productInterests, tags: c.tags,
-    });
+      productInterests: c.productInterests, tags: c.tags, website: c.website,
+    }, mode);
     const generatedAt = new Date();
     await prisma.crmContact.update({ where: { id }, data: { kundli: kundli as never, kundliGeneratedAt: generatedAt } });
-    await audit({ tenantId: user.tenantId, actorId: user.id, action: 'kundli.generated', targetType: 'contact', targetId: id, detail: c.company ?? c.name });
+    await audit({ tenantId: user.tenantId, actorId: user.id, action: mode === 'identity' ? 'kundli.identity' : 'kundli.generated', targetType: 'contact', targetId: id, detail: c.company ?? c.name });
     return NextResponse.json({ kundli, generatedAt: generatedAt.toISOString() });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Could not generate the dossier.' }, { status: 502 });

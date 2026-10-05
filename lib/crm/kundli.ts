@@ -1,10 +1,14 @@
 /**
- * "Kundli" — an AI-generated pre-call dossier. Given whatever the CRM knows
- * about a contact/company, it researches public information online (via Gemini
- * with Google Search grounding) and returns a call-ready brief: company profile,
- * likely needs, talking points and a tailored script — so the rep is prepared
- * before dialing. Plain REST, no SDK. Falls back to model knowledge if grounding
- * is unavailable, and to OpenAI (knowledge-only) if no Gemini key.
+ * "Kundli" — an AI-researched pre-call dossier for a jewellery retailer.
+ *
+ * Two stages, because identity is the expensive mistake. Stage 1 spends one or
+ * two grounded searches working out whether we have found the right business at
+ * all; only when that is confident does stage 2 research the full brief. A
+ * wrong "Krishna Jewellers" researched in depth is worse than useless to a rep,
+ * and costs five times as much as finding out early.
+ *
+ * Grounded search is billed per query, so each prompt names the few sources
+ * worth checking rather than inviting the model to crawl fifteen.
  */
 
 export interface KundliInput {
@@ -13,12 +17,17 @@ export interface KundliInput {
   name?: string | null;
   city?: string | null;
   state?: string | null;
+  area?: string | null;
+  address?: string | null;
   mobile?: string | null;
+  website?: string | null;
   customerType?: string | null;         // b2b | b2c
   relationship: 'prospect' | 'customer';
   productInterests?: string[];
   tags?: string[];
 }
+
+export type KundliMode = 'identity' | 'full';
 
 export interface StorePresence {
   totalCities: number | null;
@@ -26,149 +35,260 @@ export interface StorePresence {
   byCity: { city: string; stores: number | null }[];
 }
 
+/** Did we find the right business? Everything else is worthless without this. */
+export interface KundliIdentity {
+  confidence: 'high' | 'medium' | 'low' | 'conflict';
+  reason: string;
+  verifyBeforeCalling: string[];
+  /** Other businesses that could be this one, when the name is ambiguous. */
+  possibleMatches: { name: string; area?: string; clue?: string; url?: string }[];
+}
+
 export interface Kundli {
+  identity: KundliIdentity;
+
+  // Snapshot
   companyOverview: string;
   industry: string;
+  businessType: string;      // Retail / Wholesale / Manufacturing / Trading / Mixed / Not Found
+  customerTypeServed: string; // End customers / Retailers / Both / Not Found
+  brandLevel: string;        // Local / Regional / Chain / Premium / Not Found
+  ownerDecisionMaker: string;
   sizeEstimate: string;
-  productsServices: string[];
-  onlinePresence: { website?: string; socials?: string[] };
-  storePresence: StorePresence;
-  // Structured dossier facts (Prospects Tracker "Kundli" sheet).
   establishedYear?: string;
   teamStrength?: string;
   googleRating?: string;
-  awards: string[];
+  storePresence: StorePresence;
+  onlinePresence: { website?: string; socials?: string[] };
   socialProfiles: { platform: string; url?: string; followers?: string }[];
-  importantFestivals: string[];
-  recentSignals: string[];
+
+  // What they sell
+  productsServices: string[];
+  designStyle: string;
+  occasionFocus: string;
+  customerSegment: string;
+  visibleProductFocus: string;
+
+  // Why they are worth calling
+  differentiation: string[];
   likelyNeeds: string[];
   talkingPoints: string[];
+  pitchAngle: { bestProduct: string; whyItFits: string; mainBenefit: string; bestTiming: string };
+
+  // On the call
   suggestedScript: {
     opening: string;
     discoveryQuestions: string[];
     valuePitch: string;
     objectionHandling: string[];
   };
-  // Hinglish (Hindi + English in Roman script) call script for Indian SME calls.
-  hinglishScript: {
-    opening: string;
-    valuePitch: string;
-  };
+  hinglishScript: { opening: string; valuePitch: string };
+  whatNotToSay: string[];
   bestTimeOrChannel: string;
+
+  // Context
+  importantFestivals: string[];
+  awards: string[];
+  recentSignals: string[];
   risksNotes: string[];
+
   confidence: 'low' | 'medium' | 'high';
   sources: string[];
   generatedWith: string;
+  /** Set when only stage 1 ran, so the UI can offer to continue. */
+  identityOnly?: boolean;
 }
 
-const GEMINI_MODEL = 'gemini-flash-latest';
+// Pinned: "latest" drifts between generations, and grounding is billed at very
+// different rates across them ($14 vs $35 per 1k queries).
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-flash-latest';
 const OPENAI_MODEL = 'gpt-4o-mini';
 
-function buildPrompt(input: KundliInput): string {
-  const known = {
-    company: input.company ?? 'unknown',
-    contactPerson: input.contactPerson ?? input.name ?? 'unknown',
-    location: [input.city, input.state].filter(Boolean).join(', ') || 'unknown',
-    phone: input.mobile ?? 'unknown',
-    customerType: input.customerType ?? 'unknown',
-    relationship: input.relationship,
-    productInterests: (input.productInterests ?? []).join(', ') || 'unknown',
-    tags: (input.tags ?? []).join(', ') || 'none',
-  };
-  return [
-    'You are a sales research assistant preparing a rep to CALL this company/contact.',
-    'Using the details below and any PUBLIC information you can find online, produce a concise, accurate PRE-CALL DOSSIER.',
-    'Rules: Only include facts you are reasonably confident about. If something is unknown, write "unknown" — NEVER fabricate revenue, headcount, names or news.',
-    `Tailor the script to a ${known.relationship === 'customer' ? 'EXISTING CUSTOMER (retention/upsell/reactivation)' : 'NEW PROSPECT (introduction/qualification)'}.`,
-    'Prefer specifics over generic filler. Keep every string tight and useful on a live call.',
-    '',
-    'KNOWN DETAILS:',
-    JSON.stringify(known, null, 2),
-    '',
-    'For storePresence, research how many physical stores/showrooms/branches the business runs and in which cities. Use numbers only where you are confident; use null when unknown — never guess counts.',
-    'For hinglishScript, write a natural Hinglish (Hindi + English, in Roman script) version of the opening line and value pitch, the way an Indian sales rep would actually speak on a call.',
-    'For socialProfiles, list each social handle with its follower count where visible (e.g. "12.4k"). For importantFestivals, list the festivals/occasions most relevant to THIS jeweller for greetings & campaigns (e.g. Akshaya Tritiya, Dhanteras, Diwali, the regional new year, local temple festivals). Use "unknown"/[] when not confident.',
-    'Return ONLY a JSON object (no markdown, no commentary) of EXACTLY this shape:',
-    `{
-  "companyOverview": string,
-  "industry": string,
-  "sizeEstimate": string,
-  "productsServices": string[],
-  "onlinePresence": { "website": string, "socials": string[] },
-  "storePresence": { "totalCities": number | null, "totalStores": number | null, "byCity": [{ "city": string, "stores": number | null }] },
-  "establishedYear": string,
-  "teamStrength": string,
-  "googleRating": string,
-  "awards": string[],
-  "socialProfiles": [{ "platform": string, "url": string, "followers": string }],
-  "importantFestivals": string[],
-  "recentSignals": string[],
-  "likelyNeeds": string[],
-  "talkingPoints": string[],
-  "suggestedScript": { "opening": string, "discoveryQuestions": string[], "valuePitch": string, "objectionHandling": string[] },
-  "hinglishScript": { "opening": string, "valuePitch": string },
-  "bestTimeOrChannel": string,
-  "risksNotes": string[],
-  "confidence": "low" | "medium" | "high",
-  "sources": string[]
-}`,
-    'Put any public URLs you relied on in "sources".',
-  ].join('\n');
+const UNKNOWN = 'Not Found';
+
+function knownFacts(input: KundliInput): string {
+  const lines = [
+    ['Brand / Firm name', input.company || input.name],
+    ['Contact person', input.contactPerson],
+    ['City', input.city],
+    ['State', input.state],
+    ['Area / locality', input.area],
+    ['Address', input.address],
+    ['Phone', input.mobile],
+    ['Website / social', input.website],
+    ['Known interests', input.productInterests?.join(', ')],
+    ['CRM tags', input.tags?.join(', ')],
+    ['Relationship', input.relationship === 'customer' ? 'Existing customer' : 'Prospect'],
+  ].filter(([, v]) => v);
+  return lines.map(([k, v]) => `- ${k}: ${v}`).join('\n');
 }
 
-function coerce(text: string, generatedWith: string, extraSources: string[]): Kundli {
-  const match = text.match(/\{[\s\S]*\}/);
-  const raw = match ? match[0] : text;
-  let o: Record<string, unknown> = {};
-  try { o = JSON.parse(raw) as Record<string, unknown>; } catch { /* leave defaults */ }
-  const arr = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x) => typeof x === 'string') as string[] : []);
-  const str = (v: unknown, d = 'unknown'): string => (typeof v === 'string' && v.trim() ? v.trim() : d);
-  const script = (o.suggestedScript ?? {}) as Record<string, unknown>;
-  const presence = (o.onlinePresence ?? {}) as Record<string, unknown>;
-  const hing = (o.hinglishScript ?? {}) as Record<string, unknown>;
-  const conf = ['low', 'medium', 'high'].includes(String(o.confidence)) ? (o.confidence as Kundli['confidence']) : 'low';
-  const sources = [...new Set([...arr(o.sources), ...extraSources])];
+const SHARED_RULES = `
+RULES (follow strictly):
+1. Do not guess. Use only information you actually found.
+2. Never merge two businesses that share a name. If unsure, say so.
+3. Unavailable information must be written exactly as "${UNKNOWN}".
+4. Unclear information must be written exactly as "Needs Manual Verification".
+5. Keep every field short and practical for a telecaller. No essays.
+6. Return ONLY a JSON object. No markdown, no commentary, no code fences.`;
+
+/**
+ * Stage 1 — just enough searching to know whether we have the right shop.
+ * Deliberately capped: this runs for every contact, so it must stay cheap.
+ */
+function buildIdentityPrompt(input: KundliInput): string {
+  return `You are a jewellery client research assistant for India, preparing B2B outreach to a
+jewellery retailer.
+
+WHAT THE CRM KNOWS:
+${knownFacts(input)}
+
+TASK: establish ONLY whether this specific business can be identified online.
+Run AT MOST 2 web searches. Prefer Google Business Profile and the business's own
+website or Instagram. Do not research products, pitch or history yet.
+
+Judge identity by: name + city + area/address + phone + owner name + website/social handle.
+- high: name + city plus at least one of address / phone / website / owner match.
+- medium: name + city match, but nothing else is confirmed.
+- low: only the name matches, or public information is too thin.
+- conflict: several similar jewellers exist in the same city or area.
+${SHARED_RULES}
+
+JSON shape:
+{"identity":{"confidence":"high|medium|low|conflict","reason":"one sentence","verifyBeforeCalling":["question the rep should confirm"],"possibleMatches":[{"name":"","area":"","clue":"","url":""}]},
+ "onlinePresence":{"website":"","socials":[""]},
+ "sources":[""]}`;
+}
+
+/** Stage 2 — the full brief, run only once identity holds up. */
+function buildFullPrompt(input: KundliInput): string {
+  return `You are a jewellery client research assistant for India. Prepare a short, accurate,
+telecaller-friendly profile of a jewellery retailer so a jewellery supplier /
+manufacturer / wholesaler knows what to talk about before calling.
+
+WHAT THE CRM KNOWS:
+${knownFacts(input)}
+
+SEARCH BUDGET: run AT MOST 5 web searches, choosing from the sources most likely to
+carry something: Google Business Profile, the business's website, Instagram,
+Justdial / IndiaMART, and local news or association listings. Stop early once you
+have enough; do not sweep every source.
+
+FOCUS on what helps a B2B jewellery sale: what they sell, their design style, their
+customer type, their visible category focus, what to pitch, and what to ask. Do NOT
+comment on their marketing, Instagram quality, follow-up systems or digital presence
+as weaknesses.
+
+For a small local jeweller keep everything compact and lean on verification questions.
+For a known chain, give a little more on categories, design style and fit.
+${SHARED_RULES}
+
+JSON shape (use "${UNKNOWN}" for anything you could not establish):
+{"identity":{"confidence":"high|medium|low|conflict","reason":"","verifyBeforeCalling":[""],"possibleMatches":[{"name":"","area":"","clue":"","url":""}]},
+ "companyOverview":"2-3 sentences","industry":"","businessType":"Retail|Wholesale|Manufacturing|Trading|Mixed|${UNKNOWN}","customerTypeServed":"End customers|Retailers|Both|${UNKNOWN}","brandLevel":"Local|Regional|Chain|Premium|${UNKNOWN}","ownerDecisionMaker":"","sizeEstimate":"","establishedYear":"","teamStrength":"","googleRating":"",
+ "storePresence":{"totalCities":null,"totalStores":null,"byCity":[{"city":"","stores":null}]},
+ "onlinePresence":{"website":"","socials":[""]},
+ "socialProfiles":[{"platform":"","url":"","followers":""}],
+ "productsServices":[""],"designStyle":"","occasionFocus":"","customerSegment":"","visibleProductFocus":"",
+ "differentiation":["3-5 short points, only what you actually saw"],
+ "likelyNeeds":[""],"talkingPoints":["5 safe, useful points"],
+ "pitchAngle":{"bestProduct":"","whyItFits":"","mainBenefit":"","bestTiming":""},
+ "suggestedScript":{"opening":"one polite personalised line, no unverified facts","discoveryQuestions":["5 questions about their buying needs"],"valuePitch":"","objectionHandling":[""]},
+ "hinglishScript":{"opening":"Hindi+English in Roman script","valuePitch":""},
+ "whatNotToSay":["3-5 points, e.g. do not assume they need suppliers"],
+ "bestTimeOrChannel":"","importantFestivals":[""],"awards":[""],"recentSignals":[""],"risksNotes":[""],
+ "confidence":"low|medium|high","sources":["url"]}`;
+}
+
+/* ---- Response handling --------------------------------------------------- */
+
+const str = (v: unknown, fallback = UNKNOWN): string => {
+  const s = typeof v === 'string' ? v.trim() : '';
+  return s || fallback;
+};
+const list = (v: unknown): string[] =>
+  Array.isArray(v) ? v.map((x) => String(x ?? '').trim()).filter(Boolean) : [];
+
+function coerce(raw: string, generatedWith: string, grounded: string[], identityOnly: boolean): Kundli {
+  // Models still wrap JSON in fences now and then.
+  const cleaned = raw.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  let d: Record<string, unknown> = {};
+  try { d = JSON.parse(cleaned.slice(start, end + 1)) as Record<string, unknown>; } catch { /* keep defaults */ }
+
+  const ident = (d.identity ?? {}) as Record<string, unknown>;
+  const conf = String(ident.confidence ?? '').toLowerCase();
+  const sp = (d.storePresence ?? {}) as Record<string, unknown>;
+  const op = (d.onlinePresence ?? {}) as Record<string, unknown>;
+  const pa = (d.pitchAngle ?? {}) as Record<string, unknown>;
+  const sc = (d.suggestedScript ?? {}) as Record<string, unknown>;
+  const hs = (d.hinglishScript ?? {}) as Record<string, unknown>;
   const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
-  const sp = (o.storePresence ?? {}) as Record<string, unknown>;
-  const byCity = Array.isArray(sp.byCity)
-    ? (sp.byCity as unknown[]).map((r) => {
-        const row = (r ?? {}) as Record<string, unknown>;
-        return { city: str(row.city, ''), stores: num(row.stores) };
-      }).filter((r) => r.city)
-    : [];
+
+  const sources = [...new Set([...list(d.sources), ...grounded])];
+
   return {
-    companyOverview: str(o.companyOverview),
-    industry: str(o.industry),
-    sizeEstimate: str(o.sizeEstimate),
-    productsServices: arr(o.productsServices),
-    onlinePresence: { website: typeof presence.website === 'string' ? presence.website : undefined, socials: arr(presence.socials) },
-    storePresence: { totalCities: num(sp.totalCities), totalStores: num(sp.totalStores), byCity },
-    establishedYear: str(o.establishedYear, ''),
-    teamStrength: str(o.teamStrength, ''),
-    googleRating: str(o.googleRating, ''),
-    awards: arr(o.awards),
-    socialProfiles: Array.isArray(o.socialProfiles)
-      ? (o.socialProfiles as unknown[]).map((r) => {
-          const row = (r ?? {}) as Record<string, unknown>;
-          return { platform: str(row.platform, ''), url: typeof row.url === 'string' ? row.url : undefined, followers: typeof row.followers === 'string' ? row.followers : undefined };
-        }).filter((r) => r.platform)
-      : [],
-    importantFestivals: arr(o.importantFestivals),
-    recentSignals: arr(o.recentSignals),
-    likelyNeeds: arr(o.likelyNeeds),
-    talkingPoints: arr(o.talkingPoints),
-    suggestedScript: {
-      opening: str(script.opening, ''),
-      discoveryQuestions: arr(script.discoveryQuestions),
-      valuePitch: str(script.valuePitch, ''),
-      objectionHandling: arr(script.objectionHandling),
+    identity: {
+      confidence: (['high', 'medium', 'low', 'conflict'].includes(conf) ? conf : 'low') as KundliIdentity['confidence'],
+      reason: str(ident.reason, 'No identity assessment returned.'),
+      verifyBeforeCalling: list(ident.verifyBeforeCalling),
+      possibleMatches: Array.isArray(ident.possibleMatches)
+        ? (ident.possibleMatches as Record<string, unknown>[]).map((m) => ({
+            name: str(m?.name, ''), area: str(m?.area, ''), clue: str(m?.clue, ''), url: str(m?.url, ''),
+          })).filter((m) => m.name)
+        : [],
     },
-    hinglishScript: { opening: str(hing.opening, ''), valuePitch: str(hing.valuePitch, '') },
-    bestTimeOrChannel: str(o.bestTimeOrChannel, ''),
-    risksNotes: arr(o.risksNotes),
-    confidence: conf,
+    companyOverview: str(d.companyOverview, ''),
+    industry: str(d.industry),
+    businessType: str(d.businessType),
+    customerTypeServed: str(d.customerTypeServed),
+    brandLevel: str(d.brandLevel),
+    ownerDecisionMaker: str(d.ownerDecisionMaker),
+    sizeEstimate: str(d.sizeEstimate),
+    establishedYear: str(d.establishedYear, ''),
+    teamStrength: str(d.teamStrength, ''),
+    googleRating: str(d.googleRating, ''),
+    storePresence: {
+      totalCities: num(sp.totalCities),
+      totalStores: num(sp.totalStores),
+      byCity: Array.isArray(sp.byCity)
+        ? (sp.byCity as Record<string, unknown>[]).map((c) => ({ city: str(c?.city, ''), stores: num(c?.stores) })).filter((c) => c.city)
+        : [],
+    },
+    onlinePresence: { website: str(op.website, ''), socials: list(op.socials) },
+    socialProfiles: Array.isArray(d.socialProfiles)
+      ? (d.socialProfiles as Record<string, unknown>[]).map((s) => ({
+          platform: str(s?.platform, ''), url: str(s?.url, ''), followers: str(s?.followers, ''),
+        })).filter((s) => s.platform)
+      : [],
+    productsServices: list(d.productsServices),
+    designStyle: str(d.designStyle),
+    occasionFocus: str(d.occasionFocus),
+    customerSegment: str(d.customerSegment),
+    visibleProductFocus: str(d.visibleProductFocus),
+    differentiation: list(d.differentiation),
+    likelyNeeds: list(d.likelyNeeds),
+    talkingPoints: list(d.talkingPoints),
+    pitchAngle: {
+      bestProduct: str(pa.bestProduct, ''), whyItFits: str(pa.whyItFits, ''),
+      mainBenefit: str(pa.mainBenefit, ''), bestTiming: str(pa.bestTiming, ''),
+    },
+    suggestedScript: {
+      opening: str(sc.opening, ''), discoveryQuestions: list(sc.discoveryQuestions),
+      valuePitch: str(sc.valuePitch, ''), objectionHandling: list(sc.objectionHandling),
+    },
+    hinglishScript: { opening: str(hs.opening, ''), valuePitch: str(hs.valuePitch, '') },
+    whatNotToSay: list(d.whatNotToSay),
+    bestTimeOrChannel: str(d.bestTimeOrChannel, ''),
+    importantFestivals: list(d.importantFestivals),
+    awards: list(d.awards),
+    recentSignals: list(d.recentSignals),
+    risksNotes: list(d.risksNotes),
+    confidence: (['low', 'medium', 'high'].includes(String(d.confidence)) ? String(d.confidence) : 'low') as Kundli['confidence'],
     sources,
     generatedWith,
+    ...(identityOnly ? { identityOnly: true } : {}),
   };
 }
 
@@ -179,7 +299,7 @@ interface GeminiResponse {
   }>;
 }
 
-async function callGemini(prompt: string, key: string, useSearch: boolean): Promise<Kundli> {
+async function callGemini(prompt: string, key: string, useSearch: boolean, identityOnly: boolean): Promise<Kundli> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;
   const body: Record<string, unknown> = {
     contents: [{ parts: [{ text: prompt }] }],
@@ -191,11 +311,11 @@ async function callGemini(prompt: string, key: string, useSearch: boolean): Prom
   const json = (await res.json()) as GeminiResponse;
   const cand = json.candidates?.[0];
   const text = cand?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
-  const groundingSources = (cand?.groundingMetadata?.groundingChunks ?? []).map((c) => c.web?.uri ?? '').filter(Boolean);
-  return coerce(text, useSearch ? 'gemini+search' : 'gemini', groundingSources);
+  const grounded = (cand?.groundingMetadata?.groundingChunks ?? []).map((c) => c.web?.uri ?? '').filter(Boolean);
+  return coerce(text, useSearch ? `${GEMINI_MODEL}+search` : GEMINI_MODEL, grounded, identityOnly);
 }
 
-async function callOpenAI(prompt: string, key: string): Promise<Kundli> {
+async function callOpenAI(prompt: string, key: string, identityOnly: boolean): Promise<Kundli> {
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
@@ -206,19 +326,25 @@ async function callOpenAI(prompt: string, key: string): Promise<Kundli> {
   });
   if (!res.ok) throw new Error(`OpenAI failed (${res.status}): ${await res.text()}`);
   const json = await res.json();
-  return coerce(json?.choices?.[0]?.message?.content ?? '', 'openai', []);
+  return coerce(json?.choices?.[0]?.message?.content ?? '', OPENAI_MODEL, [], identityOnly);
 }
 
-/** Generate a pre-call dossier for a contact. Prefers Gemini + Google Search grounding. */
-export async function generateKundli(input: KundliInput): Promise<Kundli> {
-  const prompt = buildPrompt(input);
+/**
+ * Research a contact. `mode: 'identity'` runs only the cheap identification
+ * pass; 'full' runs the complete brief. Prefers Gemini with Google Search
+ * grounding, falls back to model knowledge, then to OpenAI.
+ */
+export async function generateKundli(input: KundliInput, mode: KundliMode = 'full'): Promise<Kundli> {
+  const identityOnly = mode === 'identity';
+  const prompt = identityOnly ? buildIdentityPrompt(input) : buildFullPrompt(input);
   const gem = process.env.GEMINI_API_KEY;
   const oai = process.env.OPENAI_API_KEY;
+
   if (gem) {
-    try { return await callGemini(prompt, gem, true); }         // grounded (live web)
-    catch { try { return await callGemini(prompt, gem, false); } // model knowledge
+    try { return await callGemini(prompt, gem, true, identityOnly); }        // grounded (live web)
+    catch { try { return await callGemini(prompt, gem, false, identityOnly); } // model knowledge only
     catch (e) { if (!oai) throw e; } }
   }
-  if (oai) return await callOpenAI(prompt, oai);
+  if (oai) return await callOpenAI(prompt, oai, identityOnly);
   throw new Error('No AI provider configured. Set GEMINI_API_KEY or OPENAI_API_KEY.');
 }

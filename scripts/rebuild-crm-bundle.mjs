@@ -42,7 +42,9 @@ for (let i = 1; i < parts.length; i += 2) {
 const listed = new Set();
 for (let i = 1; i < parts.length; i += 2) listed.add(parts[i].trim().replace(/\\/g, '/'));
 
-const allCss = execSync('git ls-files "crm/**/*.css"', { encoding: 'utf8' })
+// --others picks up stylesheets that have just been written and not yet
+// committed; without it a brand-new component ships with no styles at all.
+const allCss = execSync('git ls-files --cached --others --exclude-standard "crm/**/*.css"', { encoding: 'utf8' })
   .trim().split('\n').filter(Boolean).map((p) => p.replace(/\\/g, '/'));
 const added = allCss.filter((p) => !listed.has(p) && existsSync(p));
 for (const path of added) out.push(`/* ===== ${path} ===== */\n${readFileSync(path, 'utf8')}\n`);

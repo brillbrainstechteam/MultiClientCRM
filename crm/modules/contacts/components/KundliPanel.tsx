@@ -1,193 +1,318 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { Sparkles, RefreshCw, ExternalLink } from 'lucide-react';
-import { Badge, Button, type BadgeTone } from '@crm/design-system';
-
-interface Kundli {
-  companyOverview: string; industry: string; sizeEstimate: string;
-  productsServices: string[];
-  onlinePresence: { website?: string; socials?: string[] };
-  storePresence?: { totalCities: number | null; totalStores: number | null; byCity: { city: string; stores: number | null }[] };
-  establishedYear?: string; teamStrength?: string; googleRating?: string;
-  awards?: string[]; socialProfiles?: { platform: string; url?: string; followers?: string }[]; importantFestivals?: string[];
-  recentSignals: string[]; likelyNeeds: string[]; talkingPoints: string[];
-  suggestedScript: { opening: string; discoveryQuestions: string[]; valuePitch: string; objectionHandling: string[] };
-  hinglishScript?: { opening: string; valuePitch: string };
-  bestTimeOrChannel: string; risksNotes: string[];
-  confidence: 'low' | 'medium' | 'high'; sources: string[]; generatedWith: string;
-}
-
-const CONF_TONE: Record<string, BadgeTone> = { low: 'warning', medium: 'info', high: 'success' };
+import { useCallback, useEffect, useState } from 'react';
+import { AlertTriangle, BadgeCheck, Check, Copy, ExternalLink, Search, ShieldAlert, Sparkles } from 'lucide-react';
+import { Button } from '@crm/design-system';
+import './KundliPanel.css';
 
 /**
- * Pre-call brief ("Kundli") — AI-researched company dossier + call script, so
- * the rep is prepared before dialing. Fetches the cached dossier and offers a
- * generate/refresh action that researches the company online.
+ * Pre-call brief ("Kundli").
+ *
+ * Identity leads, because a rep must know whether this is even the right shop
+ * before reading anything else — a confident-looking brief about the wrong
+ * "Krishna Jewellers" is worse than none. Research runs in two stages so an
+ * uncertain match costs one search instead of five.
  */
+
+interface Identity {
+  confidence: 'high' | 'medium' | 'low' | 'conflict';
+  reason: string;
+  verifyBeforeCalling: string[];
+  possibleMatches: { name: string; area?: string; clue?: string; url?: string }[];
+}
+
+interface Kundli {
+  identity?: Identity;
+  companyOverview?: string;
+  industry?: string;
+  businessType?: string;
+  customerTypeServed?: string;
+  brandLevel?: string;
+  ownerDecisionMaker?: string;
+  establishedYear?: string;
+  teamStrength?: string;
+  googleRating?: string;
+  storePresence?: { totalCities: number | null; totalStores: number | null; byCity: { city: string; stores: number | null }[] };
+  onlinePresence?: { website?: string; socials?: string[] };
+  socialProfiles?: { platform: string; url?: string; followers?: string }[];
+  productsServices?: string[];
+  designStyle?: string;
+  occasionFocus?: string;
+  customerSegment?: string;
+  visibleProductFocus?: string;
+  differentiation?: string[];
+  likelyNeeds?: string[];
+  talkingPoints?: string[];
+  pitchAngle?: { bestProduct: string; whyItFits: string; mainBenefit: string; bestTiming: string };
+  suggestedScript?: { opening: string; discoveryQuestions: string[]; valuePitch: string; objectionHandling: string[] };
+  hinglishScript?: { opening: string; valuePitch: string };
+  whatNotToSay?: string[];
+  bestTimeOrChannel?: string;
+  importantFestivals?: string[];
+  awards?: string[];
+  recentSignals?: string[];
+  risksNotes?: string[];
+  sources?: string[];
+  generatedWith?: string;
+  identityOnly?: boolean;
+}
+
+const UNKNOWN = 'Not Found';
+const known = (v?: string) => Boolean(v && v !== UNKNOWN && v !== 'Needs Manual Verification');
+
+const CONFIDENCE: Record<Identity['confidence'], { label: string; tone: string; icon: typeof BadgeCheck }> = {
+  high: { label: 'Identity confirmed', tone: 'good', icon: BadgeCheck },
+  medium: { label: 'Probably the right business', tone: 'warn', icon: AlertTriangle },
+  low: { label: 'Not confirmed — verify on the call', tone: 'bad', icon: ShieldAlert },
+  conflict: { label: 'Several businesses match this name', tone: 'bad', icon: ShieldAlert },
+};
+
 export function KundliPanel({ contactId }: { contactId: string }) {
   const [kundli, setKundli] = useState<Kundli | null>(null);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<'identity' | 'full' | null>(null);
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState('');
 
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/crm/contacts/${contactId}/kundli`, { credentials: 'same-origin' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (!cancelled && d) { setKundli(d.kundli ?? null); setGeneratedAt(d.generatedAt ?? null); } })
-      .catch(() => {})
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .catch(() => {});
     return () => { cancelled = true; };
   }, [contactId]);
 
-  const generate = async () => {
-    setBusy(true); setError(null);
+  const run = useCallback(async (mode: 'identity' | 'full') => {
+    setBusy(mode); setError('');
     try {
-      const res = await fetch(`/api/crm/contacts/${contactId}/kundli`, { method: 'POST', credentials: 'same-origin' });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) { setError(String(d.error ?? 'Could not generate the brief.')); return; }
+      const res = await fetch(`/api/crm/contacts/${contactId}/kundli`, {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setError(d.error ?? 'Could not research this contact.'); return; }
       setKundli(d.kundli ?? null); setGeneratedAt(d.generatedAt ?? null);
-    } catch {
-      setError('Could not generate the brief.');
-    } finally {
-      setBusy(false);
-    }
-  };
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not research this contact.');
+    } finally { setBusy(null); }
+  }, [contactId]);
 
-  if (loading) return <p style={sx.muted}>Loading…</p>;
+  const copy = async (key: string, text: string) => {
+    try { await navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(''), 1600); } catch { /* ignore */ }
+  };
 
   if (!kundli) {
     return (
-      <div style={sx.empty}>
-        <Sparkles size={28} style={{ color: 'var(--crm-text-brand, #2f6bff)' }} />
-        <p style={sx.emptyTitle}>No pre-call brief yet</p>
-        <p style={sx.muted}>Research this company online and generate a call-ready dossier with talking points and a script.</p>
-        <Button variant="primary" iconLeft={<Sparkles size={16} />} disabled={busy} onClick={generate}>
-          {busy ? 'Researching…' : 'Generate pre-call brief'}
+      <div className="kp kp--empty">
+        <Sparkles size={26} />
+        <h3>No pre-call brief yet</h3>
+        <p>
+          We check who this business is first — one quick search. If it looks like the right shop,
+          you can run the full brief.
+        </p>
+        {error ? <p className="kp-error">{error}</p> : null}
+        <Button variant="primary" iconLeft={<Search />} disabled={busy !== null} onClick={() => void run('identity')}>
+          {busy === 'identity' ? 'Checking…' : 'Check who this is'}
         </Button>
-        {error ? <p style={sx.error}>{error}</p> : null}
       </div>
     );
   }
 
-  const s = kundli.suggestedScript;
+  const id = kundli.identity;
+  const conf = CONFIDENCE[id?.confidence ?? 'low'];
+  const ConfIcon = conf.icon;
+  const sure = id?.confidence === 'high' || id?.confidence === 'medium';
+  const script = kundli.suggestedScript;
+
   return (
-    <div style={sx.wrap}>
-      <div style={sx.head}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <Badge tone={CONF_TONE[kundli.confidence] ?? 'neutral'}>Confidence: {kundli.confidence}</Badge>
-          <span style={sx.muted}>
-            {generatedAt ? `Generated ${new Date(generatedAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}
-            {kundli.generatedWith ? ` · ${kundli.generatedWith}` : ''}
-          </span>
+    <div className="kp">
+      {/* Verification first — nothing below matters if this is the wrong shop. */}
+      <section className={`kp-verify kp-verify--${conf.tone}`}>
+        <div className="kp-verify__head">
+          <ConfIcon size={18} />
+          <strong>{conf.label}</strong>
         </div>
-        <Button variant="secondary" size="sm" iconLeft={<RefreshCw size={14} />} disabled={busy} onClick={generate}>
-          {busy ? 'Refreshing…' : 'Refresh'}
+        {id?.reason ? <p>{id.reason}</p> : null}
+        {id?.verifyBeforeCalling?.length ? (
+          <>
+            <span className="kp-label">Confirm on the call</span>
+            <ul>{id.verifyBeforeCalling.map((v) => <li key={v}>{v}</li>)}</ul>
+          </>
+        ) : null}
+        {id?.possibleMatches?.length ? (
+          <>
+            <span className="kp-label">Could also be</span>
+            <ul>
+              {id.possibleMatches.map((m) => (
+                <li key={m.name}>
+                  <strong>{m.name}</strong>{m.area ? ` · ${m.area}` : ''}{m.clue ? ` — ${m.clue}` : ''}
+                  {m.url ? <> · <a href={m.url} target="_blank" rel="noopener noreferrer">source</a></> : null}
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : null}
+      </section>
+
+      {error ? <p className="kp-error">{error}</p> : null}
+
+      {kundli.identityOnly ? (
+        <div className="kp-next">
+          <p>
+            {sure
+              ? 'Looks like the right business. Research the full brief when you are ready to call.'
+              : 'Identity is not certain. Confirm the business first, or research anyway and treat the details with caution.'}
+          </p>
+          <Button variant="primary" iconLeft={<Sparkles />} disabled={busy !== null} onClick={() => void run('full')}>
+            {busy === 'full' ? 'Researching…' : 'Research full brief'}
+          </Button>
+        </div>
+      ) : null}
+
+      {!kundli.identityOnly ? (
+        <>
+          {kundli.companyOverview ? <p className="kp-overview">{kundli.companyOverview}</p> : null}
+
+          <div className="kp-chips">
+            <Chip label="Type" value={kundli.businessType} />
+            <Chip label="Sells to" value={kundli.customerTypeServed} />
+            <Chip label="Level" value={kundli.brandLevel} />
+            <Chip label="Stores" value={kundli.storePresence?.totalStores != null ? String(kundli.storePresence.totalStores) : undefined} />
+            <Chip label="Cities" value={kundli.storePresence?.totalCities != null ? String(kundli.storePresence.totalCities) : undefined} />
+            <Chip label="Rating" value={kundli.googleRating} />
+            <Chip label="Since" value={kundli.establishedYear} />
+            <Chip label="Team" value={kundli.teamStrength} />
+            <Chip label="Decision maker" value={kundli.ownerDecisionMaker} />
+          </div>
+
+          {kundli.storePresence?.byCity?.length ? (
+            <Section title="Store presence">
+              <ul className="kp-bullets">
+                {kundli.storePresence.byCity.map((c) => (
+                  <li key={c.city}>{c.city}{c.stores != null ? ` — ${c.stores} store${c.stores === 1 ? '' : 's'}` : ''}</li>
+                ))}
+              </ul>
+            </Section>
+          ) : null}
+
+          <Section title="What they sell">
+            <div className="kp-grid">
+              <Meta label="Main products" value={kundli.productsServices?.join(', ')} />
+              <Meta label="Design style" value={kundli.designStyle} />
+              <Meta label="Occasion focus" value={kundli.occasionFocus} />
+              <Meta label="Customer segment" value={kundli.customerSegment} />
+              <Meta label="Visible focus" value={kundli.visibleProductFocus} />
+            </div>
+          </Section>
+
+          {kundli.differentiation?.length ? (
+            <Section title="Strengths">
+              <ul className="kp-bullets">{kundli.differentiation.map((d) => <li key={d}>{d}</li>)}</ul>
+            </Section>
+          ) : null}
+
+          {kundli.pitchAngle && known(kundli.pitchAngle.bestProduct) ? (
+            <Section title="Best pitch angle">
+              <div className="kp-pitch">
+                <Meta label="Pitch" value={kundli.pitchAngle.bestProduct} />
+                <Meta label="Why it fits" value={kundli.pitchAngle.whyItFits} />
+                <Meta label="Main benefit" value={kundli.pitchAngle.mainBenefit} />
+                <Meta label="Best timing" value={kundli.pitchAngle.bestTiming} />
+              </div>
+            </Section>
+          ) : null}
+
+          {script?.opening ? (
+            <Section title="Say this">
+              <blockquote className="kp-say">
+                {script.opening}
+                <button className="kp-copy" onClick={() => void copy('opening', script.opening)}>
+                  {copied === 'opening' ? <Check size={13} /> : <Copy size={13} />} {copied === 'opening' ? 'Copied' : 'Copy'}
+                </button>
+              </blockquote>
+              {kundli.hinglishScript?.opening ? (
+                <blockquote className="kp-say kp-say--alt">
+                  {kundli.hinglishScript.opening}
+                  <button className="kp-copy" onClick={() => void copy('hinglish', kundli.hinglishScript!.opening)}>
+                    {copied === 'hinglish' ? <Check size={13} /> : <Copy size={13} />} {copied === 'hinglish' ? 'Copied' : 'Copy'}
+                  </button>
+                </blockquote>
+              ) : null}
+            </Section>
+          ) : null}
+
+          {script?.discoveryQuestions?.length ? (
+            <Section title="Ask these">
+              <ol className="kp-questions">{script.discoveryQuestions.map((q) => <li key={q}>{q}</li>)}</ol>
+            </Section>
+          ) : null}
+
+          {kundli.talkingPoints?.length ? (
+            <Section title="Talking points">
+              <ul className="kp-bullets">{kundli.talkingPoints.map((t) => <li key={t}>{t}</li>)}</ul>
+            </Section>
+          ) : null}
+
+          {kundli.whatNotToSay?.length ? (
+            <Section title="Do not say">
+              <ul className="kp-bullets kp-bullets--caution">{kundli.whatNotToSay.map((w) => <li key={w}>{w}</li>)}</ul>
+            </Section>
+          ) : null}
+
+          {kundli.importantFestivals?.length || kundli.recentSignals?.length ? (
+            <Section title="Timing & signals">
+              {kundli.importantFestivals?.length ? <Meta label="Festivals" value={kundli.importantFestivals.join(', ')} /> : null}
+              {kundli.bestTimeOrChannel ? <Meta label="Best time / channel" value={kundli.bestTimeOrChannel} /> : null}
+              {kundli.recentSignals?.length ? (
+                <ul className="kp-bullets">{kundli.recentSignals.map((s) => <li key={s}>{s}</li>)}</ul>
+              ) : null}
+            </Section>
+          ) : null}
+
+          {kundli.sources?.length ? (
+            <Section title="Sources">
+              <ul className="kp-sources">
+                {kundli.sources.map((s) => (
+                  <li key={s}>
+                    <a href={s} target="_blank" rel="noopener noreferrer">{hostOf(s)} <ExternalLink size={11} /></a>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          ) : null}
+        </>
+      ) : null}
+
+      <div className="kp-foot">
+        <span>
+          {generatedAt ? `Researched ${new Date(generatedAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}
+          {kundli.generatedWith ? ` · ${kundli.generatedWith}` : ''}
+        </span>
+        <Button variant="secondary" size="sm" disabled={busy !== null} onClick={() => void run(kundli.identityOnly ? 'identity' : 'full')}>
+          {busy ? 'Working…' : 'Refresh'}
         </Button>
       </div>
-      {error ? <p style={sx.error}>{error}</p> : null}
-
-      <Section title="Company overview"><p style={sx.p}>{kundli.companyOverview}</p></Section>
-      <div style={sx.metaRow}>
-        <Meta label="Industry" value={kundli.industry} />
-        <Meta label="Size" value={kundli.sizeEstimate} />
-        {kundli.establishedYear && kundli.establishedYear !== 'unknown' ? <Meta label="Established" value={kundli.establishedYear} /> : null}
-        {kundli.teamStrength && kundli.teamStrength !== 'unknown' ? <Meta label="Team strength" value={kundli.teamStrength} /> : null}
-        {kundli.googleRating && kundli.googleRating !== 'unknown' ? <Meta label="Google rating" value={kundli.googleRating} /> : null}
-        <Meta label="Best time / channel" value={kundli.bestTimeOrChannel || '—'} />
-        {kundli.onlinePresence.website ? <Meta label="Website" value={kundli.onlinePresence.website} link /> : null}
-      </div>
-
-      {kundli.socialProfiles && kundli.socialProfiles.length ? (
-        <Section title="Social presence">
-          <ul style={sx.ul}>{kundli.socialProfiles.map((s2, i) => <li key={i}>{s2.platform}{s2.followers ? ` — ${s2.followers} followers` : ''}{s2.url ? ` (${s2.url})` : ''}</li>)}</ul>
-        </Section>
-      ) : null}
-
-      {kundli.importantFestivals && kundli.importantFestivals.length ? <ListSection title="Important festivals & occasions" items={kundli.importantFestivals} /> : null}
-      {kundli.awards && kundli.awards.length ? <ListSection title="Awards & recognitions" items={kundli.awards} /> : null}
-
-      {kundli.storePresence && (kundli.storePresence.totalStores !== null || kundli.storePresence.byCity.length > 0) ? (
-        <Section title="Store presence">
-          <div style={sx.metaRow}>
-            <Meta label="Cities" value={kundli.storePresence.totalCities !== null ? String(kundli.storePresence.totalCities) : (kundli.storePresence.byCity.length ? String(kundli.storePresence.byCity.length) : '—')} />
-            <Meta label="Stores" value={kundli.storePresence.totalStores !== null ? String(kundli.storePresence.totalStores) : '—'} />
-          </div>
-          {kundli.storePresence.byCity.length ? (
-            <ul style={sx.ul}>{kundli.storePresence.byCity.map((c, i) => <li key={i}>{c.city}{c.stores !== null ? ` — ${c.stores} store${c.stores === 1 ? '' : 's'}` : ''}</li>)}</ul>
-          ) : null}
-        </Section>
-      ) : null}
-
-      <ListSection title="Products / services" items={kundli.productsServices} />
-      <ListSection title="Recent signals" items={kundli.recentSignals} />
-      <ListSection title="Likely needs" items={kundli.likelyNeeds} />
-      <ListSection title="Talking points" items={kundli.talkingPoints} />
-
-      <Section title="Suggested call script">
-        {s.opening ? <p style={sx.p}><strong>Opening: </strong>{s.opening}</p> : null}
-        {s.discoveryQuestions.length ? (<><p style={sx.subLabel}>Discovery questions</p><ul style={sx.ul}>{s.discoveryQuestions.map((q, i) => <li key={i}>{q}</li>)}</ul></>) : null}
-        {s.valuePitch ? <p style={sx.p}><strong>Value pitch: </strong>{s.valuePitch}</p> : null}
-        {s.objectionHandling.length ? (<><p style={sx.subLabel}>Objection handling</p><ul style={sx.ul}>{s.objectionHandling.map((q, i) => <li key={i}>{q}</li>)}</ul></>) : null}
-      </Section>
-
-      {kundli.hinglishScript && (kundli.hinglishScript.opening || kundli.hinglishScript.valuePitch) ? (
-        <Section title="Hinglish script">
-          {kundli.hinglishScript.opening ? <p style={sx.p}><strong>Opening: </strong>{kundli.hinglishScript.opening}</p> : null}
-          {kundli.hinglishScript.valuePitch ? <p style={sx.p}><strong>Value pitch: </strong>{kundli.hinglishScript.valuePitch}</p> : null}
-        </Section>
-      ) : null}
-
-      <ListSection title="Risks / notes" items={kundli.risksNotes} />
-
-      {kundli.sources.length ? (
-        <Section title="Sources">
-          <ul style={sx.ul}>
-            {kundli.sources.map((u, i) => (
-              <li key={i}>{/^https?:\/\//.test(u)
-                ? <a href={u} target="_blank" rel="noopener noreferrer" style={sx.link}>{u} <ExternalLink size={11} /></a>
-                : u}</li>
-            ))}
-          </ul>
-        </Section>
-      ) : null}
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return <section style={sx.section}><h3 style={sx.h3}>{title}</h3>{children}</section>;
+function hostOf(url: string): string {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; }
 }
-function ListSection({ title, items }: { title: string; items: string[] }) {
-  if (!items.length) return null;
-  return <Section title={title}><ul style={sx.ul}>{items.map((it, i) => <li key={i}>{it}</li>)}</ul></Section>;
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="kp-section"><h3>{title}</h3>{children}</section>;
 }
-function Meta({ label, value, link }: { label: string; value: string; link?: boolean }) {
+
+function Chip({ label, value }: { label: string; value?: string }) {
+  if (!known(value)) return null;
+  return <span className="kp-chip"><em>{label}</em>{value}</span>;
+}
+
+function Meta({ label, value }: { label: string; value?: string }) {
   return (
-    <div style={sx.meta}>
-      <span style={sx.metaLabel}>{label}</span>
-      {link && /^https?:\/\//.test(value)
-        ? <a href={value} target="_blank" rel="noopener noreferrer" style={sx.link}>{value}</a>
-        : <span style={sx.metaValue}>{value}</span>}
+    <div className="kp-meta">
+      <span className="kp-label">{label}</span>
+      <span className={known(value) ? '' : 'kp-unknown'}>{known(value) ? value : UNKNOWN}</span>
     </div>
   );
 }
-
-const sx: Record<string, React.CSSProperties> = {
-  wrap: { display: 'flex', flexDirection: 'column', gap: 14 },
-  head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' },
-  section: { display: 'flex', flexDirection: 'column', gap: 6 },
-  h3: { fontSize: 13, fontWeight: 600, color: 'var(--crm-text-title, #1b2733)', margin: 0, textTransform: 'uppercase', letterSpacing: 0.3 },
-  subLabel: { fontSize: 12, fontWeight: 600, color: 'var(--crm-text-muted, #6b7a88)', margin: '6px 0 2px' },
-  p: { margin: 0, fontSize: 14, lineHeight: 1.5, color: 'var(--crm-text-primary, #2b3948)' },
-  ul: { margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4, fontSize: 14, lineHeight: 1.5, color: 'var(--crm-text-primary, #2b3948)' },
-  metaRow: { display: 'flex', flexWrap: 'wrap', gap: 16 },
-  meta: { display: 'flex', flexDirection: 'column' },
-  metaLabel: { fontSize: 11, color: 'var(--crm-text-muted, #6b7a88)', textTransform: 'uppercase', letterSpacing: 0.3 },
-  metaValue: { fontSize: 14, color: 'var(--crm-text-primary, #2b3948)' },
-  muted: { fontSize: 12, color: 'var(--crm-text-muted, #6b7a88)', margin: 0 },
-  empty: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8, padding: 20, borderRadius: 12, background: 'var(--crm-bg-subtle, #f6f8fa)', border: '1px dashed var(--crm-border, #d7dee6)', maxWidth: 520 },
-  emptyTitle: { fontWeight: 600, margin: 0, color: 'var(--crm-text-title, #1b2733)' },
-  error: { fontSize: 13, color: 'var(--crm-text-danger, #c0392b)', margin: 0 },
-  link: { display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--crm-text-brand, #2f6bff)', textDecoration: 'none' },
-};
