@@ -88,7 +88,10 @@ export default function ImportsHubScreen() {
     if (!file) return;
     setImporting(true);
     try {
-      const rows = parseCsv(await file.text());
+      // This path has no mapping step, so it leans on the importer's own header
+      // aliases — which match lowercase keys.
+      const rows = parseCsv(await file.text()).map((row) =>
+        Object.fromEntries(Object.entries(row).map(([k, v]) => [k.toLowerCase(), v])));
       if (rows.length === 0) { setResult('No valid rows found in that file.'); return; }
       const r = await importContacts(rows, 'skip', { source: 'CSV upload', fileName: file.name });
       setResult(`Imported ${r.created} new · ${r.updated} updated · ${r.skipped} skipped.`);

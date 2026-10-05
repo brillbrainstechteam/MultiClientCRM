@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import type { ImportMethod } from '@crm/mock-data';
+import { isScientificNotation, normMobile } from '@/lib/crm/mobile';
 
 /**
  * State for one run of the Import Wizard.
@@ -63,6 +64,9 @@ export function useImportJob(): ImportJob {
 /* ---- Field mapping ------------------------------------------------------ */
 
 /** Fields the importer understands. Starred ones are required for a row to import. */
+/** Sentinel mapping value: keep the column under the contact's customFields. */
+export const CUSTOM_FIELD = '__custom';
+
 export const TARGET_FIELDS: { value: string; label: string; required?: boolean }[] = [
   { value: 'name', label: 'Name *', required: true },
   { value: 'mobile', label: 'Mobile *', required: true },
@@ -87,6 +91,7 @@ export const TARGET_FIELDS: { value: string; label: string; required?: boolean }
   { value: 'companyAnniversary', label: 'Company anniversary' },
   { value: 'nextFollowUpAt', label: 'Next follow-up' },
   { value: 'customerType', label: 'Customer type (b2b/b2c)' },
+  { value: CUSTOM_FIELD, label: 'Keep as custom field' },
 ];
 
 const key = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -119,27 +124,76 @@ const ALIASES: Record<string, string> = {
   customertype: 'customerType',
 };
 
-/** Best-guess mapping for a file's headers; unknown columns default to ignored. */
-export function guessMapping(headers: string[]): Record<string, string> {
+/* ---- Detecting a column from its data ----------------------------------- */
+
+// 15 chars: 2 state digits + the 10-char PAN + entity code + 'Z' + checksum.
+const GSTIN = /^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/i;
+const PINCODE = /^[1-9]\d{5}$/;
+
+/**
+ * Work out what a column holds by looking at its values, for when the header
+ * is unrecognised, missing, or in another language ("Column1", "मोबाइल").
+ * Deterministic and free — no AI call. A column must be mostly consistent
+ * before we claim it, so a stray value cannot mislabel a whole column.
+ */
+export function sniffColumn(values: string[]): string {
+  const vals = values.map((v) => (v ?? '').trim()).filter(Boolean).slice(0, 50);
+  if (vals.length < 2) return '';
+  const share = (test: (v: string) => boolean) => vals.filter(test).length / vals.length;
+
+  // Phone first: the most valuable column to get right.
+  if (share((v) => Boolean(normMobile(v)) || isScientificNotation(v)) >= 0.8) return 'mobile';
+  if (share((v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) >= 0.8) return 'email';
+  if (share((v) => GSTIN.test(v)) >= 0.8) return 'gstin';
+  if (share((v) => PINCODE.test(v)) >= 0.8) return 'pincode';
+  if (share((v) => /^(https?:\/\/|www\.)/i.test(v)) >= 0.8) return 'website';
+  return '';
+}
+
+/* ---- Field mapping ------------------------------------------------------ */
+
+/**
+ * Best-guess mapping: match the header first, then fall back to reading the
+ * column's values. Anything still unknown is kept as a custom field rather than
+ * dropped — a client's own columns are usually the ones they care about.
+ */
+export function guessMapping(headers: string[], rows: Record<string, string>[] = []): Record<string, string> {
   const used = new Set<string>();
   const out: Record<string, string> = {};
+
+  // Pass 1: headers we recognise outright.
   for (const h of headers) {
     const guess = ALIASES[key(h)];
     if (guess && !used.has(guess)) { out[h] = guess; used.add(guess); }
     else out[h] = '';
   }
+
+  // Pass 2: unclaimed columns judged by their contents.
+  for (const h of headers) {
+    if (out[h]) continue;
+    const sniffed = sniffColumn(rows.map((r) => r[h] ?? ''));
+    if (sniffed && !used.has(sniffed)) { out[h] = sniffed; used.add(sniffed); }
+  }
+
+  // Pass 3: keep the rest, rather than silently discarding the client's data.
+  for (const h of headers) if (!out[h]) out[h] = CUSTOM_FIELD;
+
   return out;
 }
 
 /** Apply the mapping, producing rows keyed by canonical field names. */
-export function mappedRows(j: ImportJob): Record<string, string>[] {
+export function mappedRows(j: ImportJob): Record<string, unknown>[] {
   const pairs = Object.entries(j.mapping).filter(([, field]) => field);
   return j.rows.map((row) => {
-    const out: Record<string, string> = {};
+    const out: Record<string, unknown> = {};
+    const custom: Record<string, string> = {};
     for (const [header, field] of pairs) {
       const v = (row[header] ?? '').trim();
-      if (v) out[field] = v;
+      if (!v) continue;
+      if (field === CUSTOM_FIELD) custom[header] = v;
+      else out[field] = v;
     }
+    if (Object.keys(custom).length) out.customFields = custom;
     return out;
   });
 }
@@ -149,21 +203,31 @@ export interface RowIssues {
   importable: number;
   missingName: number;
   missingMobile: number;
+  mangledMobile: number;
   duplicateInFile: number;
 }
 
-/** What the importer will do with these rows — mirrors its own skip rules. */
-export function validateRows(rows: Record<string, string>[]): RowIssues {
+/**
+ * What the importer will do with these rows — mirrors its own skip rules, using
+ * the same normaliser, so the preview cannot promise more than the server does.
+ */
+export function validateRows(rows: Record<string, unknown>[]): RowIssues {
   const seen = new Set<string>();
-  let missingName = 0, missingMobile = 0, duplicateInFile = 0, importable = 0;
+  let missingName = 0, missingMobile = 0, mangledMobile = 0, duplicateInFile = 0, importable = 0;
   for (const r of rows) {
-    const name = (r.name ?? '').trim();
-    const mobile = (r.mobile ?? '').replace(/\D/g, '');
+    const name = String(r.name ?? '').trim();
+    const raw = String(r.mobile ?? '').trim();
+    const mobile = normMobile(raw);
     if (!name) { missingName++; continue; }
-    if (!mobile) { missingMobile++; continue; }
+    if (!mobile) {
+      // Separated out because the fix differs: re-export the column as Text.
+      if (isScientificNotation(raw)) mangledMobile++;
+      else missingMobile++;
+      continue;
+    }
     if (seen.has(mobile)) { duplicateInFile++; continue; }
     seen.add(mobile);
     importable++;
   }
-  return { total: rows.length, importable, missingName, missingMobile, duplicateInFile };
+  return { total: rows.length, importable, missingName, missingMobile, mangledMobile, duplicateInFile };
 }

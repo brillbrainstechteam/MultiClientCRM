@@ -66,8 +66,13 @@ export function buildTemplateCsv(): string {
 /** Excel-openable HTML table (application/vnd.ms-excel). */
 export function buildTemplateExcelHtml(): string {
   const head = headerLabels().map((h) => `<th>${h}</th>`).join('');
+  // Excel reformats long digit strings as numbers — a mobile becomes 9.8E+09
+  // and its real digits are lost for good. mso-number-format forces these
+  // columns to Text so the file survives a round-trip through Excel.
+  const TEXT_COLUMNS = new Set(['mobile', 'pincode', 'gstin', 'pan', 'clientCode']);
+  const textCol = templateFields.map((f) => TEXT_COLUMNS.has(f.key));
   const body = SAMPLE_ROWS.map(
-    (r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`,
+    (r) => `<tr>${r.map((c, i) => `<td${textCol[i] ? ` style="mso-number-format:'\@'"` : ''}>${c}</td>`).join('')}</tr>`,
   ).join('');
   return `<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body><table border="1"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></body></html>`;
 }

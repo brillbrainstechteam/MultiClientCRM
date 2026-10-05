@@ -473,6 +473,9 @@ model CrmContact {
 
   // Kundli: AI-generated pre-call dossier (company research + call scripts),
   // cached so it is ready before calling. Regenerable.
+  /// Columns from the client's own sheet that map to no CRM field. Kept so an
+  /// import never silently discards data the business cares about.
+  customFields             Json?
   kundli                   Json?
   kundliGeneratedAt        DateTime?
 

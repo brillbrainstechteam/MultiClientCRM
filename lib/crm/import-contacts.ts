@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { normMobile } from './mobile';
 import { ensureZones, matchZone } from '@/lib/crm/zone-routing';
 
 export type ImportRow = Record<string, unknown>;
@@ -9,12 +10,7 @@ export interface ImportResult {
   skipped: number;
 }
 
-/** Normalise a mobile to E.164, assuming +91 when no country code is present. */
-export const normMobile = (m: string): string => {
-  const t = String(m ?? '').trim();
-  if (!t) return '';
-  return t.startsWith('+') ? t : `+91${t.replace(/\D/g, '')}`;
-};
+
 
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : v == null ? '' : String(v));
 
@@ -80,6 +76,10 @@ export async function importContactRows(
       primaryWhatsAppNumberId: str(r.primaryWhatsAppNumberId),
       createdSource: str(r.importSource) || src,
       tags: str(r.tags) ? String(r.tags).split(/[;|]/).map((t) => t.trim()).filter(Boolean) : [],
+      // The client's own columns, kept verbatim rather than dropped.
+      ...(r.customFields && typeof r.customFields === 'object' && Object.keys(r.customFields as object).length
+        ? { customFields: r.customFields as object }
+        : {}),
       // Optional enrichment — only set when the row provides it, so schema
       // defaults (customerType 'b2b') are preserved for plain CSV imports.
       ...(ct === 'b2b' || ct === 'b2c' ? { customerType: ct } : {}),

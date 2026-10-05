@@ -149,7 +149,10 @@ export function parseCsv(text: string): Array<Record<string, string>> {
   if (field.length || row.length) { row.push(field); rows.push(row); }
   const nonEmpty = rows.filter((r) => r.some((x) => x.trim() !== ''));
   if (nonEmpty.length < 2) return [];
-  const headers = nonEmpty[0].map((h) => h.trim().toLowerCase());
+  // Headers keep their original text: the import wizard shows them to the user,
+  // and an unmapped column is stored as a custom field under the client's own
+  // name. A leading BOM (Excel writes one) is dropped so the first header is clean.
+  const headers = nonEmpty[0].map((h) => h.trim().replace(/^﻿/, ''));
   return nonEmpty.slice(1).map((r) => {
     const o: Record<string, string> = {};
     headers.forEach((h, idx) => { o[h] = (r[idx] ?? '').trim(); });

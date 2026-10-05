@@ -5,7 +5,7 @@ import { Button } from '@crm/design-system';
 import { parseCsv, importContacts } from '@crm/app/crm-data';
 import { parseVcf } from '../vcf';
 import {
-  TARGET_FIELDS, guessMapping, mappedRows, setJob, validateRows,
+  CUSTOM_FIELD, TARGET_FIELDS, guessMapping, mappedRows, setJob, validateRows,
   type ImportJob,
 } from './import-job-store';
 import './wizard-steps.css';
@@ -59,14 +59,14 @@ export function SourcePick({ job }: { job: ImportJob }) {
           email: c.email ?? '', city: c.city ?? '',
         }));
         const headers = ['name', 'mobile', 'company', 'email', 'city'];
-        setJob({ fileName: file.name, headers, rows, mapping: guessMapping(headers), busy: false });
+        setJob({ fileName: file.name, headers, rows, mapping: guessMapping(headers, rows), busy: false });
         return;
       }
 
       const rows = parseCsv(text);
       if (!rows.length) throw new Error('That CSV has no data rows, or no header row.');
       const headers = Object.keys(rows[0]);
-      setJob({ fileName: file.name, headers, rows, mapping: guessMapping(headers), busy: false });
+      setJob({ fileName: file.name, headers, rows, mapping: guessMapping(headers, rows), busy: false });
     } catch (e) {
       setJob({
         busy: false, rows: [], headers: [], fileName: '',
@@ -154,7 +154,7 @@ export function MapFields({ job }: { job: ImportJob }) {
 export function Validate({ job }: { job: ImportJob }) {
   if (!job.rows.length) return <NeedsFile />;
   const issues = validateRows(mappedRows(job));
-  const problems = issues.missingName + issues.missingMobile + issues.duplicateInFile;
+  const problems = issues.missingName + issues.missingMobile + issues.mangledMobile + issues.duplicateInFile;
 
   return (
     <div className="iw">
@@ -168,6 +168,13 @@ export function Validate({ job }: { job: ImportJob }) {
         <ul className="iw__issues">
           {issues.missingName ? <li>{issues.missingName} row(s) have no <strong>Name</strong></li> : null}
           {issues.missingMobile ? <li>{issues.missingMobile} row(s) have no <strong>Mobile</strong></li> : null}
+          {issues.mangledMobile ? (
+            <li>
+              <strong>{issues.mangledMobile} mobile number(s) were damaged by Excel</strong> (saved as 9.8E+09).
+              The real digits are gone, so these cannot be imported — in Excel, format that column as
+              <em> Text</em>, re-enter the numbers and export again.
+            </li>
+          ) : null}
           {issues.duplicateInFile ? <li>{issues.duplicateInFile} row(s) repeat a mobile from earlier in the file</li> : null}
         </ul>
       ) : (
@@ -185,7 +192,9 @@ export function Validate({ job }: { job: ImportJob }) {
 export function Preview({ job }: { job: ImportJob }) {
   if (!job.rows.length) return <NeedsFile />;
   const rows = mappedRows(job);
-  const fields = [...new Set(rows.flatMap((r) => Object.keys(r)))];
+  // customFields is an object; it gets its own summary rather than a column.
+  const fields = [...new Set(rows.flatMap((r) => Object.keys(r)))].filter((f) => f !== 'customFields');
+  const customCols = Object.entries(job.mapping).filter(([, v]) => v === CUSTOM_FIELD).map(([h]) => h);
   const sample = rows.slice(0, 10);
 
   return (
@@ -196,10 +205,17 @@ export function Preview({ job }: { job: ImportJob }) {
         <table className="iw__preview">
           <thead><tr>{fields.map((f) => <th key={f}>{f}</th>)}</tr></thead>
           <tbody>
-            {sample.map((r, i) => <tr key={i}>{fields.map((f) => <td key={f}>{r[f] ?? ''}</td>)}</tr>)}
+            {sample.map((r, i) => <tr key={i}>{fields.map((f) => <td key={f}>{String(r[f] ?? '')}</td>)}</tr>)}
           </tbody>
         </table>
       </div>
+
+      {customCols.length ? (
+        <p className="iw__sub">
+          Keeping {customCols.length} custom column{customCols.length === 1 ? '' : 's'} on each contact:{' '}
+          <strong>{customCols.join(', ')}</strong>
+        </p>
+      ) : null}
 
       <fieldset className="iw__dupes">
         <legend>When a mobile already exists in your CRM</legend>

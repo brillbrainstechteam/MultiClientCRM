@@ -16,7 +16,9 @@ import {
   validateRows,
   type ImportJob,
 } from '../crm/modules/contacts/imports/import-job-store';
-import { templateFields } from '../crm/modules/contacts/imports/import-template';
+import { buildTemplateCsv } from '../crm/modules/contacts/imports/import-template';
+import { normMobile, isScientificNotation } from '../lib/crm/mobile';
+import { sniffColumn, CUSTOM_FIELD } from '../crm/modules/contacts/imports/import-job-store';
 
 let passed = 0;
 const failures: string[] = [];
@@ -66,14 +68,15 @@ check('BOM does not break the first header', bomKeys.some((k) => k.replace(/[^a-
 /* ---- 2. Header mapping --------------------------------------------------- */
 section('Header mapping');
 
-// The exact header row our downloadable template produces.
-const templateHeaders = templateFields.map((f) => f.label);
-const templateMap = guessMapping(templateHeaders);
+// Parse the real downloadable template, asterisks and all.
+const templateRows = parseCsv(buildTemplateCsv());
+const templateHeaders = Object.keys(templateRows[0] ?? {});
+const templateMap = guessMapping(templateHeaders, templateRows);
 const templateTargets = new Set(Object.values(templateMap).filter(Boolean));
 check('template: Name maps', templateTargets.has('name'));
 check('template: Mobile maps', templateTargets.has('mobile'), JSON.stringify(templateMap));
-const unmappedTemplate = templateHeaders.filter((h) => !templateMap[h]);
-check('template: every column except Notes maps', unmappedTemplate.every((h) => h === 'Notes'), `unmapped: ${JSON.stringify(unmappedTemplate)}`);
+const unmappedTemplate = templateHeaders.filter((h) => !templateMap[h] || templateMap[h] === CUSTOM_FIELD);
+check('template: every column except Notes maps to a field', unmappedTemplate.every((h) => /notes/i.test(h)), `unmapped: ${JSON.stringify(unmappedTemplate)}`);
 
 // Headers as they actually appear in customer sheets.
 const messy = guessMapping(['Party Name', 'Mobile No.', 'Shop Name', 'E-mail ID', 'City', 'GST No', 'Next Follow Up']);
@@ -89,7 +92,7 @@ const collide = guessMapping(['Mobile', 'Phone', 'Name']);
 const mobileClaims = Object.values(collide).filter((v) => v === 'mobile').length;
 check('no two columns claim the same field', mobileClaims === 1, JSON.stringify(collide));
 
-check('unknown columns default to ignored', guessMapping(['Ledger Balance'])['Ledger Balance'] === '');
+check('unknown columns are kept as custom, not dropped', guessMapping(['Ledger Balance'])['Ledger Balance'] === CUSTOM_FIELD);
 
 /* ---- 3. Mapping + validation --------------------------------------------- */
 section('Row mapping and validation');
@@ -154,6 +157,55 @@ const phone = parseVcf(phoneCard);
 check('parses a phone-exported card', phone.length === 1, `got ${phone.length}`);
 check('reads FN as the name', phone[0]?.name === 'Suresh Kumar', JSON.stringify(phone[0]));
 check('prefers the mobile TEL', (phone[0]?.mobile ?? '').replace(/\D/g, '').endsWith('9820011223'), JSON.stringify(phone[0]));
+
+/* ---- 5. Mobile normalisation --------------------------------------------- */
+section('Mobile numbers');
+
+check('plain 10-digit gets +91', normMobile('9810011234') === '+919810011234');
+check('spaces and dashes are stripped', normMobile('98100-11234') === '+919810011234');
+check('+91 with spaces normalises', normMobile('+91 98100 11234') === '+919810011234', normMobile('+91 98100 11234'));
+check('country code already present', normMobile('919810011234') === '+919810011234');
+check('trunk zero dropped', normMobile('09810011234') === '+919810011234');
+check('spreadsheet .0 suffix dropped', normMobile('9810011234.0') === '+919810011234', normMobile('9810011234.0'));
+check('too short is rejected', normMobile('12345') === '');
+check('empty is rejected', normMobile('') === '');
+// Excel destroys the digits, so importing a rounded value would text a stranger.
+check('scientific notation is detected', isScientificNotation('9.81001E+09'));
+check('scientific notation is refused, not guessed', normMobile('9.81001E+09') === '', normMobile('9.81001E+09'));
+check('two formats of one number dedupe to the same value',
+  normMobile('+91 98100 11234') === normMobile('9810011234'));
+
+/* ---- 6. Column sniffing --------------------------------------------------- */
+section('Detecting columns from their data');
+
+check('detects a mobile column', sniffColumn(['9810011234', '9820022345', '9830033456']) === 'mobile');
+check('detects an email column', sniffColumn(['a@b.com', 'c@d.in']) === 'email');
+check('detects a pincode column', sniffColumn(['122001', '400001', '560001']) === 'pincode');
+check('detects a GSTIN column', sniffColumn(['06ABCDE1234F1Z5', '27ABCDE1234F1Z5']) === 'gstin');
+check('detects a website column', sniffColumn(['www.a.com', 'https://b.in']) === 'website');
+check('does not guess from names', sniffColumn(['Rahul Shah', 'Priya Mehta']) === '');
+check('ignores a column of one value', sniffColumn(['9810011234']) === '');
+
+// A file with useless headers must still import — this is the whole point.
+const junk = parseCsv([
+  'Column1,Column2,Column3',
+  'Rahul Shah,9810011234,rahul@example.com',
+  'Priya Mehta,9820022345,priya@example.com',
+].join('\n'));
+const junkMap = guessMapping(Object.keys(junk[0]), junk);
+check('headerless file: mobile found by data', Object.values(junkMap).includes('mobile'), JSON.stringify(junkMap));
+check('headerless file: email found by data', Object.values(junkMap).includes('email'), JSON.stringify(junkMap));
+
+/* ---- 7. Custom columns ---------------------------------------------------- */
+section('Custom columns');
+
+const withCustom = parseCsv(['Full Name*,WhatsApp Mobile*,Ledger Balance', 'Rahul,9810011234,15000'].join('\n'));
+const customJob = jobFrom(withCustom);
+const customMapped = mappedRows(customJob);
+const kept = customMapped[0]?.customFields as Record<string, string> | undefined;
+check('unmapped column is kept as a custom field', Boolean(kept), JSON.stringify(customMapped[0]));
+check('custom value survives', kept?.['Ledger Balance'] === '15000', JSON.stringify(kept));
+check('custom column does not pollute real fields', !('Ledger Balance' in (customMapped[0] ?? {})));
 
 /* ---- summary -------------------------------------------------------------- */
 console.log(`\n${passed} passed, ${failures.length} failed`);
