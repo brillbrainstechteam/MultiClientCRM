@@ -53,6 +53,8 @@ interface Kundli {
   sources?: string[];
   generatedWith?: string;
   identityOnly?: boolean;
+  language?: 'english' | 'hinglish';
+  storePresenceVerified?: boolean;
 }
 
 const UNKNOWN = 'Not Found';
@@ -65,30 +67,34 @@ const CONFIDENCE: Record<Identity['confidence'], { label: string; tone: string; 
   conflict: { label: 'Several businesses match this name', tone: 'bad', icon: ShieldAlert },
 };
 
+type Lang = 'english' | 'hinglish';
+
 export function KundliPanel({ contactId }: { contactId: string }) {
   const [kundli, setKundli] = useState<Kundli | null>(null);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [busy, setBusy] = useState<'identity' | 'full' | null>(null);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState('');
+  const [lang, setLang] = useState<Lang>('english');
 
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/crm/contacts/${contactId}/kundli`, { credentials: 'same-origin' })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (!cancelled && d) { setKundli(d.kundli ?? null); setGeneratedAt(d.generatedAt ?? null); } })
+      .then((d) => { if (!cancelled && d) { setKundli(d.kundli ?? null); setGeneratedAt(d.generatedAt ?? null); if (d.kundli?.language) setLang(d.kundli.language); } })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [contactId]);
 
   // `force` (Refresh) bypasses the cache and pays for a fresh model call; every
-  // other call is cache-first on the server, so re-opening a brief is free.
+  // other call is cache-first on the server, so re-opening a brief is free. The
+  // chosen language is sent so the model writes that script as the primary one.
   const run = useCallback(async (mode: 'identity' | 'full', force = false) => {
     setBusy(mode); setError('');
     try {
       const res = await fetch(`/api/crm/contacts/${contactId}/kundli`, {
         method: 'POST', credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode, refresh: force }),
+        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode, refresh: force, language: lang }),
       });
       const d = await res.json();
       if (!res.ok) { setError(d.error ?? 'Could not research this contact.'); return; }
@@ -96,7 +102,7 @@ export function KundliPanel({ contactId }: { contactId: string }) {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not research this contact.');
     } finally { setBusy(null); }
-  }, [contactId]);
+  }, [contactId, lang]);
 
   const copy = async (key: string, text: string) => {
     try { await navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(''), 1600); } catch { /* ignore */ }
@@ -111,6 +117,7 @@ export function KundliPanel({ contactId }: { contactId: string }) {
           We check who this business is first — one quick search. If it looks like the right shop,
           you can run the full brief.
         </p>
+        <LangSwitch lang={lang} onChange={setLang} />
         {error ? <p className="kp-error">{error}</p> : null}
         <Button variant="primary" iconLeft={<Search />} disabled={busy !== null} onClick={() => void run('identity')}>
           {busy === 'identity' ? 'Checking…' : 'Check who this is'}
@@ -172,6 +179,10 @@ export function KundliPanel({ contactId }: { contactId: string }) {
 
       {!kundli.identityOnly ? (
         <>
+          <div className="kp-toolbar">
+            <LangSwitch lang={lang} onChange={setLang} />
+          </div>
+
           {kundli.companyOverview ? <p className="kp-overview">{kundli.companyOverview}</p> : null}
 
           <div className="kp-chips">
@@ -187,7 +198,12 @@ export function KundliPanel({ contactId }: { contactId: string }) {
           </div>
 
           {kundli.storePresence?.byCity?.length ? (
-            <Section title="Store presence">
+            <Section title={`Store presence${kundli.storePresenceVerified ? '' : ''}`}>
+              {kundli.storePresenceVerified ? <span className="kp-verified"><BadgeCheck size={12} /> Verified · Google</span> : null}
+              <p className="kp-presence-sum">
+                {kundli.storePresence.totalStores != null ? `${kundli.storePresence.totalStores} store${kundli.storePresence.totalStores === 1 ? '' : 's'}` : ''}
+                {kundli.storePresence.totalCities != null ? ` across ${kundli.storePresence.totalCities} cit${kundli.storePresence.totalCities === 1 ? 'y' : 'ies'}` : ''}
+              </p>
               <ul className="kp-bullets">
                 {kundli.storePresence.byCity.map((c) => (
                   <li key={c.city}>{c.city}{c.stores != null ? ` — ${c.stores} store${c.stores === 1 ? '' : 's'}` : ''}</li>
@@ -223,24 +239,29 @@ export function KundliPanel({ contactId }: { contactId: string }) {
             </Section>
           ) : null}
 
-          {script?.opening ? (
-            <Section title="Say this">
-              <blockquote className="kp-say">
-                {script.opening}
-                <button className="kp-copy" onClick={() => void copy('opening', script.opening)}>
-                  {copied === 'opening' ? <Check size={13} /> : <Copy size={13} />} {copied === 'opening' ? 'Copied' : 'Copy'}
-                </button>
-              </blockquote>
-              {kundli.hinglishScript?.opening ? (
-                <blockquote className="kp-say kp-say--alt">
-                  {kundli.hinglishScript.opening}
-                  <button className="kp-copy" onClick={() => void copy('hinglish', kundli.hinglishScript!.opening)}>
-                    {copied === 'hinglish' ? <Check size={13} /> : <Copy size={13} />} {copied === 'hinglish' ? 'Copied' : 'Copy'}
+          {(() => {
+            const opening = lang === 'hinglish' ? (kundli.hinglishScript?.opening || script?.opening) : (script?.opening || kundli.hinglishScript?.opening);
+            const pitch = lang === 'hinglish' ? (kundli.hinglishScript?.valuePitch || script?.valuePitch) : (script?.valuePitch || kundli.hinglishScript?.valuePitch);
+            if (!opening) return null;
+            return (
+              <Section title={`Say this · ${lang === 'hinglish' ? 'Hinglish' : 'English'}`}>
+                <blockquote className="kp-say">
+                  {opening}
+                  <button className="kp-copy" onClick={() => void copy('opening', opening)}>
+                    {copied === 'opening' ? <Check size={13} /> : <Copy size={13} />} {copied === 'opening' ? 'Copied' : 'Copy'}
                   </button>
                 </blockquote>
-              ) : null}
-            </Section>
-          ) : null}
+                {pitch ? (
+                  <blockquote className="kp-say kp-say--alt">
+                    {pitch}
+                    <button className="kp-copy" onClick={() => void copy('pitch', pitch)}>
+                      {copied === 'pitch' ? <Check size={13} /> : <Copy size={13} />} {copied === 'pitch' ? 'Copied' : 'Copy'}
+                    </button>
+                  </blockquote>
+                ) : null}
+              </Section>
+            );
+          })()}
 
           {script?.discoveryQuestions?.length ? (
             <Section title="Ask these">
@@ -299,6 +320,18 @@ export function KundliPanel({ contactId }: { contactId: string }) {
 
 function hostOf(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; }
+}
+
+function LangSwitch({ lang, onChange }: { lang: Lang; onChange: (l: Lang) => void }) {
+  return (
+    <div className="kp-lang" role="group" aria-label="Call language">
+      <span className="kp-lang__label">Call language</span>
+      <div className="kp-lang__seg">
+        <button className={lang === 'english' ? 'on' : ''} onClick={() => onChange('english')}>English</button>
+        <button className={lang === 'hinglish' ? 'on' : ''} onClick={() => onChange('hinglish')}>Hinglish</button>
+      </div>
+    </div>
+  );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

@@ -28,6 +28,7 @@ export interface KundliInput {
 }
 
 export type KundliMode = 'identity' | 'full';
+export type KundliLanguage = 'english' | 'hinglish';
 
 export interface StorePresence {
   totalCities: number | null;
@@ -97,6 +98,10 @@ export interface Kundli {
   generatedWith: string;
   /** Set when only stage 1 ran, so the UI can offer to continue. */
   identityOnly?: boolean;
+  /** Primary call language chosen when the brief was generated. */
+  language?: KundliLanguage;
+  /** True when store presence / rating were verified from Google Places, not the LLM. */
+  storePresenceVerified?: boolean;
 }
 
 // Pinned: "latest" drifts between generations, and grounding is billed at very
@@ -161,10 +166,18 @@ JSON shape:
 }
 
 /** Stage 2 — the full brief, run only once identity holds up. */
-function buildFullPrompt(input: KundliInput): string {
-  return `You are a jewellery client research assistant for India. Prepare a short, accurate,
-telecaller-friendly profile of a jewellery retailer so a jewellery supplier /
-manufacturer / wholesaler knows what to talk about before calling.
+function buildFullPrompt(input: KundliInput, language: KundliLanguage): string {
+  const langName = language === 'hinglish' ? 'Hinglish (Hindi + English in Roman script)' : 'English';
+  return `You are a jewellery client research assistant for India. You work for a B2B JEWELLERY
+MANUFACTURER / WHOLESALER (the supplier) whose business is selling gold/diamond
+jewellery STOCK to retail jewellers. Prepare a short, accurate, telecaller-friendly
+profile of the RETAIL JEWELLER below so the supplier's rep knows what to pitch and
+ask before calling. Everything is from the SUPPLIER's side — the goal is to sell
+them jewellery to stock, not to help their marketing.
+
+PRIMARY CALL LANGUAGE: ${langName}. The rep will speak mainly in ${langName}, so make
+that script the natural, fluent one. Still fill both suggestedScript (English) and
+hinglishScript (Hinglish) so either can be shown.
 
 WHAT THE CRM KNOWS:
 ${knownFacts(input)}
@@ -334,9 +347,9 @@ async function callOpenAI(prompt: string, key: string, identityOnly: boolean): P
  * pass; 'full' runs the complete brief. Prefers Gemini with Google Search
  * grounding, falls back to model knowledge, then to OpenAI.
  */
-export async function generateKundli(input: KundliInput, mode: KundliMode = 'full'): Promise<Kundli> {
+export async function generateKundli(input: KundliInput, mode: KundliMode = 'full', language: KundliLanguage = 'english'): Promise<Kundli> {
   const identityOnly = mode === 'identity';
-  const prompt = identityOnly ? buildIdentityPrompt(input) : buildFullPrompt(input);
+  const prompt = identityOnly ? buildIdentityPrompt(input) : buildFullPrompt(input, language);
   const gem = process.env.GEMINI_API_KEY;
   const oai = process.env.OPENAI_API_KEY;
 

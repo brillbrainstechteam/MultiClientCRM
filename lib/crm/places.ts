@@ -68,6 +68,66 @@ export async function lookupPlaceWithPhotos(textQuery: string): Promise<PlaceLoo
   };
 }
 
+export interface StorePresenceFacts {
+  totalStores: number;
+  totalCities: number;
+  byCity: { city: string; stores: number }[];
+  rating: number | null;
+  ratingCount: number | null;
+  address: string;
+}
+
+const normName = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+
+/**
+ * Verified store footprint from Google Places: how many branches, in which
+ * cities, and the flagship rating. Only branches whose name actually matches the
+ * brand are counted, so a "Saheli Jewellers" is not folded into "Saheli Aurum".
+ */
+export async function fetchStorePresence(brand: string, city?: string | null, state?: string | null): Promise<StorePresenceFacts | null> {
+  const key = process.env.PLACES_API_KEY;
+  if (!key) throw new Error('PLACES_API_KEY is not configured.');
+  const textQuery = `${brand} jewellery${city ? ' ' + city : ''}${state ? ', ' + state : ''} India`;
+  const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': key,
+      'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.addressComponents,places.rating,places.userRatingCount',
+    },
+    body: JSON.stringify({ textQuery, maxResultCount: 20, regionCode: 'IN' }),
+  });
+  if (!res.ok) throw new Error(`Places search failed (${res.status}).`);
+  const j = await res.json();
+  type P = { displayName?: { text?: string }; formattedAddress?: string; rating?: number; userRatingCount?: number;
+    addressComponents?: { longText?: string; types?: string[] }[] };
+  const places: P[] = j.places ?? [];
+
+  // Match the brand strictly: the result name must contain the brand's words.
+  const brandNorm = normName(brand);
+  const matched = places.filter((p) => brandNorm && normName(p.displayName?.text ?? '').includes(brandNorm));
+  if (matched.length === 0) return null;
+
+  const cityOf = (p: P): string => {
+    const comps = p.addressComponents ?? [];
+    return comps.find((c) => c.types?.includes('locality'))?.longText
+      ?? comps.find((c) => c.types?.includes('administrative_area_level_2'))?.longText
+      ?? '—';
+  };
+  const byCityMap = new Map<string, number>();
+  for (const p of matched) { const c = cityOf(p); byCityMap.set(c, (byCityMap.get(c) ?? 0) + 1); }
+  const flagship = matched.slice().sort((a, b) => (b.userRatingCount ?? 0) - (a.userRatingCount ?? 0))[0];
+
+  return {
+    totalStores: matched.length,
+    totalCities: byCityMap.size,
+    byCity: [...byCityMap.entries()].map(([city, stores]) => ({ city, stores })).sort((a, b) => b.stores - a.stores),
+    rating: typeof flagship?.rating === 'number' ? flagship.rating : null,
+    ratingCount: typeof flagship?.userRatingCount === 'number' ? flagship.userRatingCount : null,
+    address: flagship?.formattedAddress ?? '',
+  };
+}
+
 /** Download one Place photo's bytes (billed per call, so callers cache the result). */
 export async function downloadPlacePhoto(photoName: string, maxWidthPx = 1200): Promise<{ bytes: Buffer; mimeType: string }> {
   const key = process.env.PLACES_API_KEY;

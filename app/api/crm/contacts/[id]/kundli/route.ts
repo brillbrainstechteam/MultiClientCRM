@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
-import { generateKundli } from '@/lib/crm/kundli';
+import { generateKundli, type Kundli } from '@/lib/crm/kundli';
+import { fetchStorePresence } from '@/lib/crm/places';
 import { audit } from '@/lib/crm/audit';
 
 /** Return the cached kundli (pre-call dossier) for a contact, if any. */
@@ -28,9 +29,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   // fraction of a full brief. `refresh` forces a new call; otherwise an already
   // cached result that satisfies the requested mode is served WITHOUT paying for
   // a model call again.
-  const body = (await req.json().catch(() => ({}))) as { mode?: string; refresh?: boolean };
+  const body = (await req.json().catch(() => ({}))) as { mode?: string; refresh?: boolean; language?: string };
   const mode = body.mode === 'full' ? 'full' : 'identity';
   const refresh = body.refresh === true;
+  const language = body.language === 'hinglish' ? 'hinglish' : 'english';
 
   const c = await prisma.crmContact.findFirst({
     where: { id, tenantId: user.tenantId },
@@ -66,12 +68,26 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   try {
-    const kundli = await generateKundli({
+    const kundli: Kundli = await generateKundli({
       company: c.company, contactPerson: c.contactPerson, name: c.name, city: c.city, state: c.state,
       mobile: c.mobile, customerType: c.customerType,
       relationship: c.lifecycleStage === 'customer' ? 'customer' : 'prospect',
       productInterests: c.productInterests, tags: c.tags, website: c.website,
-    }, mode);
+    }, mode, language);
+    kundli.language = language;
+
+    // Verified facts beat the model: pull the real store footprint + rating from
+    // Google Places and overwrite the brief's store presence for the full brief.
+    if (mode === 'full') {
+      try {
+        const sp = await fetchStorePresence(c.company || c.name || '', c.city, c.state);
+        if (sp) {
+          kundli.storePresence = { totalCities: sp.totalCities, totalStores: sp.totalStores, byCity: sp.byCity };
+          if (sp.rating != null) kundli.googleRating = sp.ratingCount ? `${sp.rating} (${sp.ratingCount})` : String(sp.rating);
+          kundli.storePresenceVerified = true;
+        }
+      } catch { /* Places is best-effort; keep the model's estimate on failure */ }
+    }
     const generatedAt = new Date();
     await prisma.crmContact.update({ where: { id }, data: { kundli: kundli as never, kundliGeneratedAt: generatedAt } });
     await audit({ tenantId: user.tenantId, actorId: user.id, action: mode === 'identity' ? 'kundli.identity' : 'kundli.generated', targetType: 'contact', targetId: id, detail: c.company ?? c.name });
