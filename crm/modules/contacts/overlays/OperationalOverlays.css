@@ -162,3 +162,26 @@
   color: var(--crm-text-title);
   font-variant-numeric: tabular-nums;
 }
+
+/* Create-a-tag row and inline error in the Tags drawer. */
+.crm-ov-tagnew {
+  text-align: left;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px dashed var(--crm-border-strong, #d7dde5);
+  border-radius: 8px;
+  background: none;
+  color: var(--crm-green-dark, #1b6150);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.crm-ov-tagnew:hover { border-color: var(--crm-green, #1f9d55); background: var(--crm-green-tint, #e3f1ec); }
+.crm-ov-error {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  background: var(--crm-danger-tint, #fdeeee);
+  color: var(--crm-danger, #b43333);
+}

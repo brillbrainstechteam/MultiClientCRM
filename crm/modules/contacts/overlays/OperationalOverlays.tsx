@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Info, MapPin, Tag as TagIcon, TriangleAlert } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useScopedHref } from '@crm/app/use-scoped-href';
@@ -423,10 +423,24 @@ function TagsDrawer({ targetLabel, onClose, onApply, targetIds }: { targetLabel:
   const [mode, setMode] = useState<'add' | 'remove'>('add');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
   const navigate = useNavigate();
   const scopedHref = useScopedHref();
 
-  const visible = TAG_MASTER.filter((t) => t.includes(search.toLowerCase()));
+  // Tags already in use beat a fixed list: an imported sheet brings its own, and
+  // they were invisible here before.
+  const known = useMemo(() => {
+    const all = new Set<string>(TAG_MASTER);
+    for (const c of contacts) for (const t of (c.tags ?? []) as string[]) if (t.trim()) all.add(t.trim());
+    return [...all].sort((a, b) => a.localeCompare(b));
+  }, []);
+
+  const term = search.trim();
+  const visible = known.filter((t: string) => t.toLowerCase().includes(term.toLowerCase()));
+  // Typing a tag nobody has used yet should still be possible.
+  const canCreate = mode === 'add' && term.length > 0
+    && !known.some((t: string) => t.toLowerCase() === term.toLowerCase());
   const toggle = (tag: string) =>
     setSelected((prev) => {
       const next = new Set(prev);
@@ -449,8 +463,26 @@ function TagsDrawer({ targetLabel, onClose, onApply, targetIds }: { targetLabel:
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" disabled={selected.size === 0} onClick={async () => { if (targetIds.length) { try { await bulkContacts(targetIds, { op: 'tags', tags: [...selected], tagMode: mode }); } catch { return; } } onApply(`${mode === 'add' ? 'Added' : 'Removed'} ${selected.size} tag(s) for ${targetLabel}`); }}>
-            Apply
+          <Button
+            variant="primary"
+            disabled={selected.size === 0 || busy}
+            onClick={async () => {
+              // Previously an empty target list still reported success, so a
+              // no-op looked identical to a save.
+              if (!targetIds.length) { setErr('No contacts selected — close this and pick contacts first.'); return; }
+              setBusy(true); setErr('');
+              try {
+                await bulkContacts(targetIds, { op: 'tags', tags: [...selected], tagMode: mode });
+              } catch (e) {
+                setBusy(false);
+                setErr(e instanceof Error ? e.message : 'Could not update tags.');
+                return;
+              }
+              setBusy(false);
+              onApply(`${mode === 'add' ? 'Added' : 'Removed'} ${selected.size} tag(s) for ${targetLabel}`);
+            }}
+          >
+            {busy ? 'Applying…' : 'Apply'}
           </Button>
         </>
       }
@@ -464,11 +496,25 @@ function TagsDrawer({ targetLabel, onClose, onApply, targetIds }: { targetLabel:
       </div>
       <Input label="Search tags" hideLabel value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search tags…" />
       <div className="crm-ov-taglist">
-        {visible.map((tag) => (
+        {canCreate ? (
+          <button type="button" className="crm-ov-tagnew" onClick={() => { toggle(term); setSearch(''); }}>
+            + Create tag “{term}”
+          </button>
+        ) : null}
+        {visible.map((tag: string) => (
           <Checkbox key={tag} label={tag} checked={selected.has(tag)} onChange={() => toggle(tag)} />
         ))}
-        {visible.length === 0 ? <p className="crm-ov-muted">No tags match “{search}”.</p> : null}
+        {visible.length === 0 && !canCreate ? <p className="crm-ov-muted">No tags match “{search}”.</p> : null}
       </div>
+      {err ? <p className="crm-ov-error">{err}</p> : null}
+      {selected.size ? (
+        <p className="crm-ov-muted">
+          {mode === 'add' ? 'Adding' : 'Removing'} {selected.size} tag{selected.size === 1 ? '' : 's'}:{' '}
+          <strong>{[...selected].join(', ')}</strong>
+        </p>
+      ) : (
+        <p className="crm-ov-muted">Tick a tag, then Apply. Tags are applied to every selected contact.</p>
+      )}
     </Drawer>
   );
 }
