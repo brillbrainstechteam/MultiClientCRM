@@ -64,6 +64,8 @@ export interface Kundli {
   socialProfiles: { platform: string; url?: string; followers?: string }[];
 
   // What they sell
+  productCategories: string[];
+  priceSegment: string;
   productsServices: string[];
   designStyle: string;
   occasionFocus: string;
@@ -187,10 +189,20 @@ carry something: Google Business Profile, the business's website, Instagram,
 Justdial / IndiaMART, and local news or association listings. Stop early once you
 have enough; do not sweep every source.
 
-FOCUS on what helps a B2B jewellery sale: what they sell, their design style, their
-customer type, their visible category focus, what to pitch, and what to ask. Do NOT
-comment on their marketing, Instagram quality, follow-up systems or digital presence
-as weaknesses.
+THE ONLY THING THAT MATTERS is: what JEWELLERY does this retailer sell, and what
+jewellery stock could the supplier sell THEM. Everything must help the rep decide
+which designs/categories to offer.
+- productCategories: tick the jewellery they actually retail (Gold, Diamond,
+  Polki/Kundan, Silver, Platinum, Gemstone/Coloured stones, Temple/Antique,
+  Daily-wear/Lightweight, Bridal/Heavy, Coins/Bullion).
+- priceSegment: Mass / Mid-market / Premium / Luxury.
+- likelyNeeds here means the jewellery CATEGORIES OR DESIGNS they would most likely
+  BUY from a wholesaler/manufacturer to stock (e.g. "lightweight 18K diamond
+  daily-wear", "bridal polki sets", "22K temple jewellery") — NOT business services.
+- pitchAngle.bestProduct is a specific jewellery line the supplier should offer them.
+STRICTLY FORBIDDEN: do NOT suggest software, CRM, inventory/management systems,
+marketing services, digital marketing, websites or consulting. The supplier sells
+PHYSICAL JEWELLERY ONLY. Any such suggestion is wrong.
 
 For a small local jeweller keep everything compact and lean on verification questions.
 For a known chain, give a little more on categories, design style and fit.
@@ -202,10 +214,11 @@ JSON shape (use "${UNKNOWN}" for anything you could not establish):
  "storePresence":{"totalCities":null,"totalStores":null,"byCity":[{"city":"","stores":null}]},
  "onlinePresence":{"website":"","socials":[""]},
  "socialProfiles":[{"platform":"","url":"","followers":""}],
- "productsServices":[""],"designStyle":"","occasionFocus":"","customerSegment":"","visibleProductFocus":"",
+ "productCategories":["from the list above"],"priceSegment":"Mass|Mid-market|Premium|Luxury|${UNKNOWN}",
+ "productsServices":["specific jewellery they sell"],"designStyle":"","occasionFocus":"","customerSegment":"","visibleProductFocus":"collections visible on their site/Instagram now",
  "differentiation":["3-5 short points, only what you actually saw"],
- "likelyNeeds":[""],"talkingPoints":["5 safe, useful points"],
- "pitchAngle":{"bestProduct":"","whyItFits":"","mainBenefit":"","bestTiming":""},
+ "likelyNeeds":["jewellery categories/designs they would BUY to stock"],"talkingPoints":["5 jewellery-supply points"],
+ "pitchAngle":{"bestProduct":"a specific jewellery line to offer them","whyItFits":"","mainBenefit":"","bestTiming":""},
  "suggestedScript":{"opening":"one polite personalised line, no unverified facts","discoveryQuestions":["5 questions about their buying needs"],"valuePitch":"","objectionHandling":[""]},
  "hinglishScript":{"opening":"Hindi+English in Roman script","valuePitch":""},
  "whatNotToSay":["3-5 points, e.g. do not assume they need suppliers"],
@@ -275,6 +288,8 @@ function coerce(raw: string, generatedWith: string, grounded: string[], identity
           platform: str(s?.platform, ''), url: str(s?.url, ''), followers: str(s?.followers, ''),
         })).filter((s) => s.platform)
       : [],
+    productCategories: list(d.productCategories),
+    priceSegment: str(d.priceSegment),
     productsServices: list(d.productsServices),
     designStyle: str(d.designStyle),
     occasionFocus: str(d.occasionFocus),

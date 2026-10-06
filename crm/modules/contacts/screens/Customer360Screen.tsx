@@ -35,6 +35,7 @@ import { consentLabel, salesTierLabel, leadStatusLabel, lifecycleLabel } from '.
 import { can, canViewField, dealValueFor } from '../permissions';
 import { KundliPanel } from '../components/KundliPanel';
 import { ProspectJourney } from '../components/ProspectJourney';
+import { ConsentActions } from '../components/ConsentActions';
 import { ShowroomGallery } from '../components/ShowroomGallery';
 import { EnquiriesPanel } from '../components/EnquiriesPanel';
 
@@ -45,21 +46,16 @@ const SEGMENT_LABEL: Record<string, string> = {
 const fmtDay = (d?: string | null) => (d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '—');
 const yn = (v?: boolean) => (v ? 'Yes' : 'No');
 
+// Consolidated from 14 narrow tabs: Profile now holds all business/store/
+// jewellery details + photos; Sales folds in Enquiries; Activity folds in
+// Communication, Timeline, Audit and the cross-module links.
 const tabs: TabItem[] = [
   { id: 'profile', label: 'Profile' },
-  { id: 'journey', label: 'Journey' },
-  { id: 'photos', label: 'Showroom photos' },
-  { id: 'sales', label: 'Sales' },
-  { id: 'jewellery', label: 'Jewellery' },
-  { id: 'enquiries', label: 'Enquiries' },
-  { id: 'classification', label: 'Classification' },
-  { id: 'consent', label: 'Consent & Privacy' },
-  { id: 'source', label: 'Source' },
-  { id: 'communication', label: 'Communication' },
   { id: 'kundli', label: 'Pre-call brief' },
-  { id: 'timeline', label: 'Timeline' },
-  { id: 'audit', label: 'Audit' },
-  { id: 'related', label: 'Related' },
+  { id: 'journey', label: 'Journey' },
+  { id: 'sales', label: 'Sales & enquiries' },
+  { id: 'activity', label: 'Activity' },
+  { id: 'consent', label: 'Consent' },
 ];
 
 /**
@@ -218,86 +214,106 @@ export default function Customer360Screen() {
 
       <section className="crm-c360__panel">
         {activeTab === 'profile' ? (
-          <FieldGrid
-            fields={[
-              ['Full name', contact.name],
-              ['Company', contact.company ?? notSet()],
-              ['Contact person', contact.contactPerson ?? notSet()],
-              ['WhatsApp mobile', contact.mobile],
-              ['Email', contact.email ?? notSet()],
-              ['City', contact.city],
-              ['State', contact.state ?? notSet()],
-              ['Pincode', contact.pincode ?? notSet()],
-              ['GSTIN', contact.gstin ?? notSet()],
-              ['Type of lead', contact.typeOfLead ?? notSet()],
-              ['Reference', contact.reference ?? notSet()],
-              ['Product interests', contact.productInterests && contact.productInterests.length ? contact.productInterests.join(', ') : notSet()],
-              ['Tags', contact.tags.length ? contact.tags.join(', ') : notSet()],
-            ]}
-          />
-        ) : null}
-
-        {activeTab === 'sales' ? (
-          <FieldGrid
-            fields={[
-              ['Lead status', leadStatusLabel[contact.leadStatus ?? 'new'] ?? (contact.leadStatus ?? 'New')],
-              ['Lifecycle', lifecycleLabel[contact.lifecycleStage ?? 'prospect'] ?? 'Prospect'],
-              ['Activated on', contact.activatedAt ? new Date(contact.activatedAt).toLocaleDateString('en-IN') : notSet()],
-              ['Business value', contact.businessValue ? contact.businessValue[0].toUpperCase() + contact.businessValue.slice(1) : notSet()],
-              ['Sales tier', salesTierLabel[contact.salesTier]],
-              ['Owner', owner?.name ?? 'Unassigned'],
-              // Sensitive field: hidden entirely from roles without access (no leakage).
-              ['Estimated deal value', canViewField(role, 'dealValue') ? dealValueFor(contact) : <MaskedValue />],
-              ['Next follow-up', <span className="crm-fieldgrid__empty">Set via Follow-up</span>],
-            ]}
-          />
-        ) : null}
-
-        {activeTab === 'jewellery' ? (
           <>
+            <p className="crm-c360__scope-note">Business &amp; contact</p>
+            <FieldGrid
+              fields={[
+                ['Full name', contact.name],
+                ['Company', contact.company ?? notSet()],
+                ['Contact person', contact.contactPerson ?? notSet()],
+                ['WhatsApp mobile', contact.mobile],
+                ['Email', contact.email ?? notSet()],
+                ['City', contact.city],
+                ['State', contact.state ?? notSet()],
+                ['Pincode', contact.pincode ?? notSet()],
+                ['GSTIN', contact.gstin ?? notSet()],
+                ['PAN', contact.pan ?? notSet()],
+                ['Website', contact.website ?? notSet()],
+                ['Customer type', contact.company ? 'B2B' : 'B2C'],
+                ['Branch', branchName(contact.branchId)],
+                ['Type of lead', contact.typeOfLead ?? notSet()],
+                ['Reference', contact.reference ?? notSet()],
+                ['Original source', contact.source],
+              ]}
+            />
+
+            <p className="crm-c360__scope-note">Jewellery &amp; account</p>
             <FieldGrid
               fields={[
                 ['Segment', SEGMENT_LABEL[contact.businessSegment ?? ''] ?? notSet()],
                 ['Grade (ABCD)', contact.grade ?? notSet()],
                 ['Preferred language', contact.preferredLanguage ?? notSet()],
+                ['Product interests', contact.productInterests && contact.productInterests.length ? contact.productInterests.join(', ') : notSet()],
+                ['Interested in', contact.interestedIn ?? notSet()],
+                ['Tags', contact.tags.length ? contact.tags.join(', ') : notSet()],
+                ['Client code', contact.clientCode ?? notSet()],
                 ['Key account manager', contact.kamUserId ? (findUser(contact.kamUserId)?.name ?? contact.kamUserId) : notSet()],
                 ['Marketing owner', contact.marketingOwnerId ? (findUser(contact.marketingOwnerId)?.name ?? contact.marketingOwnerId) : notSet()],
                 ['Sales owner', contact.salesOwnerId ? (findUser(contact.salesOwnerId)?.name ?? contact.salesOwnerId) : notSet()],
-                ['Client code', contact.clientCode ?? notSet()],
-                ['PAN', contact.pan ?? notSet()],
-                ['Website', contact.website ?? notSet()],
                 ['Birthday', contact.dateOfBirth ? fmtDay(contact.dateOfBirth) : notSet()],
                 ['Company anniversary', contact.companyAnniversary ? fmtDay(contact.companyAnniversary) : notSet()],
-                ['Next follow-up', contact.nextFollowUpAt ? new Date(contact.nextFollowUpAt).toLocaleDateString('en-IN') : notSet()],
-                ['Interested in', contact.interestedIn ?? notSet()],
-                ['Last feedback', contact.lastFeedback ?? notSet()],
               ]}
             />
-            <p className="crm-c360__scope-note">Prospect checkpoints &amp; reach</p>
-            <FieldGrid
-              fields={[
-                ['Data verified', yn(contact.dataVerified)],
-                ['Intro call done', yn(contact.introCallDone)],
-                ['Office visit done', yn(contact.officeVisitDone)],
-                ['In broadcast list', yn(contact.inBroadcastList)],
-                ['In community', yn(contact.inCommunity)],
-              ]}
-            />
+
+            <p className="crm-c360__scope-note">Showroom photos</p>
+            <ShowroomGallery contactId={contact.id} contactName={contact.name} />
           </>
         ) : null}
 
-        {activeTab === 'enquiries' ? (
-          <EnquiriesPanel contactId={contact.id} />
+        {activeTab === 'kundli' ? (
+          <KundliPanel contactId={contact.id} />
         ) : null}
 
-        {activeTab === 'classification' ? (
-          <FieldGrid
-            fields={[
-              ['Customer type', contact.company ? 'B2B' : 'B2C'],
-              ['Business unit', company?.segment ?? notSet()],
-              ['Branch', branchName(contact.branchId)],
-            ]}
-          />
+        {activeTab === 'journey' ? (
+          <ProspectJourney contact={contact} />
+        ) : null}
+
+        {activeTab === 'sales' ? (
+          <>
+            <FieldGrid
+              fields={[
+                ['Lead status', leadStatusLabel[contact.leadStatus ?? 'new'] ?? (contact.leadStatus ?? 'New')],
+                ['Lifecycle', lifecycleLabel[contact.lifecycleStage ?? 'prospect'] ?? 'Prospect'],
+                ['Activated on', contact.activatedAt ? new Date(contact.activatedAt).toLocaleDateString('en-IN') : notSet()],
+                ['Business value', contact.businessValue ? contact.businessValue[0].toUpperCase() + contact.businessValue.slice(1) : notSet()],
+                ['Sales tier', salesTierLabel[contact.salesTier]],
+                ['Owner', owner?.name ?? 'Unassigned'],
+                ['Estimated deal value', canViewField(role, 'dealValue') ? dealValueFor(contact) : <MaskedValue />],
+                ['Next follow-up', contact.nextFollowUpAt ? new Date(contact.nextFollowUpAt).toLocaleDateString('en-IN') : <span className="crm-fieldgrid__empty">Set via Follow-up</span>],
+              ]}
+            />
+            <p className="crm-c360__scope-note">Enquiries</p>
+            <EnquiriesPanel contactId={contact.id} />
+          </>
+        ) : null}
+
+        {activeTab === 'activity' ? (
+          <>
+            <FieldGrid
+              fields={[
+                ['Primary WhatsApp number', whatsappNumber ? `${whatsappNumber.displayName} · ${whatsappNumber.displayNumber}` : notSet()],
+                ['First interaction', formatDate(contact.createdAt)],
+                ['Last activity', formatDateTime(contact.lastActivityAt)],
+                ['Record ID', contact.id],
+              ]}
+            />
+            <p className="crm-c360__scope-note">Timeline</p>
+            {timeline.length ? (
+              <ul className="crm-c360__timeline">
+                {timeline.map((item, index) => (
+                  <TimelineItem key={item.id} item={item} isLast={index === timeline.length - 1} />
+                ))}
+              </ul>
+            ) : (
+              <p className="crm-c360__empty">No recorded activity yet.</p>
+            )}
+            <p className="crm-c360__scope-note">Open in</p>
+            <div className="crm-c360__related">
+              <RelatedCard label="Conversations" value="Inbox" to={scopedHref('/inbox', { contactId: contact.id, returnTo })} />
+              <RelatedCard label="Calls & visits" value="Calling" to={scopedHref('/calling', { contactId: contact.id, returnTo })} />
+              <RelatedCard label="Orders" value="Catalogue & Orders" to={scopedHref('/catalogue-orders', { contactId: contact.id, returnTo })} />
+            </div>
+          </>
         ) : null}
 
         {activeTab === 'consent' ? (
@@ -314,71 +330,8 @@ export default function Customer360Screen() {
               Consent is recorded per WhatsApp number. Opt-in on {whatsappNumber?.displayName ?? 'this number'} does
               not imply consent on any other connected number.
             </p>
+            <ConsentActions contactId={contact.id} contactName={contact.name} consent={contact.consent} />
           </>
-        ) : null}
-
-        {activeTab === 'source' ? (
-          <FieldGrid
-            fields={[
-              ['Original source', contact.source],
-              ['First interaction', formatDate(contact.createdAt)],
-              ['Latest touch', formatDate(contact.lastActivityAt)],
-            ]}
-          />
-        ) : null}
-
-        {activeTab === 'communication' ? (
-          <FieldGrid
-            fields={[
-              ['Primary WhatsApp number', whatsappNumber ? `${whatsappNumber.displayName} · ${whatsappNumber.displayNumber}` : notSet()],
-              ['Connection status', whatsappNumber?.connectionStatus ?? notSet()],
-              ['Last activity', formatDateTime(contact.lastActivityAt)],
-            ]}
-          />
-        ) : null}
-
-        {activeTab === 'journey' ? (
-          <ProspectJourney contact={contact} />
-        ) : null}
-
-        {activeTab === 'photos' ? (
-          <ShowroomGallery contactId={contact.id} contactName={contact.name} />
-        ) : null}
-
-        {activeTab === 'kundli' ? (
-          <KundliPanel contactId={contact.id} />
-        ) : null}
-
-        {activeTab === 'timeline' ? (
-          timeline.length ? (
-            <ul className="crm-c360__timeline">
-              {timeline.map((item, index) => (
-                <TimelineItem key={item.id} item={item} isLast={index === timeline.length - 1} />
-              ))}
-            </ul>
-          ) : (
-            <p className="crm-c360__empty">No recorded activity yet.</p>
-          )
-        ) : null}
-
-        {activeTab === 'audit' ? (
-          <FieldGrid
-            fields={[
-              ['Created', formatDateTime(contact.createdAt)],
-              ['Created by', 'Import — Walk-in register'],
-              ['Last updated', formatDateTime(contact.lastActivityAt)],
-              ['Record ID', contact.id],
-            ]}
-          />
-        ) : null}
-
-        {activeTab === 'related' ? (
-          <div className="crm-c360__related">
-            <RelatedCard label="Company" value={contact.company ?? 'None'} />
-            <RelatedCard label="Conversations" value="Opens in Inbox" to={scopedHref('/inbox', { contactId: contact.id, returnTo })} />
-            <RelatedCard label="Calls" value="Opens in Calling" to={scopedHref('/calling', { contactId: contact.id, returnTo })} />
-            <RelatedCard label="Orders" value="Opens in Catalogue & Orders" to={scopedHref('/catalogue-orders', { contactId: contact.id, returnTo })} />
-          </div>
         ) : null}
       </section>
       </>

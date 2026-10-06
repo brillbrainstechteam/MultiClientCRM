@@ -464,7 +464,14 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     "whenToUse": "Project Execution & Deliverables",
     "suggestedName": "mkt_project_execut_follow_up_email_for_pending_deliverables",
     "body": "Subject: Follow-up on Pending Deliverables – [Project Name]\nDear [Vendor Name],\nThis is a reminder to submit the pending deliverables for [Project/Campaign Name] as per the agreed timeline. Kindly share the updated status at the earliest.\nBest Regards,\n Marketing Department"
+  },
+  {
+    "category": "Consent & Compliance",
+    "name": "Consent — Opt-in request",
+    "whenToUse": "To collect WhatsApp opt-in before sending updates/offers.",
+    "suggestedName": "consent_opt_in_request",
+    "body": "Hello {{1}}, greetings from {{2}} 💎\n\nWe'd love to keep you updated on our latest collections, new designs and festive offers on WhatsApp.\n\nReply YES to receive updates, or STOP to opt out anytime. Thank you!"
   }
 ];
 
-export const STARTER_CATEGORIES: string[] = ["A. Onboarding & Initial Setup", "Announcements", "B. Purchase Order (PO) Communication", "Common Information & Support Templates", "Corporate Marketing", "Customer Communication Templates", "D. Payment & Invoicing", "Display", "E. Vendor Performance & Closure", "Exhibition Marketing", "Exports System", "Field Marketing", "Infuencer Marketing", "Marketing & Promotion Templates", "Post-Exhibition Customer Follow-Up (After the Exhibition)", "Project Execution & Deliverables"];
+export const STARTER_CATEGORIES: string[] = ["A. Onboarding & Initial Setup", "Announcements", "B. Purchase Order (PO) Communication", "Common Information & Support Templates", "Consent & Compliance", "Corporate Marketing", "Customer Communication Templates", "D. Payment & Invoicing", "Display", "E. Vendor Performance & Closure", "Exhibition Marketing", "Exports System", "Field Marketing", "Infuencer Marketing", "Marketing & Promotion Templates", "Post-Exhibition Customer Follow-Up (After the Exhibition)", "Project Execution & Deliverables"];

@@ -33,6 +33,8 @@ interface Kundli {
   storePresence?: { totalCities: number | null; totalStores: number | null; byCity: { city: string; stores: number | null }[] };
   onlinePresence?: { website?: string; socials?: string[] };
   socialProfiles?: { platform: string; url?: string; followers?: string }[];
+  productCategories?: string[];
+  priceSegment?: string;
   productsServices?: string[];
   designStyle?: string;
   occasionFocus?: string;
@@ -76,12 +78,17 @@ export function KundliPanel({ contactId }: { contactId: string }) {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState('');
   const [lang, setLang] = useState<Lang>('english');
+  const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/crm/contacts/${contactId}/kundli`, { credentials: 'same-origin' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (!cancelled && d) { setKundli(d.kundli ?? null); setGeneratedAt(d.generatedAt ?? null); if (d.kundli?.language) setLang(d.kundli.language); } })
+      .catch(() => {});
+    fetch(`/api/crm/contacts/${contactId}/images`, { credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && d?.images) setPhotos(d.images.map((i: { id: string; url: string }) => ({ id: i.id, url: i.url }))); })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [contactId]);
@@ -183,6 +190,16 @@ export function KundliPanel({ contactId }: { contactId: string }) {
             <LangSwitch lang={lang} onChange={setLang} />
           </div>
 
+          {photos.length ? (
+            <div className="kp-photos">
+              {photos.slice(0, 6).map((p) => (
+                <a key={p.id} href={p.url} target="_blank" rel="noopener noreferrer" className="kp-photo">
+                  <img src={p.url} alt="Store" loading="lazy" />
+                </a>
+              ))}
+            </div>
+          ) : null}
+
           {kundli.companyOverview ? <p className="kp-overview">{kundli.companyOverview}</p> : null}
 
           <div className="kp-chips">
@@ -213,29 +230,38 @@ export function KundliPanel({ contactId }: { contactId: string }) {
           ) : null}
 
           <Section title="What they sell">
+            {kundli.productCategories?.length ? (
+              <div className="kp-cats">{kundli.productCategories.map((c) => <span key={c} className="kp-cat">{c}</span>)}</div>
+            ) : null}
             <div className="kp-grid">
-              <Meta label="Main products" value={kundli.productsServices?.join(', ')} />
+              {known(kundli.priceSegment) ? <Meta label="Price segment" value={kundli.priceSegment} /> : null}
               <Meta label="Design style" value={kundli.designStyle} />
               <Meta label="Occasion focus" value={kundli.occasionFocus} />
               <Meta label="Customer segment" value={kundli.customerSegment} />
-              <Meta label="Visible focus" value={kundli.visibleProductFocus} />
+              <Meta label="Visible now" value={kundli.visibleProductFocus} />
             </div>
           </Section>
 
-          {kundli.differentiation?.length ? (
-            <Section title="Strengths">
-              <ul className="kp-bullets">{kundli.differentiation.map((d) => <li key={d}>{d}</li>)}</ul>
+          {/* The money section for a supplier: what jewellery to sell them. */}
+          {(kundli.likelyNeeds?.length || (kundli.pitchAngle && known(kundli.pitchAngle.bestProduct))) ? (
+            <Section title="What to pitch them">
+              {kundli.likelyNeeds?.length ? (
+                <ul className="kp-bullets kp-bullets--pitch">{kundli.likelyNeeds.map((n) => <li key={n}>{n}</li>)}</ul>
+              ) : null}
+              {kundli.pitchAngle && known(kundli.pitchAngle.bestProduct) ? (
+                <div className="kp-pitch">
+                  <Meta label="Best line to offer" value={kundli.pitchAngle.bestProduct} />
+                  <Meta label="Why it fits" value={kundli.pitchAngle.whyItFits} />
+                  <Meta label="Main benefit" value={kundli.pitchAngle.mainBenefit} />
+                  <Meta label="Best timing" value={kundli.pitchAngle.bestTiming} />
+                </div>
+              ) : null}
             </Section>
           ) : null}
 
-          {kundli.pitchAngle && known(kundli.pitchAngle.bestProduct) ? (
-            <Section title="Best pitch angle">
-              <div className="kp-pitch">
-                <Meta label="Pitch" value={kundli.pitchAngle.bestProduct} />
-                <Meta label="Why it fits" value={kundli.pitchAngle.whyItFits} />
-                <Meta label="Main benefit" value={kundli.pitchAngle.mainBenefit} />
-                <Meta label="Best timing" value={kundli.pitchAngle.bestTiming} />
-              </div>
+          {kundli.differentiation?.length ? (
+            <Section title="Their strengths">
+              <ul className="kp-bullets">{kundli.differentiation.map((d) => <li key={d}>{d}</li>)}</ul>
             </Section>
           ) : null}
 

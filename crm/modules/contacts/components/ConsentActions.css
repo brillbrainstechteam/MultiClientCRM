@@ -1,0 +1,12 @@
+.ca { margin-top: 16px; border: 1px solid var(--crm-border-subtle); border-radius: 14px; padding: 16px; }
+.ca-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.ca-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--crm-text-muted); }
+.ca-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+.ca-badge--in { color: var(--crm-brand-700); background: var(--crm-brand-50); }
+.ca-badge--out { color: var(--crm-danger-600, #dc2626); background: var(--crm-danger-tint, #fef2f2); }
+.ca-badge--pending { color: var(--crm-text-secondary); background: var(--crm-surface-sunken); }
+.ca-msg { position: relative; white-space: pre-wrap; font-size: 13.5px; line-height: 1.55; color: var(--crm-text-primary); background: var(--crm-surface-sunken); border-radius: 10px; padding: 14px 14px 36px; margin: 0 0 10px; }
+.ca-copy { position: absolute; bottom: 8px; right: 8px; display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 12px; font-weight: 600; color: var(--crm-brand-700); background: var(--crm-surface-raised); border: 1px solid var(--crm-border-subtle); border-radius: 7px; padding: 4px 9px; cursor: pointer; }
+.ca-hint { font-size: 12.5px; color: var(--crm-text-muted); margin: 0 0 12px; }
+.ca-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.ca-err { font-size: 13px; color: var(--crm-danger); margin: 10px 0 0; }
