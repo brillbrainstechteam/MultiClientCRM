@@ -42,12 +42,11 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 # Schema + migrations so `prisma migrate deploy` can run from this image.
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-# .bin is where npx finds the prisma CLI — without it "npx prisma migrate
-# deploy" inside this container tries to download Prisma from npm instead.
-COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
+# The Prisma CLI's dependency tree changes between versions (6.19 pulled in
+# @prisma/config -> effect, c12, …). Cherry-picking a few packages broke on
+# every bump, so copy the full module tree — this overlays the slim standalone
+# one and guarantees `npx prisma migrate deploy` has everything it needs.
+COPY --from=builder /app/node_modules ./node_modules
 
 USER app
 EXPOSE 3000
