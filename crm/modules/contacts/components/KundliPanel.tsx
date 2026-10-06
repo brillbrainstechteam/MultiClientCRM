@@ -69,7 +69,7 @@ const CONFIDENCE: Record<Identity['confidence'], { label: string; tone: string; 
   conflict: { label: 'Several businesses match this name', tone: 'bad', icon: ShieldAlert },
 };
 
-type Lang = 'english' | 'hinglish';
+type Lang = 'english' | 'hinglish' | 'hindi';
 
 export function KundliPanel({ contactId }: { contactId: string }) {
   const [kundli, setKundli] = useState<Kundli | null>(null);
@@ -244,7 +244,7 @@ export function KundliPanel({ contactId }: { contactId: string }) {
 
           {/* The money section for a supplier: what jewellery to sell them. */}
           {(kundli.likelyNeeds?.length || (kundli.pitchAngle && known(kundli.pitchAngle.bestProduct))) ? (
-            <Section title="What to pitch them">
+            <Section title="What to pitch them" accent>
               {kundli.likelyNeeds?.length ? (
                 <ul className="kp-bullets kp-bullets--pitch">{kundli.likelyNeeds.map((n) => <li key={n}>{n}</li>)}</ul>
               ) : null}
@@ -266,11 +266,13 @@ export function KundliPanel({ contactId }: { contactId: string }) {
           ) : null}
 
           {(() => {
-            const opening = lang === 'hinglish' ? (kundli.hinglishScript?.opening || script?.opening) : (script?.opening || kundli.hinglishScript?.opening);
-            const pitch = lang === 'hinglish' ? (kundli.hinglishScript?.valuePitch || script?.valuePitch) : (script?.valuePitch || kundli.hinglishScript?.valuePitch);
+            const useLocal = lang !== 'english';
+            const opening = useLocal ? (kundli.hinglishScript?.opening || script?.opening) : (script?.opening || kundli.hinglishScript?.opening);
+            const pitch = useLocal ? (kundli.hinglishScript?.valuePitch || script?.valuePitch) : (script?.valuePitch || kundli.hinglishScript?.valuePitch);
+            const langLabel = lang === 'hinglish' ? 'Hinglish' : lang === 'hindi' ? 'हिंदी' : 'English';
             if (!opening) return null;
             return (
-              <Section title={`Say this · ${lang === 'hinglish' ? 'Hinglish' : 'English'}`}>
+              <Section title={`Say this · ${langLabel}`}>
                 <blockquote className="kp-say">
                   {opening}
                   <button className="kp-copy" onClick={() => void copy('opening', opening)}>
@@ -355,13 +357,14 @@ function LangSwitch({ lang, onChange }: { lang: Lang; onChange: (l: Lang) => voi
       <div className="kp-lang__seg">
         <button className={lang === 'english' ? 'on' : ''} onClick={() => onChange('english')}>English</button>
         <button className={lang === 'hinglish' ? 'on' : ''} onClick={() => onChange('hinglish')}>Hinglish</button>
+        <button className={lang === 'hindi' ? 'on' : ''} onClick={() => onChange('hindi')}>हिंदी</button>
       </div>
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return <section className="kp-section"><h3>{title}</h3>{children}</section>;
+function Section({ title, children, accent }: { title: string; children: React.ReactNode; accent?: boolean }) {
+  return <section className={`kp-section${accent ? ' kp-section--accent' : ''}`}><h3>{title}</h3>{children}</section>;
 }
 
 function Chip({ label, value }: { label: string; value?: string }) {

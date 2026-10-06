@@ -28,7 +28,7 @@ export interface KundliInput {
 }
 
 export type KundliMode = 'identity' | 'full';
-export type KundliLanguage = 'english' | 'hinglish';
+export type KundliLanguage = 'english' | 'hinglish' | 'hindi';
 
 export interface StorePresence {
   totalCities: number | null;
@@ -169,7 +169,11 @@ JSON shape:
 
 /** Stage 2 — the full brief, run only once identity holds up. */
 function buildFullPrompt(input: KundliInput, language: KundliLanguage): string {
-  const langName = language === 'hinglish' ? 'Hinglish (Hindi + English in Roman script)' : 'English';
+  const langName = language === 'hinglish' ? 'Hinglish (Hindi + English in Roman script)'
+    : language === 'hindi' ? 'Hindi (Devanagari script)' : 'English';
+  const secondScriptNote = language === 'hindi'
+    ? 'in natural Hindi, Devanagari script'
+    : 'Hinglish — Hindi + English in Roman script';
   return `You are a jewellery client research assistant for India. You work for a B2B JEWELLERY
 MANUFACTURER / WHOLESALER (the supplier) whose business is selling gold/diamond
 jewellery STOCK to retail jewellers. Prepare a short, accurate, telecaller-friendly
@@ -220,7 +224,7 @@ JSON shape (use "${UNKNOWN}" for anything you could not establish):
  "likelyNeeds":["jewellery categories/designs they would BUY to stock"],"talkingPoints":["5 jewellery-supply points"],
  "pitchAngle":{"bestProduct":"a specific jewellery line to offer them","whyItFits":"","mainBenefit":"","bestTiming":""},
  "suggestedScript":{"opening":"one polite personalised line, no unverified facts","discoveryQuestions":["5 questions about their buying needs"],"valuePitch":"","objectionHandling":[""]},
- "hinglishScript":{"opening":"Hindi+English in Roman script","valuePitch":""},
+ "hinglishScript":{"opening":"${secondScriptNote}","valuePitch":"${secondScriptNote}"},
  "whatNotToSay":["3-5 points, e.g. do not assume they need suppliers"],
  "bestTimeOrChannel":"","importantFestivals":[""],"awards":[""],"recentSignals":[""],"risksNotes":[""],
  "confidence":"low|medium|high","sources":["url"]}`;

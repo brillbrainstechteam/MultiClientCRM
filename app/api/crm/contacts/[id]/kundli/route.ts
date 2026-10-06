@@ -32,7 +32,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const body = (await req.json().catch(() => ({}))) as { mode?: string; refresh?: boolean; language?: string };
   const mode = body.mode === 'full' ? 'full' : 'identity';
   const refresh = body.refresh === true;
-  const language = body.language === 'hinglish' ? 'hinglish' : 'english';
+  const language = body.language === 'hinglish' ? 'hinglish' : body.language === 'hindi' ? 'hindi' : 'english';
 
   const c = await prisma.crmContact.findFirst({
     where: { id, tenantId: user.tenantId },

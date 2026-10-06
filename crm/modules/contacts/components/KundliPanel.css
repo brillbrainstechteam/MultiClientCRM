@@ -39,11 +39,25 @@
 }
 .kp-chip em { font-style: normal; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--crm-text-secondary); }
 
-/* ---- Sections ------------------------------------------------------------ */
-.kp-section { display: flex; flex-direction: column; gap: 8px; }
+/* ---- Sections (each a readable card) ------------------------------------- */
+.kp-section {
+  display: flex; flex-direction: column; gap: 10px;
+  background: var(--crm-surface-raised, #fff); border: 1px solid var(--crm-border-subtle, #e7ecef);
+  border-radius: 14px; padding: 16px 18px;
+}
 .kp-section h3 {
-  margin: 0; font-size: 11.5px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.07em; color: var(--crm-text-secondary);
+  margin: 0; display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--crm-text-primary, #0f172a);
+}
+.kp-section h3::before {
+  content: ''; width: 4px; height: 14px; border-radius: 3px; flex: none;
+  background: var(--crm-brand-600, #10b981);
+}
+/* The money section — what jewellery to sell them — stands out. */
+.kp-section--accent {
+  background: linear-gradient(180deg, var(--crm-brand-50, #ecfdf5), var(--crm-surface-raised, #fff));
+  border-color: var(--crm-brand-200, #a7f3d0);
 }
 
 .kp-grid, .kp-pitch { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 20px; }
@@ -96,3 +110,17 @@
 .kp-photos { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; }
 .kp-photo { flex: 0 0 auto; width: 104px; height: 78px; border-radius: 10px; overflow: hidden; border: 1px solid var(--crm-border-subtle); }
 .kp-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ---- visual polish pass ---- */
+.kp-verify { box-shadow: 0 1px 2px rgba(15,23,42,.05); }
+.kp-verify__head { font-weight: 800; }
+.kp-overview { background: var(--crm-surface-sunken, #f1f5f9); border-radius: 12px; padding: 14px 16px; max-width: none; }
+.kp-chip { border: 1px solid var(--crm-border-subtle, #e7ecef); background: var(--crm-surface-raised, #fff); }
+.kp-chip em { color: var(--crm-brand-700, #047857); }
+.kp-photos { gap: 10px; }
+.kp-photo { width: 118px; height: 88px; box-shadow: 0 1px 3px rgba(15,23,42,.1); }
+.kp-cats { margin-bottom: 4px; }
+.kp-lang__seg button.on { color: var(--crm-brand-700, #047857); }
+.kp-say { box-shadow: 0 1px 2px rgba(16,185,129,.12); }
+/* section headers that carry a tone keep the accent bar coloured to match */
+.kp-section--accent h3::before { background: var(--crm-brand-700, #047857); }
