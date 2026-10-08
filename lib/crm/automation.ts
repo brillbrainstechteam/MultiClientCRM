@@ -81,9 +81,20 @@ async function applyActions(ctx: InboundContext, actions: RuleAction[]): Promise
 }
 
 /** Send an approved template to the contact (event-based campaign send). */
-async function sendTemplate(ctx: InboundContext, templateName: string, locale: string | null, contactName: string): Promise<boolean> {
+async function sendTemplate(
+  ctx: InboundContext,
+  templateName: string,
+  locale: string | null,
+  contactName: string,
+  headerMediaUrl?: string | null,
+  headerMediaType?: string | null,
+): Promise<boolean> {
   if (!ctx.accessToken) return false;
   const token = decrypt(ctx.accessToken);
+  // Image/video/document header templates carry the media per send, as a link.
+  const headerComponent = headerMediaUrl && (headerMediaType === 'image' || headerMediaType === 'video' || headerMediaType === 'document')
+    ? [{ type: 'header', parameters: [{ type: headerMediaType, [headerMediaType]: { link: headerMediaUrl } }] }]
+    : [];
   const res = await fetch(`${graphBase()}/${ctx.phoneNumberId}/messages`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -94,7 +105,10 @@ async function sendTemplate(ctx: InboundContext, templateName: string, locale: s
       template: {
         name: templateName,
         language: { code: locale || 'en' },
-        components: [{ type: 'body', parameters: [{ type: 'text', text: contactName || 'there' }] }],
+        components: [
+          ...headerComponent,
+          { type: 'body', parameters: [{ type: 'text', text: contactName || 'there' }] },
+        ],
       },
     }),
   });
@@ -126,7 +140,7 @@ async function runTriggerCampaigns(ctx: InboundContext): Promise<void> {
     if (already) continue;
 
     try {
-      const ok = await sendTemplate(ctx, c.templateName!, c.templateLocale, contact?.name ?? '');
+      const ok = await sendTemplate(ctx, c.templateName!, c.templateLocale, contact?.name ?? '', c.headerMediaUrl, c.headerMediaType);
       await prisma.crmCampaignRecipient.create({
         data: { campaignId: c.id, tenantId: ctx.tenantId, contactId: contact?.id ?? null, mobile: ctx.from, status: ok ? 'sent' : 'failed' },
       });

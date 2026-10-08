@@ -5,6 +5,7 @@ import { decrypt } from '@/lib/crypto';
 import { graphBase } from '@/lib/meta/config';
 import { graphErrorMessage, isAuthError, markTokenInvalid, type GraphErrorBody } from '@/lib/meta/account';
 import { toMetaTemplate, TemplateMappingError, type TemplateDraftInput } from '@/lib/meta/templates';
+import { uploadHeaderSample } from '@/lib/meta/upload';
 import { audit } from '@/lib/crm/audit';
 
 /**
@@ -21,7 +22,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Your role cannot submit templates to Meta.' }, { status: 403 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as { draft?: TemplateDraftInput; metaTemplateId?: string };
+  const body = (await req.json().catch(() => ({}))) as {
+    draft?: TemplateDraftInput;
+    metaTemplateId?: string;
+    headerMedia?: { base64?: string; mimeType?: string; fileName?: string };
+  };
   if (!body.draft) return NextResponse.json({ error: 'Missing template.' }, { status: 400 });
 
   const account = await prisma.whatsAppAccount.findFirst({
@@ -30,6 +35,22 @@ export async function POST(req: Request) {
   });
   if (!account?.wabaId || !account.accessToken) {
     return NextResponse.json({ error: 'Connect a WhatsApp number before submitting templates.' }, { status: 400 });
+  }
+
+  // Image/video/document header: upload the sample to Meta's Resumable Upload
+  // API first and carry the returned handle into the HEADER component.
+  const hf = body.draft.components?.headerFormat;
+  if (body.draft.format === 'standard' && (hf === 'image' || hf === 'video' || hf === 'document') && body.headerMedia?.base64) {
+    try {
+      const bytes = Buffer.from(body.headerMedia.base64, 'base64');
+      body.draft.components.headerHandle = await uploadHeaderSample(
+        bytes,
+        body.headerMedia.mimeType || 'application/octet-stream',
+        body.headerMedia.fileName || `header-sample.${hf === 'image' ? 'jpg' : hf === 'video' ? 'mp4' : 'pdf'}`,
+      );
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : 'Could not upload the header sample.' }, { status: 502 });
+    }
   }
 
   let payload;

@@ -167,6 +167,8 @@ export interface Campaign {
   whatsappNumberId: string | null;
   templateId: string | null;
   templateLocale: string | null;
+  /** Per-send media for an image/video/document header template — a public URL Meta can fetch. */
+  headerMediaUrl?: string | null;
 
   includedSources: AudienceSourceRef[];
   excludedSources: AudienceExclusionRef[];

@@ -1,7 +1,7 @@
 import { Pencil, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useScopedHref } from '@crm/app/use-scoped-href';
-import { Banner, Button, EmptyState } from '@crm/design-system';
+import { Banner, Button, EmptyState, Input } from '@crm/design-system';
 import type { WhatsAppNumber } from '@crm/mock-data';
 import { ApprovedTemplatePicker, WhatsAppTemplatePreview, type TemplateSelection } from '@crm/modules/templates/components';
 import { findTemplate, templates as allTemplates } from '@crm/modules/templates/data';
@@ -37,7 +37,12 @@ export function TemplateStep({
       updatedAt: new Date().toISOString(),
     }));
 
-  const changeTemplate = () => setDraft((d) => ({ ...d, templateId: null, templateLocale: null }));
+  const changeTemplate = () => setDraft((d) => ({ ...d, templateId: null, templateLocale: null, headerMediaUrl: null }));
+
+  // Image/video/document header templates need a public media URL supplied per send.
+  const mediaHeaderFormat = selectedTemplate && ['image', 'video', 'document'].includes(selectedTemplate.components.headerFormat)
+    ? selectedTemplate.components.headerFormat
+    : null;
 
   if (!waba) {
     return (
@@ -96,6 +101,18 @@ export function TemplateStep({
             </Button>
           </div>
           <WhatsAppTemplatePreview components={selectedTemplate.components} format={selectedTemplate.format} />
+          {mediaHeaderFormat ? (
+            <div className="crm-camp-template-step__media-url">
+              <Input
+                label={`Header ${mediaHeaderFormat} URL`}
+                type="url"
+                placeholder={mediaHeaderFormat === 'image' ? 'https://…/banner.jpg' : mediaHeaderFormat === 'video' ? 'https://…/clip.mp4' : 'https://…/catalogue.pdf'}
+                value={draft.headerMediaUrl ?? ''}
+                onChange={(e) => setDraft((d) => ({ ...d, headerMediaUrl: e.target.value, updatedAt: new Date().toISOString() }))}
+                hint={`This template has a ${mediaHeaderFormat} header. Paste a public URL Meta can fetch — it is sent with every message.`}
+              />
+            </div>
+          ) : null}
         </div>
       ) : (
         <ApprovedTemplatePicker wabaId={waba.id} onSelect={onSelect} />

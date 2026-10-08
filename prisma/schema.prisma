@@ -620,6 +620,8 @@ model CrmCampaign {
   templateId        String?                          // Meta template id
   templateName      String?
   templateLocale    String?
+  headerMediaUrl    String?                          // public URL for an image/video/document header template
+  headerMediaType   String?                          // image | video | document
   whatsappNumberId  String?                          // WhatsAppAccount id used to send
   segmentId         String?                          // optional CRM segment
   audienceFilter    Json?                            // structured audience filter snapshot

@@ -25,13 +25,20 @@ export function TriggerStep({ draft }: { draft: Campaign }) {
   const [event, setEvent] = useState('first_message');
   const [keyword, setKeyword] = useState('');
   const [templateId, setTemplateId] = useState(approved[0]?.id ?? '');
+  const [headerMediaUrl, setHeaderMediaUrl] = useState('');
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+
+  const selectedTpl = approved.find((t) => t.id === templateId);
+  const mediaHeaderFormat = selectedTpl && ['image', 'video', 'document'].includes(selectedTpl.components.headerFormat)
+    ? selectedTpl.components.headerFormat
+    : null;
 
   const create = async () => {
     if (!draft.name.trim()) { setToast('Give the campaign a name on the Setup step first.'); return; }
     if (!templateId) { setToast('Pick an approved template.'); return; }
     if (event === 'keyword' && !keyword.trim()) { setToast('Enter a keyword to match.'); return; }
+    if (mediaHeaderFormat && !headerMediaUrl.trim()) { setToast(`Paste a public ${mediaHeaderFormat} URL for the header.`); return; }
     const tpl = approved.find((t) => t.id === templateId);
     setBusy(true);
     try {
@@ -45,6 +52,8 @@ export function TriggerStep({ draft }: { draft: Campaign }) {
           templateId: tpl?.metaTemplateId ?? tpl?.id,
           templateName: tpl?.name,
           templateLocale: tpl?.locale,
+          headerMediaUrl: mediaHeaderFormat ? headerMediaUrl.trim() : undefined,
+          headerMediaType: mediaHeaderFormat ?? undefined,
           whatsappNumberId: draft.whatsappNumberId,
         }),
       });
@@ -76,6 +85,16 @@ export function TriggerStep({ draft }: { draft: Campaign }) {
         value={templateId}
         onChange={(e) => setTemplateId(e.target.value)}
       />
+      {mediaHeaderFormat ? (
+        <Input
+          label={`Header ${mediaHeaderFormat} URL`}
+          type="url"
+          value={headerMediaUrl}
+          onChange={(e) => setHeaderMediaUrl(e.target.value)}
+          placeholder={mediaHeaderFormat === 'image' ? 'https://…/banner.jpg' : mediaHeaderFormat === 'video' ? 'https://…/clip.mp4' : 'https://…/catalogue.pdf'}
+          hint={`This template has a ${mediaHeaderFormat} header — paste a public URL Meta can fetch.`}
+        />
+      ) : null}
       {approved.length === 0 ? (
         <Banner tone="warning" title="No approved templates" description="Get a template approved on the connected WhatsApp number first — event-based campaigns can only send approved templates." />
       ) : null}

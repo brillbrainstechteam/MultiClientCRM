@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button, Input, Select, Textarea } from '@crm/design-system';
 import type { ButtonType, HeaderFormat, TemplateComponents } from '../../domain/types';
@@ -28,6 +29,17 @@ export function StandardFields({
   setComponents: (updater: (c: TemplateComponents) => TemplateComponents) => void;
 }) {
   const bodyVariableIndexes = [...components.body.matchAll(/\{\{(\d+)\}\}/g)].map((m) => Number(m[1]));
+  const mediaInputRef = useRef<HTMLInputElement>(null);
+
+  const onMediaChosen = (file: File | undefined) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = String(reader.result).split(',')[1] ?? '';
+      setComponents((c) => ({ ...c, headerMediaLabel: file.name, headerMedia: { base64, mimeType: file.type, fileName: file.name } }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   const addButton = () =>
     setComponents((c) => ({
@@ -65,9 +77,19 @@ export function StandardFields({
           />
         ) : null}
         {components.headerFormat === 'image' || components.headerFormat === 'video' || components.headerFormat === 'document' ? (
-          <Button variant="secondary" size="sm" onClick={() => setComponents((c) => ({ ...c, headerMediaLabel: `${c.headerFormat}-sample.${c.headerFormat === 'image' ? 'jpg' : c.headerFormat === 'video' ? 'mp4' : 'pdf'}` }))}>
-            {components.headerMediaLabel ? `Replace media (${components.headerMediaLabel})` : 'Upload media'}
-          </Button>
+          <div>
+            <input
+              ref={mediaInputRef}
+              type="file"
+              accept={components.headerFormat === 'image' ? 'image/jpeg,image/png' : components.headerFormat === 'video' ? 'video/mp4' : 'application/pdf'}
+              hidden
+              onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; onMediaChosen(f); }}
+            />
+            <Button variant="secondary" size="sm" onClick={() => mediaInputRef.current?.click()}>
+              {components.headerMediaLabel ? `Replace sample (${components.headerMediaLabel})` : 'Upload sample file'}
+            </Button>
+            <p className="crm-composer-fields__hint">Meta reviews the template against this sample {components.headerFormat}.</p>
+          </div>
         ) : null}
       </section>
 

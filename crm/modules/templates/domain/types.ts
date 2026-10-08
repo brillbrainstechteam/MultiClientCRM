@@ -113,6 +113,8 @@ export interface TemplateComponents {
   headerFormat: HeaderFormat;
   headerText?: string;
   headerMediaLabel?: string;
+  /** Sample file for an image/video/document header, uploaded to Meta at submit. */
+  headerMedia?: { base64: string; mimeType: string; fileName: string } | null;
   body: string;
   footer?: string;
   buttons: TemplateButton[];

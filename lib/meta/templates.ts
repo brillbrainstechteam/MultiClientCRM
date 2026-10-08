@@ -17,6 +17,8 @@ export interface DraftButton {
 export interface DraftComponents {
   headerFormat: string;
   headerText?: string;
+  /** Resumable-upload handle for an image/video/document header (set server-side). */
+  headerHandle?: string;
   body: string;
   footer?: string;
   buttons: DraftButton[];
@@ -90,9 +92,14 @@ export function toMetaTemplate(input: TemplateDraftInput): MetaTemplatePayload {
     }
     components.push({ type: 'HEADER', format: 'TEXT', text: c.headerText.trim() });
   } else if (['image', 'video', 'document'].includes(c.headerFormat)) {
-    throw new TemplateMappingError(
-      `${/^[aeiou]/.test(c.headerFormat) ? 'An' : 'A'} ${c.headerFormat} header needs a sample file uploaded to Meta, which TalkTrack doesn't support yet — use a text header or none.`,
-    );
+    // Meta reviews a media header against a sample file, referenced by the
+    // handle returned from the Resumable Upload API (done in the submit route).
+    if (!c.headerHandle) {
+      throw new TemplateMappingError(
+        `Attach a sample ${c.headerFormat} for the header before submitting — Meta reviews the template against it.`,
+      );
+    }
+    components.push({ type: 'HEADER', format: c.headerFormat.toUpperCase(), example: { header_handle: [c.headerHandle] } });
   }
 
   const body = (c.body ?? '').trim();

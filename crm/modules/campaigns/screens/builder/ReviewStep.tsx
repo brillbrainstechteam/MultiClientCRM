@@ -90,6 +90,9 @@ export function ReviewStep({
   if (!capabilities.templateUsable) {
     blockers.push({ id: 'template', message: capabilities.templateUnusableReason ?? 'No usable template selected.', step: 'template' });
   }
+  if (template && ['image', 'video', 'document'].includes(template.components.headerFormat) && !(draft.headerMediaUrl ?? '').trim()) {
+    blockers.push({ id: 'header-media', message: `This template has a ${template.components.headerFormat} header — add a public media URL on the Template step.`, step: 'template' });
+  }
   if (draft.audience.finalEligible === 0) {
     blockers.push({ id: 'audience', message: 'No eligible recipients remain after exclusions and personalisation.', step: 'audience' });
   }
@@ -121,6 +124,10 @@ export function ReviewStep({
         templateId: template?.metaTemplateId ?? draft.templateId,
         templateName: template?.name,
         templateLocale: template?.locale,
+        headerMediaUrl: draft.headerMediaUrl ?? null,
+        headerMediaType: template && ['image', 'video', 'document'].includes(template.components.headerFormat)
+          ? template.components.headerFormat
+          : null,
         whatsappNumberId: draft.whatsappNumberId,
         scheduledAt,
       }),

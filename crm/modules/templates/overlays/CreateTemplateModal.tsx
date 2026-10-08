@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Copy, FilePlus2, Library, Sparkles } from 'lucide-react';
+import { Copy, FilePlus2, Library } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useScopedHref } from '@crm/app/use-scoped-href';
-import { Badge, Modal, SearchField } from '@crm/design-system';
+import { Modal, SearchField } from '@crm/design-system';
 import { templates } from '../data/mockTemplates';
 import { TemplateStatusBadge } from '../components';
 
@@ -66,21 +66,13 @@ export function CreateTemplateModal() {
             className="crm-tpl-create__option"
             onClick={() => {
               close();
-              navigate(scopedHref('/templates/library'));
+              navigate(scopedHref('/templates/ready'));
             }}
           >
             <Library aria-hidden="true" />
             <div>
-              <p className="crm-tpl-create__option-title">Ready-made template</p>
-              <p className="crm-tpl-create__option-desc">Browse the library for a proven starting point.</p>
-            </div>
-          </button>
-
-          <button className="crm-tpl-create__option crm-tpl-create__option--disabled" disabled>
-            <Sparkles aria-hidden="true" />
-            <div>
-              <p className="crm-tpl-create__option-title">Generate with AI <Badge tone="neutral">Coming soon</Badge></p>
-              <p className="crm-tpl-create__option-desc">AI-assisted drafting is planned for a future release.</p>
+              <p className="crm-tpl-create__option-title">Marketing templates</p>
+              <p className="crm-tpl-create__option-desc">Start from a ready jewellery template and edit it.</p>
             </div>
           </button>
         </div>

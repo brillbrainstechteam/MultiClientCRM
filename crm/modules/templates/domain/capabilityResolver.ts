@@ -24,42 +24,15 @@ const formatLabel: Record<TemplateFormat, string> = {
   payment: 'Payment / Checkout',
 };
 
-export function resolveFormatCapabilities(waba: WhatsAppBusinessAccount): FormatAvailability[] {
+export function resolveFormatCapabilities(_waba: WhatsAppBusinessAccount): FormatAvailability[] {
+  // Only the formats the Meta submission layer (lib/meta/templates.ts) can
+  // actually create are offered — a Standard template (text or image/document
+  // header, body, footer, buttons) and an Authentication OTP. Carousel,
+  // Catalogue, Limited-Time Offer, Flow and Payment are not surfaced because
+  // they can't be submitted yet and aren't needed for B2B jewellery outreach.
   return [
     { format: 'standard', label: formatLabel.standard, available: true },
-    { format: 'carousel', label: formatLabel.carousel, available: true },
     { format: 'authentication', label: formatLabel.authentication, available: true },
-    { format: 'offer', label: formatLabel.offer, available: true },
-    {
-      format: 'catalogue',
-      label: formatLabel.catalogue,
-      available: waba.catalogueConnected,
-      reason: waba.catalogueConnected
-        ? undefined
-        : 'Connect a product catalogue for this WhatsApp Business Account before using catalogue templates.',
-      ctaLabel: waba.catalogueConnected ? undefined : 'Configure Catalogue',
-      ctaTo: waba.catalogueConnected ? undefined : '/catalogue-orders',
-    },
-    {
-      format: 'flow',
-      label: formatLabel.flow,
-      available: waba.flowAvailable,
-      reason: waba.flowAvailable
-        ? undefined
-        : 'No Flows are available on this WhatsApp Business Account yet.',
-      ctaLabel: waba.flowAvailable ? undefined : 'Manage Flows',
-      ctaTo: waba.flowAvailable ? undefined : '/automation',
-    },
-    {
-      format: 'payment',
-      label: formatLabel.payment,
-      available: waba.paymentAvailable,
-      reason: waba.paymentAvailable
-        ? undefined
-        : 'Payment/checkout templates need a connected commerce provider for this account.',
-      ctaLabel: waba.paymentAvailable ? undefined : 'View Commerce Settings',
-      ctaTo: waba.paymentAvailable ? undefined : '/settings',
-    },
   ];
 }
 

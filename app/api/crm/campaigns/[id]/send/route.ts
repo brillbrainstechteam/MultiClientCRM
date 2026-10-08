@@ -71,14 +71,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const token = decrypt(account.accessToken);
   const langCode = campaign.templateLocale || 'en';
+  // Image/video/document header templates carry the media per send, as a link.
+  const headerType = campaign.headerMediaType;
+  const headerUrl = campaign.headerMediaUrl;
+  const headerComponent = headerUrl && (headerType === 'image' || headerType === 'video' || headerType === 'document')
+    ? [{ type: 'header', parameters: [{ type: headerType, [headerType]: { link: headerUrl } }] }]
+    : [];
   let sent = 0, failed = 0;
 
   for (const c of audience) {
     const to = digits(c.mobile);
     const paramTexts = [...(body.nameAsFirstParam ? [c.name || 'there'] : []), ...fixedParams];
-    const components = paramTexts.length
-      ? [{ type: 'body', parameters: paramTexts.map((t) => ({ type: 'text', text: t })) }]
-      : [];
+    const components = [
+      ...headerComponent,
+      ...(paramTexts.length ? [{ type: 'body', parameters: paramTexts.map((t) => ({ type: 'text', text: t })) }] : []),
+    ];
     try {
       const res = await fetch(`${graphBase()}/${account.phoneNumberId}/messages`, {
         method: 'POST',

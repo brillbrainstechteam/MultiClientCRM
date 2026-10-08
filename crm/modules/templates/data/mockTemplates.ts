@@ -820,6 +820,9 @@ export async function submitTemplateToMeta(
           components: draft.components,
         },
         metaTemplateId,
+        // Sample media for an image/video/document header — uploaded to Meta's
+        // Resumable Upload API server-side to get the review handle.
+        headerMedia: draft.components.headerMedia ?? undefined,
       }),
     });
     const data = (await res.json().catch(() => ({}))) as { error?: string; metaTemplateId?: string; status?: string };
