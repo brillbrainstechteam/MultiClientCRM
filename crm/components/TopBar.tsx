@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bell, ChevronDown, CircleHelp, LogOut } from 'lucide-react';
+import { ChevronDown, CircleHelp, LogOut } from 'lucide-react';
 import './TopBar.css'; // loads after crm-bundle.css so the account dropdown styles apply
 import { useAppSession } from '@crm/app/app-session';
 import { useWorkspace } from '@crm/app/workspace-context';
 import { Avatar, IconButton, SearchField, Select } from '@crm/design-system';
+import { NotificationsBell } from './NotificationsBell';
 import type { RoleKey } from '@crm/mock-data';
 
 const roleOptions = [
@@ -83,7 +84,7 @@ export function TopBar() {
         ) : null}
 
         <IconButton label="Help" icon={<CircleHelp />} disabled />
-        <IconButton label="Notifications" icon={<Bell />} disabled />
+        <NotificationsBell />
 
         <div className="crm-topbar__account" ref={accountRef}>
           <button

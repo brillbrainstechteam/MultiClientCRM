@@ -88,8 +88,8 @@ async function sendTemplate(
   contactName: string,
   headerMediaUrl?: string | null,
   headerMediaType?: string | null,
-): Promise<boolean> {
-  if (!ctx.accessToken) return false;
+): Promise<{ ok: boolean; capped: boolean }> {
+  if (!ctx.accessToken) return { ok: false, capped: false };
   const token = decrypt(ctx.accessToken);
   // Image/video/document header templates carry the media per send, as a link.
   const headerComponent = headerMediaUrl && (headerMediaType === 'image' || headerMediaType === 'video' || headerMediaType === 'document')
@@ -112,7 +112,10 @@ async function sendTemplate(
       },
     }),
   });
-  return res.ok;
+  if (res.ok) return { ok: true, capped: false };
+  // Marketing per-user frequency cap (131049): withheld, not a hard failure.
+  const err = (await res.json().catch(() => ({}))) as { error?: { code?: number } };
+  return { ok: false, capped: err.error?.code === 131049 };
 }
 
 /**
@@ -140,11 +143,20 @@ async function runTriggerCampaigns(ctx: InboundContext): Promise<void> {
     if (already) continue;
 
     try {
-      const ok = await sendTemplate(ctx, c.templateName!, c.templateLocale, contact?.name ?? '', c.headerMediaUrl, c.headerMediaType);
+      const { ok, capped } = await sendTemplate(ctx, c.templateName!, c.templateLocale, contact?.name ?? '', c.headerMediaUrl, c.headerMediaType);
+      const status = ok ? 'sent' : capped ? 'capped' : 'failed';
       await prisma.crmCampaignRecipient.create({
-        data: { campaignId: c.id, tenantId: ctx.tenantId, contactId: contact?.id ?? null, mobile: ctx.from, status: ok ? 'sent' : 'failed' },
+        data: { campaignId: c.id, tenantId: ctx.tenantId, contactId: contact?.id ?? null, mobile: ctx.from, status, ...(capped ? { error: 'Marketing frequency cap (131049) — do not retry for 24h' } : {}) },
       });
-      await prisma.crmCampaign.update({ where: { id: c.id }, data: ok ? { sentCount: { increment: 1 }, totalRecipients: { increment: 1 } } : { failedCount: { increment: 1 }, totalRecipients: { increment: 1 } } });
+      // Capped recipients are withheld, not failures — count them toward reach, not failedCount.
+      await prisma.crmCampaign.update({
+        where: { id: c.id },
+        data: ok
+          ? { sentCount: { increment: 1 }, totalRecipients: { increment: 1 } }
+          : capped
+            ? { totalRecipients: { increment: 1 } }
+            : { failedCount: { increment: 1 }, totalRecipients: { increment: 1 } },
+      });
       if (ok) await audit({ tenantId: ctx.tenantId, action: 'campaign.sent', targetType: 'campaign', targetId: c.id, detail: `Event-based (${evt}) -> ${ctx.from}` });
     } catch {
       // never break the webhook

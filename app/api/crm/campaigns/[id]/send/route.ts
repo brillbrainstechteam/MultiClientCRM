@@ -77,7 +77,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const headerComponent = headerUrl && (headerType === 'image' || headerType === 'video' || headerType === 'document')
     ? [{ type: 'header', parameters: [{ type: headerType, [headerType]: { link: headerUrl } }] }]
     : [];
-  let sent = 0, failed = 0;
+  // Meta's marketing per-user frequency cap. A capped recipient is not a hard
+  // failure — the message was withheld because the user is over their marketing
+  // limit. We must NOT retry within 24h, so we record it distinctly.
+  const MARKETING_CAP_CODE = 131049;
+  let sent = 0, failed = 0, capped = 0;
 
   for (const c of audience) {
     const to = digits(c.mobile);
@@ -97,11 +101,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           template: { name: campaign.templateName, language: { code: langCode }, components },
         }),
       });
-      const json = (await res.json().catch(() => ({}))) as { messages?: Array<{ id?: string }>; error?: { message?: string } };
+      const json = (await res.json().catch(() => ({}))) as { messages?: Array<{ id?: string }>; error?: { message?: string; code?: number } };
       if (res.ok) {
         sent++;
         await prisma.crmCampaignRecipient.create({
           data: { campaignId: id, tenantId: user.tenantId, contactId: c.id, mobile: to, status: 'sent', waMessageId: json.messages?.[0]?.id ?? null },
+        });
+      } else if (json.error?.code === MARKETING_CAP_CODE) {
+        capped++;
+        await prisma.crmCampaignRecipient.create({
+          data: { campaignId: id, tenantId: user.tenantId, contactId: c.id, mobile: to, status: 'capped', error: 'Marketing frequency cap (131049) — do not retry for 24h' },
         });
       } else {
         failed++;
@@ -118,6 +127,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   await prisma.crmCampaign.update({ where: { id }, data: { status: 'completed', sentCount: sent, failedCount: failed } });
-  await audit({ tenantId: user.tenantId, actorId: user.id, action: 'campaign.sent', targetType: 'campaign', targetId: id, detail: `${campaign.name}: ${sent} sent, ${failed} failed` });
-  return NextResponse.json({ totalRecipients: audience.length, sent, failed });
+  const cappedNote = capped ? `, ${capped} capped (marketing limit)` : '';
+  await audit({ tenantId: user.tenantId, actorId: user.id, action: 'campaign.sent', targetType: 'campaign', targetId: id, detail: `${campaign.name}: ${sent} sent, ${failed} failed${cappedNote}` });
+  return NextResponse.json({ totalRecipients: audience.length, sent, failed, capped });
 }
