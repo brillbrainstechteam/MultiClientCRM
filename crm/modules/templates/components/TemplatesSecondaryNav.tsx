@@ -13,7 +13,7 @@ interface SecondaryNavItem {
 const items: SecondaryNavItem[] = [
   { label: 'Repository', to: '/templates', icon: LayoutGrid, matchPrefix: '/templates', end: true },
   { label: 'Marketing Templates', to: '/templates/ready', icon: Sparkles, matchPrefix: '/templates/ready' },
-  { label: 'Ready-Made Library', to: '/templates/library', icon: BookOpenCheck, matchPrefix: '/templates/library' },
+  { label: 'Template Library', to: '/templates/library', icon: BookOpenCheck, matchPrefix: '/templates/library' },
   { label: 'Internal Approvals', to: '/templates/approvals', icon: ClipboardCheck, matchPrefix: '/templates/approvals' },
 ];
 
