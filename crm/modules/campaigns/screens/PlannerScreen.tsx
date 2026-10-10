@@ -1,12 +1,12 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Plus, X, Trash2, Sparkles, CalendarDays, ListFilter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X, Trash2, Sparkles, CalendarDays, ListFilter, Bell } from 'lucide-react';
 import { PageHeader } from '@crm/components';
 import { Button, Select } from '@crm/design-system';
 import { useWorkspace } from '@crm/app/workspace-context';
 import { FESTIVALS_2026 } from '../data/festivals';
 import './PlannerScreen.css';
 
-interface PlanEvent { id: string; title: string; type: string; date: string; endDate: string | null; note: string | null; }
+interface PlanEvent { id: string; title: string; type: string; date: string; endDate: string | null; note: string | null; remindDaysBefore?: number | null; assigneeUserIds?: string[]; notifyWhatsapp?: boolean; }
 
 const TYPE_META: Record<string, { label: string; cls: string }> = {
   field: { label: 'Field marketing', cls: 'field' },
@@ -33,6 +33,7 @@ export default function PlannerScreen() {
   const [hiddenTypes, setHiddenTypes] = useState<Set<string>>(new Set());
   const [events, setEvents] = useState<PlanEvent[]>([]);
   const [adding, setAdding] = useState<string | null>(null); // date being added to
+  const [editing, setEditing] = useState<PlanEvent | null>(null); // event being viewed/edited
   const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -151,9 +152,10 @@ export default function PlannerScreen() {
                 </div>
                 {fests.map((f, j) => <div key={`f${j}`} className="pn-ev pn-ev--fest" title={f}><Sparkles size={10} /> {f}</div>)}
                 {evs.map((e) => (
-                  <div key={e.id} className={`pn-ev pn-ev--${TYPE_META[e.type]?.cls ?? 'camp'}`} title={e.note ?? e.title}>
+                  <div key={e.id} className={`pn-ev pn-ev--${TYPE_META[e.type]?.cls ?? 'camp'} pn-ev--clickable`} title={e.note ?? e.title} role="button" tabIndex={0} onClick={() => setEditing(e)} onKeyDown={(k) => { if (k.key === 'Enter') setEditing(e); }}>
+                    {e.remindDaysBefore != null ? <Bell size={9} aria-label="Has reminder" /> : null}
                     <span>{e.title}</span>
-                    {canEdit ? <button className="pn-ev__x" onClick={() => remove(e.id)} aria-label="Remove"><Trash2 size={10} /></button> : null}
+                    {canEdit ? <button className="pn-ev__x" onClick={(ev) => { ev.stopPropagation(); remove(e.id); }} aria-label="Remove"><Trash2 size={10} /></button> : null}
                   </div>
                 ))}
               </div>
@@ -164,18 +166,35 @@ export default function PlannerScreen() {
         <div className="pn-agenda">
           {agenda.length === 0 ? (
             <p className="pn-agenda__empty">No activities or festivals between {prettyDate(rangeFrom)} and {prettyDate(rangeTo)}.</p>
-          ) : agenda.map((r, i) => (
-            <div key={`${r.kind}-${r.id ?? i}`} className={`pn-agenda__row pn-ev--${r.kind === 'festival' ? 'fest' : (TYPE_META[r.type ?? '']?.cls ?? 'camp')}`}>
-              <span className="pn-agenda__date">{prettyDate(r.date)}</span>
-              <span className="pn-agenda__badge">{r.kind === 'festival' ? 'Festival' : (TYPE_META[r.type ?? '']?.label ?? r.type)}</span>
-              <span className="pn-agenda__title">{r.title}{r.note ? <em> — {r.note}</em> : null}</span>
-              {canEdit && r.kind === 'event' && r.id ? <button className="pn-agenda__x" onClick={() => remove(r.id!)} aria-label="Remove"><Trash2 size={13} /></button> : null}
-            </div>
-          ))}
+          ) : agenda.map((r, i) => {
+            const ev = r.kind === 'event' && r.id ? events.find((e) => e.id === r.id) : null;
+            return (
+              <div
+                key={`${r.kind}-${r.id ?? i}`}
+                className={`pn-agenda__row pn-ev--${r.kind === 'festival' ? 'fest' : (TYPE_META[r.type ?? '']?.cls ?? 'camp')}${ev ? ' pn-agenda__row--clickable' : ''}`}
+                role={ev ? 'button' : undefined} tabIndex={ev ? 0 : undefined}
+                onClick={ev ? () => setEditing(ev) : undefined}
+                onKeyDown={ev ? (k) => { if (k.key === 'Enter') setEditing(ev); } : undefined}
+              >
+                <span className="pn-agenda__date">{prettyDate(r.date)}</span>
+                <span className="pn-agenda__badge">{r.kind === 'festival' ? 'Festival' : (TYPE_META[r.type ?? '']?.label ?? r.type)}</span>
+                <span className="pn-agenda__title">{r.title}{r.note ? <em> — {r.note}</em> : null}{ev?.remindDaysBefore != null ? <Bell size={11} className="pn-agenda__bell" /> : null}</span>
+                {canEdit && r.kind === 'event' && r.id ? <button className="pn-agenda__x" onClick={(e) => { e.stopPropagation(); remove(r.id!); }} aria-label="Remove"><Trash2 size={13} /></button> : null}
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {adding ? <AddModal date={adding} onClose={() => setAdding(null)} onDone={(msg) => { setAdding(null); setToast(msg); load(); }} /> : null}
+      {(adding || editing) ? (
+        <PlanModal
+          date={adding ?? undefined}
+          event={editing ?? undefined}
+          canEdit={canEdit}
+          onClose={() => { setAdding(null); setEditing(null); }}
+          onDone={(msg) => { setAdding(null); setEditing(null); setToast(msg); load(); }}
+        />
+      ) : null}
       {toast ? <div className="pn-toast" role="status" onAnimationEnd={() => setToast(null)}>{toast}</div> : null}
     </div>
   );
@@ -183,14 +202,18 @@ export default function PlannerScreen() {
 
 interface Member { id: string; name: string; role?: string; department?: string | null }
 
-function AddModal({ date, onClose, onDone }: { date: string; onClose: () => void; onDone: (msg: string) => void }) {
-  const [title, setTitle] = useState('');
-  const [type, setType] = useState('campaign');
-  const [endDate, setEndDate] = useState('');
-  const [note, setNote] = useState('');
-  const [remindDays, setRemindDays] = useState('');
-  const [assignees, setAssignees] = useState<Set<string>>(new Set());
-  const [notifyWhatsapp, setNotifyWhatsapp] = useState(false);
+/** Add a new plan (when `date` is given) or view/edit/delete an existing one (when `event` is given). */
+function PlanModal({ date, event, canEdit, onClose, onDone }: { date?: string; event?: PlanEvent; canEdit: boolean; onClose: () => void; onDone: (msg: string) => void }) {
+  const isEdit = Boolean(event);
+  const baseDate = event ? event.date.slice(0, 10) : (date ?? '');
+  const [title, setTitle] = useState(event?.title ?? '');
+  const [type, setType] = useState(event?.type ?? 'campaign');
+  const [when, setWhen] = useState(baseDate);
+  const [endDate, setEndDate] = useState(event?.endDate ? event.endDate.slice(0, 10) : '');
+  const [note, setNote] = useState(event?.note ?? '');
+  const [remindDays, setRemindDays] = useState(event?.remindDaysBefore != null ? String(event.remindDaysBefore) : '');
+  const [assignees, setAssignees] = useState<Set<string>>(new Set(event?.assigneeUserIds ?? []));
+  const [notifyWhatsapp, setNotifyWhatsapp] = useState(Boolean(event?.notifyWhatsapp));
   const [members, setMembers] = useState<Member[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -204,32 +227,50 @@ function AddModal({ date, onClose, onDone }: { date: string; onClose: () => void
 
   const save = async () => {
     if (!title.trim()) { setErr('Add a title.'); return; }
+    if (!when) { setErr('Pick a date.'); return; }
     setBusy(true); setErr(null);
     try {
-      const remindDaysBefore = remindDays.trim() === '' ? undefined : Math.max(0, Number(remindDays));
-      const r = await fetch('/api/crm/plan-events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ title, type, date, endDate: endDate || undefined, note, remindDaysBefore, assigneeUserIds: [...assignees], notifyWhatsapp }) });
+      const remindDaysBefore = remindDays.trim() === '' ? (isEdit ? null : undefined) : Math.max(0, Number(remindDays));
+      const payload = { title, type, date: when, endDate: endDate || (isEdit ? null : undefined), note, remindDaysBefore, assigneeUserIds: [...assignees], notifyWhatsapp };
+      const r = isEdit
+        ? await fetch('/api/crm/plan-events', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ id: event!.id, ...payload }) })
+        : await fetch('/api/crm/plan-events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(payload) });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.error ?? 'Could not add.'); return; }
-      onDone(`Added “${title}” to the plan.`);
+      if (!r.ok) { setErr(d.error ?? 'Could not save.'); return; }
+      onDone(isEdit ? `Updated “${title}”.` : `Added “${title}” to the plan.`);
     } finally { setBusy(false); }
   };
+
+  const del = async () => {
+    if (!event) return;
+    setBusy(true); setErr(null);
+    try {
+      const r = await fetch(`/api/crm/plan-events?id=${event.id}`, { method: 'DELETE', credentials: 'same-origin' });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); setErr(d.error ?? 'Could not delete.'); return; }
+      onDone(`Deleted “${event.title}”.`);
+    } finally { setBusy(false); }
+  };
+
+  const readOnly = isEdit && !canEdit;
 
   return (
     <div className="pn-modal" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="pn-box" onClick={(e) => e.stopPropagation()}>
         <button className="pn-x" onClick={onClose} aria-label="Close"><X size={18} /></button>
-        <h3 className="pn-modal__title">Add plan — {new Date(date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</h3>
+        <h3 className="pn-modal__title">{isEdit ? (readOnly ? 'Activity details' : 'Edit plan') : `Add plan — ${new Date(baseDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`}</h3>
+
         <label className="pn-field"><span>Activity</span>
-          <Select label="Activity" hideLabel options={Object.entries(TYPE_META).map(([value, meta]) => ({ value, label: meta.label }))} value={type} onChange={(e) => setType(e.target.value)} />
+          <Select label="Activity" hideLabel disabled={readOnly} options={Object.entries(TYPE_META).map(([value, meta]) => ({ value, label: meta.label }))} value={type} onChange={(e) => setType(e.target.value)} />
         </label>
-        <label className="pn-field"><span>Title</span><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Dhanteras push · North zone" /></label>
-        <label className="pn-field"><span>End date (optional, for multi-day)</span><input type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} /></label>
-        <label className="pn-field"><span>Note (optional)</span><textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} /></label>
+        <label className="pn-field"><span>Title</span><input value={title} readOnly={readOnly} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Dhanteras push · North zone" /></label>
+        <label className="pn-field"><span>Date</span><input type="date" value={when} readOnly={readOnly} onChange={(e) => setWhen(e.target.value)} /></label>
+        <label className="pn-field"><span>End date (optional, for multi-day)</span><input type="date" value={endDate} min={when} readOnly={readOnly} onChange={(e) => setEndDate(e.target.value)} /></label>
+        <label className="pn-field"><span>Note (optional)</span><textarea value={note} readOnly={readOnly} onChange={(e) => setNote(e.target.value)} rows={2} /></label>
 
         <div className="pn-reminder">
           <label className="pn-field pn-field--inline"><span>Remind before</span>
             <span className="pn-remind-input">
-              <input type="number" min={0} max={365} value={remindDays} onChange={(e) => setRemindDays(e.target.value)} placeholder="—" /> days ahead
+              <input type="number" min={0} max={365} value={remindDays} readOnly={readOnly} onChange={(e) => setRemindDays(e.target.value)} placeholder="—" /> days ahead
             </span>
           </label>
           <div className="pn-field">
@@ -237,14 +278,14 @@ function AddModal({ date, onClose, onDone }: { date: string; onClose: () => void
             <div className="pn-assignees">
               {members.length === 0 ? <p className="pn-assignees__empty">No team members found.</p> : members.map((m) => (
                 <label key={m.id} className="pn-assignee">
-                  <input type="checkbox" checked={assignees.has(m.id)} onChange={() => toggleAssignee(m.id)} />
+                  <input type="checkbox" checked={assignees.has(m.id)} disabled={readOnly} onChange={() => toggleAssignee(m.id)} />
                   <span>{m.name}{m.department ? <em> · {m.department}</em> : null}</span>
                 </label>
               ))}
             </div>
           </div>
           <label className="pn-assignee pn-assignee--wa">
-            <input type="checkbox" checked={notifyWhatsapp} onChange={(e) => setNotifyWhatsapp(e.target.checked)} />
+            <input type="checkbox" checked={notifyWhatsapp} disabled={readOnly} onChange={(e) => setNotifyWhatsapp(e.target.checked)} />
             <span>Also notify on WhatsApp <em>(needs the staff member’s number + an approved reminder template — in-app reminder always goes out)</em></span>
           </label>
           {remindDays.trim() !== '' && assignees.size === 0 ? (
@@ -253,10 +294,16 @@ function AddModal({ date, onClose, onDone }: { date: string; onClose: () => void
         </div>
 
         {err ? <p className="pn-err">{err}</p> : null}
-        <div className="pn-modal__foot">
-          <Button variant="ghost" onClick={onClose} disabled={busy}>Cancel</Button>
-          <Button variant="primary" onClick={save} disabled={busy}>{busy ? 'Adding…' : 'Add to plan'}</Button>
-        </div>
+        {!readOnly ? (
+          <div className="pn-modal__foot">
+            {isEdit && canEdit ? <Button variant="ghost" iconLeft={<Trash2 size={15} />} onClick={del} disabled={busy}>Delete</Button> : null}
+            <span style={{ flex: 1 }} />
+            <Button variant="ghost" onClick={onClose} disabled={busy}>Cancel</Button>
+            <Button variant="primary" onClick={save} disabled={busy}>{busy ? 'Saving…' : isEdit ? 'Save changes' : 'Add to plan'}</Button>
+          </div>
+        ) : (
+          <div className="pn-modal__foot"><Button variant="primary" onClick={onClose}>Close</Button></div>
+        )}
       </div>
     </div>
   );

@@ -30,6 +30,12 @@
 .pn-ev span { flex: 1; overflow: hidden; text-overflow: ellipsis; }
 .pn-ev__x { display: none; border: 0; background: none; color: inherit; cursor: pointer; padding: 0; opacity: .7; }
 .pn-ev:hover .pn-ev__x { display: inline-flex; }
+.pn-ev--clickable { cursor: pointer; }
+.pn-ev--clickable:hover { filter: brightness(0.96); }
+.pn-ev--clickable:focus-visible { outline: 2px solid var(--crm-brand-600); outline-offset: 1px; }
+.pn-agenda__row--clickable { cursor: pointer; }
+.pn-agenda__row--clickable:hover { background: var(--crm-surface-sunken); }
+.pn-agenda__bell { color: var(--crm-text-muted); margin-left: 6px; vertical-align: -1px; }
 .pn-ev--field { color: #047857; background: #ecfdf5; }
 .pn-ev--tele { color: #4338ca; background: #eef2ff; }
 .pn-ev--camp { color: #1d4ed8; background: #eff6ff; }

@@ -70,6 +70,43 @@ export async function POST(req: Request) {
   return NextResponse.json({ id: created.id, title: created.title, type: created.type, date: created.date.toISOString(), endDate: created.endDate?.toISOString() ?? null, note: created.note, remindDaysBefore: created.remindDaysBefore, assigneeUserIds: created.assigneeUserIds, notifyWhatsapp: created.notifyWhatsapp }, { status: 201 });
 }
 
+/** Edit a planned activity (owner/admin/manager). Accepts any subset of fields. */
+export async function PATCH(req: Request) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
+  if (!['owner', 'admin', 'manager'].includes(user.role)) {
+    return NextResponse.json({ error: 'Your role cannot edit plans.' }, { status: 403 });
+  }
+  const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const id = typeof b.id === 'string' ? b.id : '';
+  if (!id) return NextResponse.json({ error: 'A plan id is required.' }, { status: 400 });
+
+  const existing = await prisma.crmPlanEvent.findFirst({ where: { id, tenantId: user.tenantId } });
+  if (!existing) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+
+  const data: Record<string, unknown> = {};
+  if (typeof b.title === 'string' && b.title.trim()) data.title = b.title.trim();
+  if (TYPES.includes(String(b.type))) data.type = String(b.type);
+  if (typeof b.date === 'string') { const d = new Date(b.date); if (!isNaN(d.getTime())) data.date = d; }
+  if ('endDate' in b) { const e = typeof b.endDate === 'string' && b.endDate ? new Date(b.endDate) : null; data.endDate = e && !isNaN(e.getTime()) ? e : null; }
+  if ('note' in b) data.note = (typeof b.note === 'string' ? b.note.trim() : '') || null;
+  if ('remindDaysBefore' in b) data.remindDaysBefore = typeof b.remindDaysBefore === 'number' && b.remindDaysBefore >= 0 && b.remindDaysBefore <= 365 ? Math.floor(b.remindDaysBefore) : null;
+  if (Array.isArray(b.assigneeUserIds)) data.assigneeUserIds = b.assigneeUserIds.map(String).filter(Boolean).slice(0, 50);
+  if ('notifyWhatsapp' in b) data.notifyWhatsapp = b.notifyWhatsapp === true;
+
+  // If timing or reminder config changed, let the reminder fire again.
+  if ('date' in data || 'remindDaysBefore' in data || 'assigneeUserIds' in data) data.reminderSentAt = null;
+
+  if (Object.keys(data).length === 0) return NextResponse.json({ error: 'Nothing to update.' }, { status: 400 });
+
+  const updated = await prisma.crmPlanEvent.update({ where: { id }, data });
+  return NextResponse.json({
+    id: updated.id, title: updated.title, type: updated.type,
+    date: updated.date.toISOString(), endDate: updated.endDate?.toISOString() ?? null, note: updated.note,
+    remindDaysBefore: updated.remindDaysBefore, assigneeUserIds: updated.assigneeUserIds, notifyWhatsapp: updated.notifyWhatsapp,
+  });
+}
+
 /** Delete a planned activity (owner/admin/manager). */
 export async function DELETE(req: Request) {
   const user = await getSessionUser();
