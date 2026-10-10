@@ -1,0 +1,44 @@
+name: Deploy to VPS
+
+# Auto-deploy: every push to main SSHes into the VPS and runs the deploy
+# (sync to origin/main → build → migrate → restart). Mirrors the manual
+# `./deploy/deploy.sh` flow so the two never diverge.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   VPS_HOST   the server hostname or IP (e.g. srv1725789.example.com or 1.2.3.4)
+#   VPS_USER   the SSH user (e.g. root)
+#   VPS_SSH_KEY  a PRIVATE SSH key whose public half is in the server's
+#                ~/.ssh/authorized_keys (generate a dedicated deploy key)
+#   VPS_PORT   optional, SSH port (defaults to 22)
+#   VPS_APP_DIR  optional, app path (defaults to /home/talktrackcrm/app)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}   # lets you trigger a deploy by hand from the Actions tab
+
+concurrency:
+  group: vps-deploy
+  cancel-in-progress: false   # never interrupt a deploy mid-build
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          command_timeout: 30m
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.VPS_APP_DIR || '/home/talktrackcrm/app' }}"
+            # Bring deploy.sh itself up to date first, then run it. deploy.sh
+            # force-matches origin/main, so a drifted server self-heals.
+            git fetch origin main
+            git reset --hard origin/main
+            ./deploy/deploy.sh

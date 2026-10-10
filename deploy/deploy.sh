@@ -8,8 +8,12 @@ cd "$(dirname "$0")/.."
 # Compose would look for a .env beside the compose file and silently pass blanks.
 COMPOSE="docker compose --env-file .env.production -f deploy/docker-compose.vps.yml"
 
-echo "==> Pulling latest code"
-git pull --ff-only
+echo "==> Syncing code to origin/main"
+# Force-match GitHub so a stray local edit or divergent commit on the server can
+# never block the deploy (which, with `set -e`, previously aborted the whole run
+# before the container was ever restarted). The server is a mirror of GitHub.
+git fetch origin main
+git reset --hard origin/main
 
 echo "==> Building image"
 # shellcheck disable=SC2086
