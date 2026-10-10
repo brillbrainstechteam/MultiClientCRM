@@ -4,13 +4,29 @@ import { prisma } from '@/lib/db';
 
 const TYPES = ['field', 'telecalling', 'campaign', 'exhibition'];
 
-/** List planned activities, optionally within ?year=YYYY (defaults to all). */
+/**
+ * List planned activities. Scope by ?year=YYYY, or by a custom ?from=YYYY-MM-DD
+ * &to=YYYY-MM-DD range (from/to takes precedence). Defaults to all.
+ */
 export async function GET(req: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
-  const year = Number(new URL(req.url).searchParams.get('year'));
+  const sp = new URL(req.url).searchParams;
+  const year = Number(sp.get('year'));
+  const from = sp.get('from');
+  const to = sp.get('to');
   const where: Record<string, unknown> = { tenantId: user.tenantId };
-  if (year) where.date = { gte: new Date(year, 0, 1), lt: new Date(year + 1, 0, 1) };
+  if (from || to) {
+    const range: Record<string, Date> = {};
+    const f = from ? new Date(from) : null;
+    const t = to ? new Date(to) : null;
+    if (f && !isNaN(f.getTime())) range.gte = f;
+    // Include the whole 'to' day.
+    if (t && !isNaN(t.getTime())) { t.setHours(23, 59, 59, 999); range.lte = t; }
+    if (Object.keys(range).length) where.date = range;
+  } else if (year) {
+    where.date = { gte: new Date(year, 0, 1), lt: new Date(year + 1, 0, 1) };
+  }
   const events = await prisma.crmPlanEvent.findMany({ where, orderBy: { date: 'asc' } });
   return NextResponse.json({
     events: events.map((e) => ({
