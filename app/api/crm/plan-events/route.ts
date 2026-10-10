@@ -32,6 +32,7 @@ export async function GET(req: Request) {
     events: events.map((e) => ({
       id: e.id, title: e.title, type: e.type,
       date: e.date.toISOString(), endDate: e.endDate ? e.endDate.toISOString() : null, note: e.note,
+      remindDaysBefore: e.remindDaysBefore, assigneeUserIds: e.assigneeUserIds, notifyWhatsapp: e.notifyWhatsapp,
     })),
   });
 }
@@ -51,10 +52,22 @@ export async function POST(req: Request) {
   if (!title) return NextResponse.json({ error: 'A title is required.' }, { status: 400 });
   if (!date || isNaN(date.getTime())) return NextResponse.json({ error: 'A valid date is required.' }, { status: 400 });
 
+  // Reminder config (optional).
+  const remindRaw = b.remindDaysBefore;
+  const remindDaysBefore = typeof remindRaw === 'number' && remindRaw >= 0 && remindRaw <= 365 ? Math.floor(remindRaw) : null;
+  const assigneeUserIds = Array.isArray(b.assigneeUserIds) ? b.assigneeUserIds.map(String).filter(Boolean).slice(0, 50) : [];
+  const notifyWhatsapp = b.notifyWhatsapp === true;
+
   const created = await prisma.crmPlanEvent.create({
-    data: { tenantId: user.tenantId, title, type, date, endDate: endDate && !isNaN(endDate.getTime()) ? endDate : null, note: (typeof b.note === 'string' ? b.note.trim() : '') || null, createdByUserId: user.id },
+    data: {
+      tenantId: user.tenantId, title, type, date,
+      endDate: endDate && !isNaN(endDate.getTime()) ? endDate : null,
+      note: (typeof b.note === 'string' ? b.note.trim() : '') || null,
+      createdByUserId: user.id,
+      remindDaysBefore, assigneeUserIds, notifyWhatsapp,
+    },
   });
-  return NextResponse.json({ id: created.id, title: created.title, type: created.type, date: created.date.toISOString(), endDate: created.endDate?.toISOString() ?? null, note: created.note }, { status: 201 });
+  return NextResponse.json({ id: created.id, title: created.title, type: created.type, date: created.date.toISOString(), endDate: created.endDate?.toISOString() ?? null, note: created.note, remindDaysBefore: created.remindDaysBefore, assigneeUserIds: created.assigneeUserIds, notifyWhatsapp: created.notifyWhatsapp }, { status: 201 });
 }
 
 /** Delete a planned activity (owner/admin/manager). */

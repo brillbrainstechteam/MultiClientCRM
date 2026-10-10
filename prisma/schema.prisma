@@ -580,9 +580,15 @@ model CrmPlanEvent {
   endDate       DateTime?
   note          String?
   createdByUserId String?
+  // Reminders: notify the assignees `remindDaysBefore` days ahead of `date`.
+  remindDaysBefore Int?                              // null = no reminder; 0 = on the day
+  assigneeUserIds  String[] @default([])             // User ids who should be reminded
+  notifyWhatsapp   Boolean  @default(false)          // also attempt a WhatsApp reminder
+  reminderSentAt   DateTime?                         // set once the reminder has fired (idempotency)
   createdAt     DateTime @default(now())
 
   @@index([tenantId, date])
+  @@index([reminderSentAt])
 }
 
 // Req 43: immutable log of lead-status / lifecycle transitions per contact.
@@ -1032,8 +1038,11 @@ model Invoice {
 model NotificationEvent {
   id        String    @id @default(cuid())
   tenantId  String
+  // Null = visible to the whole tenant; set = targeted at one user (e.g. a plan
+  // reminder for a specific assignee). The feed returns tenant-wide OR mine.
+  userId    String?
   category  String                                // subscription | wallet | campaign | whatsapp
-  kind      String                                // renewal_due | payment_failed | low_balance | recharge_success | campaign_paused_balance | quality_warning | ...
+  kind      String                                // renewal_due | payment_failed | low_balance | recharge_success | campaign_paused_balance | quality_warning | plan_reminder | ...
   severity  String    @default("info")            // info | warning | critical
   title     String
   body      String?
@@ -1043,6 +1052,7 @@ model NotificationEvent {
 
   @@index([tenantId, createdAt])
   @@index([tenantId, readAt])
+  @@index([tenantId, userId])
 }
 
 /// A stored file (showroom photos on Customer 360 today). Bytes live in object

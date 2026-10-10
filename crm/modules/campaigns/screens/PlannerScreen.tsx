@@ -181,19 +181,33 @@ export default function PlannerScreen() {
   );
 }
 
+interface Member { id: string; name: string; role?: string; department?: string | null }
+
 function AddModal({ date, onClose, onDone }: { date: string; onClose: () => void; onDone: (msg: string) => void }) {
   const [title, setTitle] = useState('');
   const [type, setType] = useState('campaign');
   const [endDate, setEndDate] = useState('');
   const [note, setNote] = useState('');
+  const [remindDays, setRemindDays] = useState('');
+  const [assignees, setAssignees] = useState<Set<string>>(new Set());
+  const [notifyWhatsapp, setNotifyWhatsapp] = useState(false);
+  const [members, setMembers] = useState<Member[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/crm/team/assignable', { credentials: 'same-origin' })
+      .then((r) => r.json()).then((d) => setMembers((d.allMembers ?? d.members ?? []) as Member[])).catch(() => setMembers([]));
+  }, []);
+
+  const toggleAssignee = (id: string) => setAssignees((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const save = async () => {
     if (!title.trim()) { setErr('Add a title.'); return; }
     setBusy(true); setErr(null);
     try {
-      const r = await fetch('/api/crm/plan-events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ title, type, date, endDate: endDate || undefined, note }) });
+      const remindDaysBefore = remindDays.trim() === '' ? undefined : Math.max(0, Number(remindDays));
+      const r = await fetch('/api/crm/plan-events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ title, type, date, endDate: endDate || undefined, note, remindDaysBefore, assigneeUserIds: [...assignees], notifyWhatsapp }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setErr(d.error ?? 'Could not add.'); return; }
       onDone(`Added “${title}” to the plan.`);
@@ -211,6 +225,33 @@ function AddModal({ date, onClose, onDone }: { date: string; onClose: () => void
         <label className="pn-field"><span>Title</span><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Dhanteras push · North zone" /></label>
         <label className="pn-field"><span>End date (optional, for multi-day)</span><input type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} /></label>
         <label className="pn-field"><span>Note (optional)</span><textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} /></label>
+
+        <div className="pn-reminder">
+          <label className="pn-field pn-field--inline"><span>Remind before</span>
+            <span className="pn-remind-input">
+              <input type="number" min={0} max={365} value={remindDays} onChange={(e) => setRemindDays(e.target.value)} placeholder="—" /> days ahead
+            </span>
+          </label>
+          <div className="pn-field">
+            <span>Assign to {assignees.size ? `(${assignees.size})` : ''}</span>
+            <div className="pn-assignees">
+              {members.length === 0 ? <p className="pn-assignees__empty">No team members found.</p> : members.map((m) => (
+                <label key={m.id} className="pn-assignee">
+                  <input type="checkbox" checked={assignees.has(m.id)} onChange={() => toggleAssignee(m.id)} />
+                  <span>{m.name}{m.department ? <em> · {m.department}</em> : null}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <label className="pn-assignee pn-assignee--wa">
+            <input type="checkbox" checked={notifyWhatsapp} onChange={(e) => setNotifyWhatsapp(e.target.checked)} />
+            <span>Also notify on WhatsApp <em>(needs the staff member’s number + an approved reminder template — in-app reminder always goes out)</em></span>
+          </label>
+          {remindDays.trim() !== '' && assignees.size === 0 ? (
+            <p className="pn-reminder__hint">No one assigned — the reminder will go to the whole team’s notifications.</p>
+          ) : null}
+        </div>
+
         {err ? <p className="pn-err">{err}</p> : null}
         <div className="pn-modal__foot">
           <Button variant="ghost" onClick={onClose} disabled={busy}>Cancel</Button>

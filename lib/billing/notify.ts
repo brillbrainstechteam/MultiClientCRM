@@ -12,6 +12,8 @@ export type NotifySeverity = 'info' | 'warning' | 'critical';
 
 export interface NotifyInput {
   tenantId: string;
+  /** Target one user; omit for a tenant-wide notice everyone sees. */
+  userId?: string | null;
   category: NotifyCategory;
   kind: string;
   title: string;
@@ -32,6 +34,7 @@ export async function notify(input: NotifyInput): Promise<NotificationEvent | nu
   return prisma.notificationEvent.create({
     data: {
       tenantId: input.tenantId,
+      userId: input.userId ?? null,
       category: input.category,
       kind: input.kind,
       severity: input.severity ?? 'info',

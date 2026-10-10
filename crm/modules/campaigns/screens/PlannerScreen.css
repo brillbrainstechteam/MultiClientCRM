@@ -44,6 +44,21 @@
 .pn-field input, .pn-field textarea { font: inherit; font-size: 14px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--crm-text-primary); border: 1px solid var(--crm-border-subtle); border-radius: 9px; padding: 9px 11px; background: var(--crm-surface-raised); }
 .pn-field input:focus, .pn-field textarea:focus { outline: none; border-color: var(--crm-brand-600); }
 .pn-err { font-size: 13px; color: var(--crm-danger); margin: 0 0 10px; }
+
+/* reminder + assignee block in the add-plan modal */
+.pn-reminder { border-top: 1px solid var(--crm-border-subtle); padding-top: 14px; margin-bottom: 12px; }
+.pn-field--inline { flex-direction: row; align-items: center; justify-content: space-between; }
+.pn-remind-input { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--crm-text-secondary); }
+.pn-remind-input input { width: 70px; font: inherit; font-size: 14px; border: 1px solid var(--crm-border-subtle); border-radius: 9px; padding: 8px 10px; background: var(--crm-surface-raised); color: var(--crm-text-primary); }
+.pn-assignees { display: flex; flex-direction: column; gap: 2px; max-height: 150px; overflow-y: auto; border: 1px solid var(--crm-border-subtle); border-radius: 9px; padding: 6px; }
+.pn-assignees__empty { font-size: 12.5px; color: var(--crm-text-muted); text-transform: none; letter-spacing: 0; font-weight: 400; margin: 6px; }
+.pn-assignee { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--crm-text-primary); padding: 5px 6px; border-radius: 7px; cursor: pointer; }
+.pn-assignee:hover { background: var(--crm-surface-sunken); }
+.pn-assignee input { width: 15px; height: 15px; accent-color: var(--crm-brand-600); }
+.pn-assignee em { font-style: normal; color: var(--crm-text-muted); font-weight: 400; }
+.pn-assignee--wa { margin-top: 10px; align-items: flex-start; }
+.pn-assignee--wa em { display: block; font-size: 11.5px; line-height: 1.3; margin-top: 2px; }
+.pn-reminder__hint { font-size: 12px; color: var(--crm-text-muted); margin: 8px 0 0; text-transform: none; letter-spacing: 0; font-weight: 400; }
 .pn-modal__foot { display: flex; justify-content: flex-end; gap: 10px; }
 
 .pn-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 70; background: var(--crm-brand-700); color: #fff; font-size: 13.5px; font-weight: 600; padding: 11px 18px; border-radius: 10px; box-shadow: 0 12px 30px -8px rgba(0,0,0,.4); animation: pn-toast 2.6s ease forwards; }

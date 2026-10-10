@@ -17,7 +17,12 @@ export async function GET(req: Request) {
 
   const sp = new URL(req.url).searchParams;
   const category = sp.get('category');
-  const where = { tenantId: user.tenantId, ...(category ? { category } : {}) };
+  // Tenant-wide notices (userId null) plus any targeted specifically at me.
+  const where = {
+    tenantId: user.tenantId,
+    ...(category ? { category } : {}),
+    OR: [{ userId: null }, { userId: user.id }],
+  };
 
   const [events, unreadCount] = await Promise.all([
     prisma.notificationEvent.findMany({ where, orderBy: { createdAt: 'desc' }, take: 30 }),
@@ -44,9 +49,10 @@ export async function PATCH(req: Request) {
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
 
   const body = (await req.json().catch(() => ({}))) as { ids?: string[]; all?: boolean };
+  const visible = [{ userId: null }, { userId: user.id }];
   const where = body.all
-    ? { tenantId: user.tenantId, readAt: null }
-    : { tenantId: user.tenantId, id: { in: Array.isArray(body.ids) ? body.ids : [] } };
+    ? { tenantId: user.tenantId, readAt: null, OR: visible }
+    : { tenantId: user.tenantId, id: { in: Array.isArray(body.ids) ? body.ids : [] }, OR: visible };
 
   const res = await prisma.notificationEvent.updateMany({ where, data: { readAt: new Date() } });
   return NextResponse.json({ updated: res.count });
