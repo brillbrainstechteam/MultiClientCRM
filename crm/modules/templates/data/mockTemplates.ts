@@ -679,8 +679,9 @@ export function existingTemplateNames(wabaId: string, excludeId?: string): strin
 // fields into the repository's Template shape; CRM-only fields (useCase,
 // folders, internal approval) default sensibly until edited.
 
-interface RawGraphButton { type?: string; text?: string; url?: string; phone_number?: string }
-interface RawGraphComponent { type?: string; format?: string; text?: string; buttons?: RawGraphButton[] }
+interface RawGraphButton { type?: string; text?: string; url?: string; phone_number?: string; example?: string[] }
+interface RawGraphExample { body_text?: string[][]; header_text?: string[]; header_handle?: string[] }
+interface RawGraphComponent { type?: string; format?: string; text?: string; buttons?: RawGraphButton[]; example?: RawGraphExample }
 interface RawGraphTemplate {
   id?: string;
   name?: string;
@@ -706,22 +707,28 @@ function mapComponents(components: RawGraphComponent[]): TemplateComponents {
   const buttonsComp = components.find((c) => c.type === 'BUTTONS');
   const bodyText = body?.text ?? '';
 
+  // Meta returns sample values in `example.body_text` as a row of values, in
+  // {{1}}, {{2}}, … order. Carry them back so an edit keeps the original
+  // samples instead of forcing the user to retype them.
+  const bodySamples = body?.example?.body_text?.[0] ?? [];
   const variables: TemplateVariable[] = [...new Set([...bodyText.matchAll(/\{\{(\d+)\}\}/g)].map((m) => Number(m[1])))]
     .sort((a, b) => a - b)
-    .map((index) => ({ id: `var_${index}`, index, description: `Variable ${index}`, sampleValue: '' }));
+    .map((index) => ({ id: `var_${index}`, index, description: `Variable ${index}`, sampleValue: bodySamples[index - 1] ?? '' }));
 
   const buttons: TemplateButton[] = (buttonsComp?.buttons ?? []).map((b, i) => ({
     id: `btn_${i + 1}`,
     type: BUTTON_TYPE[b.type ?? ''] ?? 'quick-reply',
     label: b.text ?? '',
-    value: b.url ?? b.phone_number,
+    // URL buttons may be dynamic — Meta stores the live example alongside the url template.
+    value: b.url ?? b.phone_number ?? b.example?.[0],
+    dynamic: b.type === 'URL' && Boolean(b.url?.includes('{{')),
   }));
 
   const headerFmt = HEADER_FORMAT[header?.format ?? ''] ?? 'none';
   return {
     headerFormat: headerFmt,
     headerText: headerFmt === 'text' ? header?.text : undefined,
-    headerMediaLabel: headerFmt !== 'none' && headerFmt !== 'text' ? `${headerFmt} header` : undefined,
+    headerMediaLabel: headerFmt !== 'none' && headerFmt !== 'text' ? `Current ${headerFmt} (re-upload to change)` : undefined,
     body: bodyText,
     footer: footer?.text,
     buttons,

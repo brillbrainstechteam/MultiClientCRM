@@ -46,7 +46,7 @@ export class TemplateMappingError extends Error {}
 
 const HAS_VARIABLE = /\{\{\d+\}\}/;
 
-export function toMetaTemplate(input: TemplateDraftInput): MetaTemplatePayload {
+export function toMetaTemplate(input: TemplateDraftInput, opts: { isEdit?: boolean } = {}): MetaTemplatePayload {
   const name = (input.name ?? '').trim();
   if (!/^[a-z0-9_]{1,512}$/.test(name)) {
     throw new TemplateMappingError(
@@ -94,12 +94,17 @@ export function toMetaTemplate(input: TemplateDraftInput): MetaTemplatePayload {
   } else if (['image', 'video', 'document'].includes(c.headerFormat)) {
     // Meta reviews a media header against a sample file, referenced by the
     // handle returned from the Resumable Upload API (done in the submit route).
-    if (!c.headerHandle) {
+    if (c.headerHandle) {
+      components.push({ type: 'HEADER', format: c.headerFormat.toUpperCase(), example: { header_handle: [c.headerHandle] } });
+    } else if (opts.isEdit) {
+      // Editing an existing media-header template without swapping the file:
+      // keep the header, let Meta retain the sample already on record.
+      components.push({ type: 'HEADER', format: c.headerFormat.toUpperCase() });
+    } else {
       throw new TemplateMappingError(
         `Attach a sample ${c.headerFormat} for the header before submitting — Meta reviews the template against it.`,
       );
     }
-    components.push({ type: 'HEADER', format: c.headerFormat.toUpperCase(), example: { header_handle: [c.headerHandle] } });
   }
 
   const body = (c.body ?? '').trim();

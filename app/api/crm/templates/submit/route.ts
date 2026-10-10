@@ -55,7 +55,7 @@ export async function POST(req: Request) {
 
   let payload;
   try {
-    payload = toMetaTemplate(body.draft);
+    payload = toMetaTemplate(body.draft, { isEdit: Boolean(body.metaTemplateId?.trim()) });
   } catch (e) {
     if (e instanceof TemplateMappingError) return NextResponse.json({ error: e.message }, { status: 400 });
     throw e;
