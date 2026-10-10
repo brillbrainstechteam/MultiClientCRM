@@ -14,7 +14,7 @@
  *   Filter params: ?f_statuses=open,pending&f_assignees=user_meera&f_labels=lbl_hot_lead
  */
 
-import { useState, useCallback, useEffect, useReducer } from 'react';
+import { useState, useCallback, useEffect, useReducer, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { findItem } from '@crm/modules/catalogue-orders/data';
 import {
@@ -531,6 +531,21 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
       })
       .catch(() => patchStatus('failed', { failedAt: new Date().toISOString(), failureReason: 'Network error while sending.' }));
   }, [activeConvId, currentUser.id]);
+
+  // Typing indicator: when the agent types a reply, tell WhatsApp to show
+  // "typing…" to the customer. Throttled — Meta keeps it up ~25s — and
+  // best-effort (never blocks composing).
+  const lastTypingRef = useRef<Record<string, number>>({});
+  const handleTyping = useCallback(() => {
+    if (!activeConvId) return;
+    const now = Date.now();
+    if (now - (lastTypingRef.current[activeConvId] ?? 0) < 8000) return;
+    lastTypingRef.current[activeConvId] = now;
+    void fetch(`/api/crm/conversations/${activeConvId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+      body: JSON.stringify({ typing: true }),
+    }).catch(() => undefined);
+  }, [activeConvId]);
 
   const handleTemplateSend = useCallback((template: InboxTemplate, variables: Record<string, string>) => {
     if (!activeConvId) return;
@@ -1124,6 +1139,7 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
               pendingInsert={pendingComposerInsert}
               onPendingInsertConsumed={() => setPendingComposerInsert('')}
               onSend={handleSend}
+              onTyping={handleTyping}
               onReopen={handleReopen}
               onChooseTemplate={() => openOverlay('drawer', 'template-picker')}
               onChooseQuickReply={() => openOverlay('popover', 'quick-replies')}

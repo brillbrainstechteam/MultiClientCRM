@@ -25,6 +25,8 @@ interface ComposerShellProps {
   pendingInsert?: string;
   onPendingInsertConsumed?: () => void;
   onSend: (text: string, mode: ComposerMode, replyToId?: string) => void;
+  /** Fired (debounced by the parent) when the agent types a reply — drives the typing indicator. */
+  onTyping?: () => void;
   onReopen: () => void;
   onChooseTemplate: () => void;
   onChooseQuickReply: () => void;
@@ -40,6 +42,7 @@ export function ComposerShell({
   pendingInsert,
   onPendingInsertConsumed,
   onSend,
+  onTyping,
   onReopen,
   onChooseTemplate,
   onChooseQuickReply,
@@ -190,7 +193,7 @@ export function ComposerShell({
           className="crm-composer__textarea"
           placeholder={isNoteMode ? 'Add an internal note… Use @name to mention a teammate.' : 'Type a message…'}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => { setText(e.target.value); if (!isNoteMode && e.target.value.trim()) onTyping?.(); }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
               e.preventDefault();
