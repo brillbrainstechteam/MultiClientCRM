@@ -689,6 +689,7 @@ interface RawGraphTemplate {
   status?: string;
   category?: string;
   components?: RawGraphComponent[];
+  quality_score?: { score?: string };
 }
 
 const META_STATUS = new Set<MetaTemplateStatus>(['pending', 'approved', 'rejected', 'in_appeal', 'disabled', 'paused', 'unknown']);
@@ -753,6 +754,7 @@ function mapRawTemplate(t: RawGraphTemplate, wabaId: string): Template {
     format: 'standard',
     components: mapComponents(t.components ?? []),
     metaStatus: META_STATUS.has(statusRaw) ? statusRaw : 'unknown',
+    qualityScore: (['GREEN', 'YELLOW', 'RED'].includes((t.quality_score?.score ?? '').toUpperCase()) ? (t.quality_score!.score!.toUpperCase() as 'GREEN' | 'YELLOW' | 'RED') : 'UNKNOWN'),
     crmState: 'normal',
     metaTemplateId: t.id,
     creatorId: '',

@@ -33,7 +33,7 @@ export async function GET() {
 
   try {
     const token = decrypt(account.accessToken);
-    const url = `${graphBase()}/${account.wabaId}/message_templates?limit=200&fields=name,language,status,category,components,id`;
+    const url = `${graphBase()}/${account.wabaId}/message_templates?limit=200&fields=name,language,status,category,components,id,quality_score`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     const json = (await res.json().catch(() => ({}))) as { data?: unknown[] } & GraphErrorBody;
     if (!res.ok) {

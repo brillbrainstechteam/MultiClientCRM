@@ -213,6 +213,9 @@ export default function TemplateDetailScreen() {
                 ['Variables', template.components.variables.length ? template.components.variables.map((v) => `{{${v.index}}} — ${v.description}`).join('; ') : 'None'],
                 ['Tags', template.tags.length ? template.tags.join(', ') : '—'],
                 ['Folder', template.folder ?? '—'],
+                ['Send quality', template.qualityScore && template.qualityScore !== 'UNKNOWN'
+                  ? ({ GREEN: 'High (Green)', YELLOW: 'Medium (Yellow)', RED: 'Low (Red) — at risk of pausing' }[template.qualityScore])
+                  : '—'],
               ]}
             />
           ) : null}

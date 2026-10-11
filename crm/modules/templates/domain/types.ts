@@ -178,6 +178,8 @@ export interface Template {
   format: TemplateFormat;
   components: TemplateComponents;
   metaStatus: MetaTemplateStatus;
+  /** Meta's send-quality rating, when available. */
+  qualityScore?: 'GREEN' | 'YELLOW' | 'RED' | 'UNKNOWN';
   crmState: CrmTemplateState;
   metaTemplateId?: string;
   creatorId: string;
