@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Search, Copy, Send, X, Check, BookOpenCheck } from 'lucide-react';
+import { Search, Copy, Send, X, Check, BookOpenCheck, SquarePen } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@crm/components';
+import { useScopedHref } from '@crm/app/use-scoped-href';
 import { Button, Select } from '@crm/design-system';
 import { STARTER_TEMPLATES, STARTER_CATEGORIES, type StarterTemplate } from '../data/starter-library';
 import './ReadyLibraryScreen.css';
@@ -67,7 +69,10 @@ function EditorModal({ template, onClose, onToast }: { template: StarterTemplate
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const navigate = useNavigate();
+  const scopedHref = useScopedHref();
   const copy = async () => { try { await navigator.clipboard.writeText(body); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* ignore */ } };
+  const openInComposer = () => navigate(scopedHref('/templates/new', { source: 'starter', starterId: template.suggestedName, step: 'basics' }));
 
   const submit = async () => {
     setBusy(true); setErr(null);
@@ -99,8 +104,10 @@ function EditorModal({ template, onClose, onToast }: { template: StarterTemplate
         </label>
         <p className="rl-hint">Approval is done by Meta. Use <code>{'{{1}}'}</code> style placeholders for variables. Keep it within WhatsApp policy.</p>
         {err ? <p className="rl-err">{err}</p> : null}
+        <p className="rl-hint">Want a header, buttons, footer or variables? Open it in the full composer — the body carries over and every option is available.</p>
         <div className="rl-modal__foot">
           <Button variant="ghost" onClick={copy}>{copied ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy text</>}</Button>
+          <Button variant="secondary" onClick={openInComposer}><SquarePen size={15} /> Edit in full composer</Button>
           <Button variant="primary" onClick={submit} disabled={busy || !body.trim() || !name.trim()}><Send size={15} /> {busy ? 'Submitting…' : 'Submit for approval'}</Button>
         </div>
       </div>

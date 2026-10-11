@@ -1,6 +1,7 @@
 import type { BusinessUseCase, MetaCategory, TemplateComponents, TemplateFormat } from '../../domain/types';
 import { findTemplate, templatesByFamily } from '../../data/mockTemplates';
 import { findLibraryItem } from '../../data/mockLibrary';
+import { STARTER_TEMPLATES } from '../../data/starter-library';
 import { recommendedCategory } from '../../templates-labels';
 
 /** Editable draft shape — a subset of `Template`, plus wizard-only bookkeeping. */
@@ -77,6 +78,7 @@ export interface ComposerInit {
   source: string | null;
   cloneFrom: string | null;
   libraryId: string | null;
+  starterId: string | null;
   familyId: string | null;
   templateId: string | null;
   requestedFormat: string | null;
@@ -85,6 +87,28 @@ export interface ComposerInit {
 
 export function initComposerDraft(init: ComposerInit): ComposerDraft {
   const requestedFormat = (init.requestedFormat as TemplateFormat | null) ?? 'standard';
+
+  // A marketing-dept ready template (starter library): open the FULL composer
+  // pre-filled with its body, so every option (header, buttons, footer,
+  // variables, category, language) is available just like a new template.
+  if (init.source === 'starter' && init.starterId) {
+    const starter = STARTER_TEMPLATES.find((s) => s.suggestedName === init.starterId);
+    if (starter) {
+      return {
+        name: starter.suggestedName,
+        useCase: 'other',
+        metaCategory: 'marketing',
+        categoryConfirmedByUser: false,
+        locale: 'en',
+        localeLabel: 'English',
+        writingStyle: 'standard',
+        format: 'standard',
+        components: { headerFormat: 'none', body: starter.body, footer: undefined, buttons: [], variables: [] },
+        wabaId: init.defaultWabaId,
+        tags: [],
+      };
+    }
+  }
 
   if (init.source === 'clone' && init.cloneFrom) {
     const original = findTemplate(init.cloneFrom);

@@ -33,7 +33,7 @@ export default function TemplateComposerScreen() {
 
   const draftKey = [
     searchParams.get('source') ?? 'scratch',
-    searchParams.get('cloneFrom') ?? searchParams.get('templateId') ?? searchParams.get('libraryId') ?? searchParams.get('familyId') ?? 'new',
+    searchParams.get('cloneFrom') ?? searchParams.get('templateId') ?? searchParams.get('libraryId') ?? searchParams.get('starterId') ?? searchParams.get('familyId') ?? 'new',
   ].join(':');
 
   return <ComposerInner key={draftKey} defaultWabaId={targetWaba.id} />;
@@ -58,6 +58,7 @@ function ComposerInner({ defaultWabaId }: { defaultWabaId: string }) {
       source: searchParams.get('source'),
       cloneFrom: searchParams.get('cloneFrom'),
       libraryId: searchParams.get('libraryId'),
+      starterId: searchParams.get('starterId'),
       familyId: searchParams.get('familyId'),
       templateId: searchParams.get('templateId'),
       requestedFormat: searchParams.get('format'),
