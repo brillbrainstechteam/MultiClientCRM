@@ -280,8 +280,17 @@ export default function TemplateDetailScreen() {
         confirmLabel={confirmAction === 'delete' ? 'Delete' : 'Archive'}
         tone={confirmAction === 'delete' ? 'danger' : 'default'}
         onCancel={() => setConfirmAction(null)}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (confirmAction === 'delete') {
+            // A real (Meta-backed) template must be deleted on Meta, else it
+            // reappears on the next sync. Drafts/local-only just update state.
+            if (template.metaTemplateId) {
+              const r = await fetch(`/api/crm/templates?name=${encodeURIComponent(template.name)}&metaTemplateId=${encodeURIComponent(template.metaTemplateId)}`, { method: 'DELETE', credentials: 'same-origin' });
+              if (!r.ok) { const d = await r.json().catch(() => ({})); setToast((d as { error?: string }).error ?? 'Could not delete on Meta.'); setConfirmAction(null); return; }
+              setConfirmAction(null);
+              navigate(scopedHref('/templates'));
+              return;
+            }
             setLocalCrmState('deleted');
             setToast('Template deleted.');
           } else {

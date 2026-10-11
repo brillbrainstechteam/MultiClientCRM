@@ -22,14 +22,39 @@ export interface ComposerDraft {
   familyId?: string;
 }
 
+// Codes are Meta's exact WhatsApp template language codes (supported-languages
+// doc). Indian languages use the 2-letter code (hi, not hi_IN); submitting
+// hi_IN etc. is rejected by Meta. Indian + English first, then international.
 export const localeOptions = [
+  { value: 'en', label: 'English' },
   { value: 'en_US', label: 'English (US)' },
-  { value: 'hi_IN', label: 'Hindi' },
-  { value: 'mr_IN', label: 'Marathi' },
-  { value: 'gu_IN', label: 'Gujarati' },
-  { value: 'ta_IN', label: 'Tamil' },
-  { value: 'kn_IN', label: 'Kannada' },
-  { value: 'bn_IN', label: 'Bengali' },
+  { value: 'en_GB', label: 'English (UK)' },
+  { value: 'en_IN', label: 'English (India)' },
+  { value: 'hi', label: 'Hindi' },
+  { value: 'bn', label: 'Bengali' },
+  { value: 'gu', label: 'Gujarati' },
+  { value: 'kn', label: 'Kannada' },
+  { value: 'ml', label: 'Malayalam' },
+  { value: 'mr', label: 'Marathi' },
+  { value: 'pa', label: 'Punjabi' },
+  { value: 'ta', label: 'Tamil' },
+  { value: 'te', label: 'Telugu' },
+  { value: 'ur', label: 'Urdu' },
+  { value: 'ar', label: 'Arabic' },
+  { value: 'zh_CN', label: 'Chinese (Simplified)' },
+  { value: 'fr', label: 'French' },
+  { value: 'de', label: 'German' },
+  { value: 'id', label: 'Indonesian' },
+  { value: 'it', label: 'Italian' },
+  { value: 'ja', label: 'Japanese' },
+  { value: 'ko', label: 'Korean' },
+  { value: 'pt_BR', label: 'Portuguese (Brazil)' },
+  { value: 'ru', label: 'Russian' },
+  { value: 'es', label: 'Spanish' },
+  { value: 'es_MX', label: 'Spanish (Mexico)' },
+  { value: 'th', label: 'Thai' },
+  { value: 'tr', label: 'Turkish' },
+  { value: 'vi', label: 'Vietnamese' },
 ];
 
 function emptyComponents(format: TemplateFormat): TemplateComponents {
