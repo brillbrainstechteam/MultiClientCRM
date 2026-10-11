@@ -15,7 +15,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     "name": "Email Signature",
     "whenToUse": "Reusable info blocks (signature, address, links).",
     "suggestedName": "mkt_common_informa_email_signature",
-    "body": "Experience the WINNING DNA with VCHAINS (logo)\n\nYour Valuable Partner\nRajesh Jain\n\"Marketing Manager\"\nTel No.\nEmail: \nWebsite: \nAddress:"
+    "body": "Experience the WINNING DNA with [Company Name] (logo)\n\nYour Valuable Partner\n[Your Name]\n\"[Designation]\"\nTel No.\nEmail: \nWebsite: \nAddress:"
   },
   {
     "category": "Common Information & Support Templates",
@@ -29,35 +29,35 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     "name": "Our Address",
     "whenToUse": "Reusable info blocks (signature, address, links).",
     "suggestedName": "mkt_common_informa_our_address",
-    "body": "Dear \n\nPlease find the below address. In case you need any help reaching here, please call back on my number or the below number.\n\n**\n*Address:* \n*Tel No.:* +91\n*Email:* exportsales@\n*Website:* \n\n*Location Link:*"
+    "body": "Dear \n\nPlease find the below address. In case you need any help reaching here, please call back on my number or the below number.\n\n**\n*Address:* \n*Tel No.:* +91\n*Email:* [Email]\n*Website:* \n\n*Location Link:*"
   },
   {
     "category": "Customer Communication Templates",
     "name": "Intro Message",
     "whenToUse": "Day-to-day customer messages.",
     "suggestedName": "mkt_customer_commu_intro_message",
-    "body": "*GREETINGS FROM Office*\n\nDear Patrons,\n\n\nHappy to Introduce you to *Office, One of the India's Leading Authorized suppliers across India & International Markets. You can count on as your  Partner* \n\n\n*Products:*\n➡️ Chains\n➡️ Couple Bands\n➡️ Rings \n➡️ Earrings\n➡️ Bracelets\n➡️ Kada\n➡️ Pendant Sets\n➡️ Pendants\n➡️ Accessories\n➡️ Necklace Sets\n➡️ Bangles\n\n*Looking forward to always be your  Partner*\n\n_With Loads of Love and Best Regards,_\n**\n_Director - Founder_\n*Office*\n\n*Email:* sales@office.com\n*Website:* www.office.com"
+    "body": "*GREETINGS FROM [Company Name]*\n\nDear Patrons,\n\n\nHappy to Introduce you to *[Company Name], One of the India's Leading Authorized suppliers across India & International Markets. You can count on as your  Partner* \n\n\n*Products:*\n➡️ Chains\n➡️ Couple Bands\n➡️ Rings \n➡️ Earrings\n➡️ Bracelets\n➡️ Kada\n➡️ Pendant Sets\n➡️ Pendants\n➡️ Accessories\n➡️ Necklace Sets\n➡️ Bangles\n\n*Looking forward to always be your  Partner*\n\n_With Loads of Love and Best Regards,_\n**\n_[Designation]_\n*[Company Name]*\n\n*Email:* [Email]\n*Website:* [Website]"
   },
   {
     "category": "Marketing & Promotion Templates",
     "name": "New Collection Arrival",
     "whenToUse": "Promotions & new collection pushes.",
     "suggestedName": "mkt_marketing_pr_new_collection_arrival",
-    "body": "*“GREETINGS FROM Office”*\n\nDear Sir,\n\nWe are thrilled & excited to announce the *New Arrival of  ________*.\n\n*Please speak to your Key Account manager*\n\nHave a Progressive Day Ahead\n\n*Your  Partner,*\n*Office*\n*Tel No.:*\n*Mobile No.:* +91\n\n*Forever in Love with *"
+    "body": "*“GREETINGS FROM Office”*\n\nDear Sir,\n\nWe are thrilled & excited to announce the *New Arrival of  ________*.\n\n*Please speak to your Key Account manager*\n\nHave a Progressive Day Ahead\n\n*Your  Partner,*\n*[Company Name]*\n*Tel No.:*\n*Mobile No.:* +91\n\n*Forever in Love with *"
   },
   {
     "category": "Marketing & Promotion Templates",
     "name": "Check our WhatsApp Catalogue",
     "whenToUse": "Promotions & new collection pushes.",
     "suggestedName": "mkt_marketing_pr_check_our_whatsapp_catalogue",
-    "body": "*“GREETINGS FROM Office”*\n\nDear Sir,\n\nThe New Designs are here, please check this Whats app Catalogue and you will surely love the new designs. \n\nPlease connect with your Key Account Manager for all your enquiries or reply to this chat & our Sales Team will connect with you.\n\nLINK\n\nHave a Progressive Day Ahead\n\n*Your  Partner,*\n*Office*\n*Tel No.:*\n*Mobile No.:* +91\n\n*Forever in Love with *"
+    "body": "*“GREETINGS FROM Office”*\n\nDear Sir,\n\nThe New Designs are here, please check this Whats app Catalogue and you will surely love the new designs. \n\nPlease connect with your Key Account Manager for all your enquiries or reply to this chat & our Sales Team will connect with you.\n\nLINK\n\nHave a Progressive Day Ahead\n\n*Your  Partner,*\n*[Company Name]*\n*Tel No.:*\n*Mobile No.:* +91\n\n*Forever in Love with *"
   },
   {
     "category": "Marketing & Promotion Templates",
     "name": "Msg for Interested Clients",
     "whenToUse": "Promotions & new collection pushes.",
     "suggestedName": "mkt_marketing_pr_msg_for_interested_clients",
-    "body": "*GREETINGS FROM Office*\n\nDear ,\n\nThank you for your interest in  Jewellery, Our Sales Team will connect with you for the same. After understanding your requirements, we shall start the communication by making a group for all your Future requirements.\n\n*Looking forward to always be your  Partner*\n\n_With Loads of Love and Best Regards,_\n**\n_Director - Founder_\n*Office*\n\n*Email:* sales@office.com\n*Website:* www.office.com"
+    "body": "*GREETINGS FROM [Company Name]*\n\nDear ,\n\nThank you for your interest in  Jewellery, Our Sales Team will connect with you for the same. After understanding your requirements, we shall start the communication by making a group for all your Future requirements.\n\n*Looking forward to always be your  Partner*\n\n_With Loads of Love and Best Regards,_\n**\n_[Designation]_\n*[Company Name]*\n\n*Email:* [Email]\n*Website:* [Website]"
   },
   {
     "category": "Field Marketing",
@@ -88,98 +88,98 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     "body": "*“GREETINGS FROM ”*\n\nDear \n\nHope you are doing good, I have arrived to ----  & as per our appointment, will meet you tomorrow around 2pm.\n\nThis msg is to reconfirm only. See you tomorrow.\n\nHave a Progressive Day Ahead\n\n_,_\n**\n*Tel No.:*  \n*Mobile No.:* \n*Email:*  \n*Website:* \n*Address:* .*\n\n\n*Forever in Love with *"
   },
   {
-    "category": "Infuencer Marketing",
+    "category": "Influencer Marketing",
     "name": "Intro Message",
     "whenToUse": "Influencer outreach & collaboration.",
     "suggestedName": "mkt_infuencer_mark_intro_message",
     "body": "Hello [Influencer Name],\n\nWe represent [Brand Name], a premium gold jewellery house specializing in [22K / bridal / wholesale collections]. We are currently onboarding selected creators for a paid collaboration aligned with our upcoming event (collection launch).\n\nKindly share how you can add value to our brand and share your portfolio.\n\nLooking forward to your response.\n\nRegards,"
   },
   {
-    "category": "Infuencer Marketing",
+    "category": "Influencer Marketing",
     "name": "Influencer Outreach",
     "whenToUse": "Influencer outreach & collaboration.",
     "suggestedName": "mkt_infuencer_mark_influencer_outreach",
     "body": "Hello [Influencer Name],\n\nWe represent [Brand Name], a premium gold jewellery house specializing in [22K / bridal / wholesale collections].\n\nWe are currently onboarding selected creators for a paid collaboration aligned with our upcoming event (collection launch).\n\nKindly share the following:\n\n• Your past work samples (Reels, brand collaborations, jewellery content preferred)\n• Your price list for deliverables (Reel, Stories, Static Post)\n• Audience insights (demographics & engagement snapshot – last 60 days)\n\nIf alignment is strong, we will immediately share a structured campaign brief with deliverables and timelines.\n\nLooking forward to your response.\n\nRegards,"
   },
   {
-    "category": "Infuencer Marketing",
+    "category": "Influencer Marketing",
     "name": "Influencer Outreach – DM Version",
     "whenToUse": "Influencer outreach & collaboration.",
     "suggestedName": "mkt_infuencer_mark_influencer_outreach_dm_version",
     "body": "Hi [Name],\n\nWe are a gold jewellery brand exploring paid collaborations.\n\nPlease share:\n• Your past work samples\n• Your price list\n• Audience insights (recent 60 days)\n\nIf aligned, we’ll send a campaign brief immediately.\n\nThank you."
   },
   {
-    "category": "Infuencer Marketing",
+    "category": "Influencer Marketing",
     "name": "Align Virtaual Meeting",
     "whenToUse": "Influencer outreach & collaboration.",
     "suggestedName": "mkt_infuencer_mark_align_virtaual_meeting",
-    "body": "Greetings from \n\nDear [Name],\n\nThank you for your interest in collaborating with .\n\nWe would like to schedule a virtual meeting to discuss the campaign details, content expectations, and collaboration structure.\n\nPlease share your available time slots for a quick 15–20 minute call, and we will coordinate accordingly.\n\nLooking forward to connecting with you.\n\nRegards,\nRajesh Jain\n\"Marketing Manager\"\n\nAddress: \nTel No.: +91\nEmail: marketing@\nWebsite: \nLocation:"
+    "body": "Greetings from \n\nDear [Name],\n\nThank you for your interest in collaborating with .\n\nWe would like to schedule a virtual meeting to discuss the campaign details, content expectations, and collaboration structure.\n\nPlease share your available time slots for a quick 15–20 minute call, and we will coordinate accordingly.\n\nLooking forward to connecting with you.\n\nRegards,\n[Your Name]\n\"[Designation]\"\n\nAddress: \nTel No.: +91\nEmail: [Email]\nWebsite: \nLocation:"
   },
   {
-    "category": "Infuencer Marketing",
+    "category": "Influencer Marketing",
     "name": "Negotiation",
     "whenToUse": "Influencer outreach & collaboration.",
     "suggestedName": "mkt_infuencer_mark_negotiation",
     "body": "Hi [Name],\n\nThank you for sharing your price list.\n\nFor this campaign, our allocated budget is ₹[X].\nWe can offer:\n\n• 1 Reel\n• 3 Stories\n• Brand tagging & swipe link\n\nLet us know if you’re comfortable within this structure. We’re looking for a long-term association if this performs well.\n\nRegards."
   },
   {
-    "category": "Infuencer Marketing",
+    "category": "Influencer Marketing",
     "name": "Campaign Brief",
     "whenToUse": "Influencer outreach & collaboration.",
     "suggestedName": "mkt_infuencer_mark_campaign_brief",
     "body": "Hi [Name],\n\nPlease find the campaign details below:\n\nBrand: [Brand Name]\nCollection: [Collection Name]\nObjective: [Brand Awareness / Store Visits / Wholesale Enquiries]\n\nDeliverables:\n• 1 Reel (30–45 sec)\n• 3 Story Frames\n• Tag @brandhandle\n• Use hashtag #[CampaignName]\n\nKey Talking Points:\n• 22K Hallmarked Gold\n• Trusted since [Year]\n• Bridal & bulk collections available\n• Visit store / DM for enquiries\n\nMandatory:\n• Draft approval before posting\n• Content live for 90 days\n• No competitor jewellery 7 days before/after\n\nPosting Date:\n[Date]\n\nPlease confirm acceptance.\n\nRegards."
   },
   {
-    "category": "Infuencer Marketing",
+    "category": "Influencer Marketing",
     "name": "Influencer Agreement Summary",
     "whenToUse": "Influencer outreach & collaboration.",
     "suggestedName": "mkt_infuencer_mark_influencer_agreement_summary",
     "body": "Hi [Name],\n\nThis confirms our agreement:\n\nDeliverables:\n[Details]\n\nCompensation:\n₹[Amount], payable within [X] days post content approval.\n\nExclusivity:\nNo competitor gold jewellery promotions within 7 days before/after post.\n\nUsage Rights:\nBrand may repost organically for 90 days.\n\nPayment Mode:\n[Bank Transfer / GST Invoice Required]\n\nReply “Confirmed” to proceed.\n\nRegards."
   },
   {
-    "category": "Infuencer Marketing",
+    "category": "Influencer Marketing",
     "name": "Content Approval Feedback Template",
     "whenToUse": "Influencer outreach & collaboration.",
     "suggestedName": "mkt_infuencer_mark_content_approval_feedback_template",
     "body": "Hi [Name],\n\nThank you for sharing the draft.\n\nMinor revisions requested:\n\n• Highlight hallmark certification clearly\n• Add store location mention in caption\n• Tag @brandhandle in first line\n• Include hashtag #[CampaignName]\n\nOnce updated, please resend for final approval.\n\nThank you."
   },
   {
-    "category": "Infuencer Marketing",
+    "category": "Influencer Marketing",
     "name": "Performance Report Required",
     "whenToUse": "Influencer outreach & collaboration.",
     "suggestedName": "mkt_infuencer_mark_performance_report_required",
     "body": "Hi [Name],\n\nPlease share the performance metrics for the recent collaboration:\n\n• Reel views\n• Reach\n• Saves\n• Shares\n• Profile visits\n• Link clicks\n• Audience demographics screenshot\n\nKindly share within 48 hours.\n\nRegards."
   },
   {
-    "category": "Infuencer Marketing",
+    "category": "Influencer Marketing",
     "name": "Long-Term Ambassador Offer",
     "whenToUse": "Influencer outreach & collaboration.",
     "suggestedName": "mkt_infuencer_mark_long_term_ambassador_offer",
     "body": "Hi [Name],\n\nBased on campaign performance, we would like to explore a 3-month brand ambassador association.\n\nProposed Structure:\n\n• 2 Reels per month\n• 6 Stories per month\n• Event appearance (if required)\n• Fixed monthly retainer ₹[Amount]\n\nLet us know your thoughts so we can formalize the agreement.\n\nRegards."
   },
   {
-    "category": "Infuencer Marketing",
+    "category": "Influencer Marketing",
     "name": "Intro Message",
     "whenToUse": "Influencer outreach & collaboration.",
     "suggestedName": "mkt_infuencer_mark_intro_message",
-    "body": "\"*GREETINGS FROM *\n\nDear Patrons,\n\n\nHappy to Introduce you to *Office, One of the India's Leading Authorized suppliers across India & International Markets. You can count on as your  Partner* \n\n*Latest Collection is now ready to be showcased at IIJS* \n\n*Products:*\n➡️ Chains\n➡️ Couple Bands\n➡️ Rings \n➡️ Earrings\n➡️ Bracelets\n➡️ Kada\n➡️ Pendant Sets\n➡️ Pendants\n➡️ Accessories\n➡️ Necklace Sets\n➡️ Bangles\n\n*Looking forward to always be your  Partner*\n\n_With Loads of Love and Best Regards,_\n**\n_Director - Founder_\n*Office*\n\n*Email:* sales@office.com\n*Website:* www.office.com\""
+    "body": "\"*GREETINGS FROM *\n\nDear Patrons,\n\n\nHappy to Introduce you to *[Company Name], One of the India's Leading Authorized suppliers across India & International Markets. You can count on as your  Partner* \n\n*Latest Collection is now ready to be showcased at IIJS* \n\n*Products:*\n➡️ Chains\n➡️ Couple Bands\n➡️ Rings \n➡️ Earrings\n➡️ Bracelets\n➡️ Kada\n➡️ Pendant Sets\n➡️ Pendants\n➡️ Accessories\n➡️ Necklace Sets\n➡️ Bangles\n\n*Looking forward to always be your  Partner*\n\n_With Loads of Love and Best Regards,_\n**\n_[Designation]_\n*[Company Name]*\n\n*Email:* [Email]\n*Website:* [Website]\""
   },
   {
-    "category": "Infuencer Marketing",
+    "category": "Influencer Marketing",
     "name": "Exhibition Invite Letter (New Client)",
     "whenToUse": "Influencer outreach & collaboration.",
     "suggestedName": "mkt_infuencer_mark_exhibition_invite_letter_new_client",
     "body": "Subject / Title:\n “An Invitation to Experience Timeless Jewellery – Join Us at [Exhibition Name]”\nDear [Client Name],\nIt gives us great pleasure to invite you to [Exhibition Name], where [Your Brand Name] is unveiling a stunning collection of fine jewellery designed exclusively for discerning connoisseurs like you.\nDiscover exclusive new launches, designer collections, and special exhibition offers — a perfect opportunity to elevate your jewellery collection.\n📍 Venue: [Exhibition Venue Name]\n 🗓 Date: [Start Date] – [End Date]\n 🕒 Timings: [Time]\n 🏷 Stall No.: [Stall / Booth Number]\nPlease find attached our digital catalogue to preview our collections before your visit. We would love to personally assist you at the exhibition.\nRSVP / WhatsApp: [Contact Number]\nBest Regards,\n [Your Name]\n [Designation]\n [Brand Name]\n [Contact Details]\n [Website / QR Code]"
   },
   {
-    "category": "Infuencer Marketing",
+    "category": "Influencer Marketing",
     "name": "For VIP  (Premium Invite)",
     "whenToUse": "Influencer outreach & collaboration.",
     "suggestedName": "mkt_infuencer_mark_for_vip_premium_invite",
     "body": "Subject / Title:\n “An Exclusive VIP Preview Awaits You – [Exhibition Name]”\nDear [Client Name],\nWe are delighted to extend a personal invitation to you for an exclusive VIP preview of our luxury jewellery collection at [Exhibition Name].\nThis private showcase has been specially curated for our esteemed clients, where you will experience:\n 💎 First access to our limited-edition masterpieces\n 🎁 Exclusive VIP benefits & personalized offers\n 🥂 A luxury hospitality experience designed for you\n📍 Venue: [Exhibition Venue Name]\n 🗓 Date: [Start Date] – [End Date]\n 🕒 Timings: [Time]\n 🏷 Stall No.: [Stall / Booth Number]\nKindly confirm your presence to help us ensure a seamless personalized experience.\nRSVP: [Contact Person Name & Number]\nWith Warm Regards,\n [Your Name]\n [Designation]\n [Brand Name]\n [Signature / Logo]"
   },
   {
-    "category": "Infuencer Marketing",
+    "category": "Influencer Marketing",
     "name": "Pre-Booking - Thank you",
     "whenToUse": "Influencer outreach & collaboration.",
     "suggestedName": "mkt_infuencer_mark_pre_booking_thank_you",
@@ -474,4 +474,4 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
   }
 ];
 
-export const STARTER_CATEGORIES: string[] = ["A. Onboarding & Initial Setup", "Announcements", "B. Purchase Order (PO) Communication", "Common Information & Support Templates", "Consent & Compliance", "Corporate Marketing", "Customer Communication Templates", "D. Payment & Invoicing", "Display", "E. Vendor Performance & Closure", "Exhibition Marketing", "Exports System", "Field Marketing", "Infuencer Marketing", "Marketing & Promotion Templates", "Post-Exhibition Customer Follow-Up (After the Exhibition)", "Project Execution & Deliverables"];
+export const STARTER_CATEGORIES: string[] = ["A. Onboarding & Initial Setup", "Announcements", "B. Purchase Order (PO) Communication", "Common Information & Support Templates", "Consent & Compliance", "Corporate Marketing", "Customer Communication Templates", "D. Payment & Invoicing", "Display", "E. Vendor Performance & Closure", "Exhibition Marketing", "Exports System", "Field Marketing", "Influencer Marketing", "Marketing & Promotion Templates", "Post-Exhibition Customer Follow-Up (After the Exhibition)", "Project Execution & Deliverables"];

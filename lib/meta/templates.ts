@@ -127,7 +127,19 @@ export function toMetaTemplate(input: TemplateDraftInput, opts: { isEdit?: boole
 
   if (c.footer?.trim()) components.push({ type: 'FOOTER', text: c.footer.trim() });
 
-  if (c.buttons.length) components.push({ type: 'BUTTONS', buttons: c.buttons.map(toMetaButton) });
+  if (c.buttons.length) {
+    // Meta button limits (templates/components): ≤10 total; ≤2 URL; ≤1 phone; ≤1 copy-code; labels ≤25.
+    if (c.buttons.length > 10) throw new TemplateMappingError('A template may not have more than 10 buttons.');
+    const urls = c.buttons.filter((b) => b.type === 'website' || b.type === 'dynamic-website').length;
+    const phones = c.buttons.filter((b) => b.type === 'call-phone').length;
+    const coupons = c.buttons.filter((b) => b.type === 'coupon').length;
+    if (urls > 2) throw new TemplateMappingError('Meta allows at most 2 URL (website) buttons.');
+    if (phones > 1) throw new TemplateMappingError('Meta allows only 1 phone-number (call) button.');
+    if (coupons > 1) throw new TemplateMappingError('Meta allows only 1 copy-code button.');
+    const longLabel = c.buttons.find((b) => (b.label ?? '').length > 25);
+    if (longLabel) throw new TemplateMappingError(`Button text "${longLabel.label}" exceeds 25 characters.`);
+    components.push({ type: 'BUTTONS', buttons: c.buttons.map(toMetaButton) });
+  }
 
   return { name, language, category, components };
 }

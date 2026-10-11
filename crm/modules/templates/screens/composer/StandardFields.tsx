@@ -161,8 +161,9 @@ export function StandardFields({
       <section id="composer-section-buttons" className="crm-composer-fields__section">
         <div className="crm-composer-fields__section-head">
           <h3>Buttons</h3>
-          <Button variant="ghost" size="sm" iconLeft={<Plus />} onClick={addButton}>Add button</Button>
+          <Button variant="ghost" size="sm" iconLeft={<Plus />} onClick={addButton} disabled={components.buttons.length >= 10}>Add button</Button>
         </div>
+        <p className="crm-composer-fields__hint">Meta limits: up to 10 buttons total · max 2 website · max 1 call · max 1 copy-code · labels ≤ 25 characters.</p>
         {components.buttons.map((button) => (
           <div key={button.id} className="crm-composer-fields__button-row">
             <Select
@@ -182,6 +183,7 @@ export function StandardFields({
               hideLabel
               placeholder="Button label"
               value={button.label}
+              maxLength={25}
               onChange={(e) =>
                 setComponents((c) => ({ ...c, buttons: c.buttons.map((b) => (b.id === button.id ? { ...b, label: e.target.value } : b)) }))
               }

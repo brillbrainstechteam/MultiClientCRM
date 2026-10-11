@@ -87,27 +87,51 @@ export function validateTemplate(
     push(errors, 'footer', 'footer-length', 'Footer exceeds the 60 character limit.');
   }
 
-  // Buttons
+  // Buttons — Meta's limits (templates/components): max 10 total; URL ≤ 2;
+  // phone ≤ 1; copy-code ≤ 1; button text ≤ 25; URL ≤ 2000; phone ≤ 20.
   if (c.buttons.length > 10) {
     push(errors, 'buttons', 'buttons-count', 'A template may not have more than 10 buttons.');
   }
   const quickReplyCount = c.buttons.filter((b) => b.type === 'quick-reply').length;
+  const urlCount = c.buttons.filter((b) => b.type === 'website' || b.type === 'dynamic-website').length;
+  const phoneCount = c.buttons.filter((b) => b.type === 'call-phone').length;
+  const couponCount = c.buttons.filter((b) => b.type === 'coupon').length;
   const ctaButtons = c.buttons.filter((b) => b.type !== 'quick-reply');
+  if (quickReplyCount > 10) {
+    push(errors, 'buttons', 'buttons-qr-count', 'Meta allows at most 10 quick-reply buttons.');
+  }
+  if (urlCount > 2) {
+    push(errors, 'buttons', 'buttons-url-count', 'Meta allows at most 2 URL (website) buttons.');
+  }
+  if (phoneCount > 1) {
+    push(errors, 'buttons', 'buttons-phone-count', 'Meta allows only 1 phone-number (call) button.');
+  }
+  if (couponCount > 1) {
+    push(errors, 'buttons', 'buttons-coupon-count', 'Meta allows only 1 copy-code button.');
+  }
   if (quickReplyCount > 0 && ctaButtons.length > 0 && template.format === 'standard') {
-    push(warnings, 'buttons', 'buttons-mixed', 'Mixing Quick Reply with call-to-action buttons changes button ordering on some clients.');
+    push(warnings, 'buttons', 'buttons-mixed', 'Mixing Quick Reply with call-to-action buttons changes button ordering on some clients. Group all quick-reply buttons together.');
   }
   for (const button of c.buttons) {
     if ((button.type === 'website' || button.type === 'dynamic-website') && button.value && !URL_RE.test(button.value)) {
       push(errors, 'buttons', `button-url-${button.id}`, `"${button.label}" needs a valid https:// URL.`);
     }
+    if ((button.type === 'website' || button.type === 'dynamic-website') && (button.value?.length ?? 0) > 2000) {
+      push(errors, 'buttons', `button-url-len-${button.id}`, `"${button.label}" URL exceeds 2,000 characters.`);
+    }
     if (button.type === 'call-phone' && button.value && !PHONE_RE.test(button.value)) {
       push(errors, 'buttons', `button-phone-${button.id}`, `"${button.label}" needs a valid phone number.`);
+    }
+    if (button.type === 'call-phone' && (button.value?.length ?? 0) > 20) {
+      push(errors, 'buttons', `button-phone-len-${button.id}`, `"${button.label}" phone number exceeds 20 characters.`);
     }
     if (button.type === 'coupon' && !button.value?.trim()) {
       push(errors, 'buttons', `button-coupon-${button.id}`, `"${button.label}" needs a coupon code.`);
     }
     if (!button.label.trim()) {
       push(errors, 'buttons', `button-label-${button.id}`, 'Every button needs a label.');
+    } else if (button.label.length > 25) {
+      push(errors, 'buttons', `button-label-len-${button.id}`, `"${button.label}" button text exceeds 25 characters.`);
     }
   }
 
