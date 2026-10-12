@@ -106,10 +106,57 @@ export default function NumberDetailReal() {
         </section>
 
         <ConversationStarters numberId={numberId} />
+        <CapabilitiesCard numberId={numberId} />
       </div>
 
       {msg ? <div className="wa-det__toast">{msg}</div> : null}
     </div>
+  );
+}
+
+interface CapView { label: string; capabilities: Record<string, { available: boolean; reason?: string }>; }
+const CAP_LABELS: Record<string, string> = {
+  messaging: 'Messaging (inbox)',
+  templates: 'Templates',
+  authentication: 'Authentication (OTP)',
+  marketingBroadcast: 'Marketing broadcast',
+  calling: 'WhatsApp calling',
+  businessInitiatedCalling: 'Business-initiated calls',
+  groups: 'Groups',
+  catalogue: 'Product catalog',
+};
+
+/** Capability Registry view (doc §2.2) — what this number can actually do, with
+ *  reasons for anything that's gated. Read from /api/crm/whatsapp/capabilities. */
+function CapabilitiesCard({ numberId }: { numberId: string }) {
+  const [cap, setCap] = useState<CapView | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/crm/whatsapp/capabilities', { credentials: 'same-origin' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { const n = d?.numbers?.find((x: { id: string }) => x.id === numberId) ?? d?.primary; if (n) setCap({ label: n.label ?? '', capabilities: n.capabilities }); })
+      .catch(() => undefined)
+      .finally(() => setLoaded(true));
+  }, [numberId]);
+
+  return (
+    <section className="wa-det__card">
+      <h3>What this number can do</h3>
+      {!loaded ? <p className="wa-reg__muted">Loading…</p> : !cap ? <p className="wa-reg__muted">Capabilities unavailable.</p> : (
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {Object.entries(cap.capabilities).map(([key, c]) => (
+            <li key={key} style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+              <span aria-hidden="true" style={{ color: c.available ? '#059669' : '#9ca3af', fontWeight: 700 }}>{c.available ? '✓' : '✕'}</span>
+              <span>
+                <span style={{ fontWeight: 600 }}>{CAP_LABELS[key] ?? key}</span>
+                {c.reason ? <span className="wa-reg__muted"> — {c.reason}</span> : null}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
