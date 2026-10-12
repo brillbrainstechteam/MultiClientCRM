@@ -104,9 +104,64 @@ export default function NumberDetailReal() {
             {n.statusReason ? <div><dt>Note</dt><dd>{n.statusReason.replace(/_/g, ' ')}</dd></div> : null}
           </dl>
         </section>
+
+        <ConversationStarters numberId={numberId} />
       </div>
 
       {msg ? <div className="wa-det__toast">{msg}</div> : null}
     </div>
+  );
+}
+
+/** Conversation starters (ice breakers) — tappable prompts a customer sees when
+ *  they open a new chat with this number. Up to 4; saved to Meta. */
+function ConversationStarters({ numberId }: { numberId: string }) {
+  const [prompts, setPrompts] = useState<string[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState('');
+
+  useEffect(() => {
+    fetch(`/api/crm/whatsapp/${numberId}/conversational`, { credentials: 'same-origin' })
+      .then((r) => r.ok ? r.json() : { iceBreakers: [] })
+      .then((d) => setPrompts(Array.isArray(d.iceBreakers) ? d.iceBreakers : []))
+      .catch(() => setPrompts([]))
+      .finally(() => setLoaded(true));
+  }, [numberId]);
+
+  const setAt = (i: number, v: string) => setPrompts((p) => p.map((x, j) => (j === i ? v : x)));
+  const add = () => setPrompts((p) => (p.length < 4 ? [...p, ''] : p));
+  const removeAt = (i: number) => setPrompts((p) => p.filter((_, j) => j !== i));
+
+  const save = async () => {
+    setBusy(true); setNote('');
+    try {
+      const r = await fetch(`/api/crm/whatsapp/${numberId}/conversational`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+        body: JSON.stringify({ iceBreakers: prompts.map((p) => p.trim()).filter(Boolean) }),
+      });
+      const d = await r.json().catch(() => ({}));
+      setNote(r.ok ? 'Conversation starters saved.' : (d.error ?? 'Could not save.'));
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <section className="wa-det__card">
+      <h3>Conversation starters</h3>
+      <p className="wa-reg__muted" style={{ marginTop: -4 }}>Up to 4 tappable prompts a customer sees when they first message this number — e.g. “Browse latest collection”, “Track my order”, “Book an appointment”.</p>
+      {!loaded ? <p className="wa-reg__muted">Loading…</p> : (
+        <div className="wa-det__fields">
+          {prompts.map((p, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input value={p} maxLength={80} placeholder={`Prompt ${i + 1}`} onChange={(e) => setAt(i, e.target.value)} style={{ flex: 1, font: 'inherit', padding: '8px 10px', border: '1px solid var(--crm-border-subtle)', borderRadius: 8 }} />
+              <button className="wa-link" onClick={() => removeAt(i)} aria-label="Remove">✕</button>
+            </div>
+          ))}
+          {prompts.length < 4 ? <button className="wa-link" onClick={add}>+ Add prompt</button> : null}
+          <div className="wa-det__save"><Button variant="primary" size="sm" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save conversation starters'}</Button></div>
+          {note ? <p className="wa-reg__muted">{note}</p> : null}
+        </div>
+      )}
+    </section>
   );
 }
