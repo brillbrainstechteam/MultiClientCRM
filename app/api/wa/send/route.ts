@@ -14,9 +14,10 @@ export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
 
-  const body = (await req.json().catch(() => null)) as { to?: string; text?: string } | null;
+  const body = (await req.json().catch(() => null)) as { to?: string; text?: string; contextMessageId?: string } | null;
   const to = body?.to?.replace(/[^\d]/g, '');
   const text = body?.text?.trim();
+  const contextMessageId = typeof body?.contextMessageId === 'string' && body.contextMessageId.trim() ? body.contextMessageId.trim() : null;
   if (!to || !text) return NextResponse.json({ error: 'Provide a recipient and a message.' }, { status: 400 });
 
   const account = await prisma.whatsAppAccount.findFirst({
@@ -31,7 +32,16 @@ export async function POST(req: Request) {
   const res = await fetch(`${graphBase()}/${account.phoneNumberId}/messages`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body: text } }),
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      to,
+      type: 'text',
+      // Show a rich link preview automatically when the message contains a URL
+      // (SMEs never see the preview_url parameter).
+      text: { body: text, preview_url: /https?:\/\//i.test(text) },
+      // Quote the message being replied to, so the reply shows in-context in WhatsApp.
+      ...(contextMessageId ? { context: { message_id: contextMessageId } } : {}),
+    }),
   });
   const json = (await res.json().catch(() => ({}))) as any;
   if (!res.ok) {

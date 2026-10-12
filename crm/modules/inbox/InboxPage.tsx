@@ -518,11 +518,14 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
       return;
     }
 
+    // Contextual reply: quote the original WhatsApp message by its Meta id.
+    const contextMessageId = replyToId && replyToMessage?.id === replyToId ? replyToMessage.metaMessageId : undefined;
+
     fetch('/api/wa/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify({ to, text }),
+      body: JSON.stringify({ to, text, contextMessageId: contextMessageId ?? undefined }),
     })
       .then(async (r) => {
         if (r.ok) { patchStatus('sent', { sentAt: new Date().toISOString() }); return; }
@@ -530,7 +533,7 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
         patchStatus('failed', { failedAt: new Date().toISOString(), failureReason: d.error ?? 'Message failed to send.' });
       })
       .catch(() => patchStatus('failed', { failedAt: new Date().toISOString(), failureReason: 'Network error while sending.' }));
-  }, [activeConvId, currentUser.id]);
+  }, [activeConvId, currentUser.id, replyToMessage]);
 
   // Typing indicator: when the agent types a reply, tell WhatsApp to show
   // "typing…" to the customer. Throttled — Meta keeps it up ~25s — and

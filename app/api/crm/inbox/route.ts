@@ -61,6 +61,7 @@ export async function GET() {
       lastInboundAt: lastInbound ? lastInbound.at.toISOString() : null,
       messages: c.messages.map((m) => ({
         id: m.id,
+        waMessageId: m.waMessageId ?? null,
         direction: m.direction,
         text: m.text ?? '',
         status: m.status ?? null,

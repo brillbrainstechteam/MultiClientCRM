@@ -101,6 +101,8 @@ export interface MessageStatusDetail {
 
 export interface InboxMessage {
   id: string;
+  /** Meta's wa message id — needed to quote this message in a contextual reply. */
+  metaMessageId?: string | null;
   conversationId: string;
   kind: MessageKind;
   direction: 'inbound' | 'outbound';

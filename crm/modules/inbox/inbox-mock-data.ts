@@ -330,7 +330,7 @@ export const inboxAnalytics: InboxAnalytics = {
 // the UI never calculates them. Config data (labels, quick replies, templates,
 // AI tasks, analytics) stays fixture-backed until those modules are built.
 
-interface InboxApiMessage { id: string; direction: string; text: string; status: string | null; at: string; }
+interface InboxApiMessage { id: string; waMessageId?: string | null; direction: string; text: string; status: string | null; at: string; }
 interface InboxApiNote { id: string; text: string; authorUserId: string | null; createdAt: string; }
 interface InboxApiConversation {
   id: string;
@@ -372,6 +372,7 @@ function mapStatus(direction: string, status: string | null): MessageStatus {
 function mapMessage(m: InboxApiMessage, conversationId: string): InboxMessage {
   return {
     id: m.id,
+    metaMessageId: m.waMessageId ?? null,
     conversationId,
     kind: 'text',
     direction: m.direction === 'inbound' ? 'inbound' : 'outbound',
