@@ -1,4 +1,4 @@
-import { BookOpenCheck, ClipboardCheck, LayoutGrid, Sparkles } from 'lucide-react';
+import { BookOpenCheck, ClipboardCheck, FileEdit, LayoutGrid, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 
@@ -14,6 +14,7 @@ const items: SecondaryNavItem[] = [
   { label: 'Repository', to: '/templates', icon: LayoutGrid, matchPrefix: '/templates', end: true },
   { label: 'Marketing Templates', to: '/templates/ready', icon: Sparkles, matchPrefix: '/templates/ready' },
   { label: 'Template Library', to: '/templates/library', icon: BookOpenCheck, matchPrefix: '/templates/library' },
+  { label: 'Drafts', to: '/templates/drafts', icon: FileEdit, matchPrefix: '/templates/drafts' },
   { label: 'Internal Approvals', to: '/templates/approvals', icon: ClipboardCheck, matchPrefix: '/templates/approvals' },
 ];
 

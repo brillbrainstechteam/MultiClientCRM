@@ -61,13 +61,15 @@ export function toMetaTemplate(input: TemplateDraftInput, opts: { isEdit?: boole
   // Authentication templates have a fixed, Meta-defined shape: no free body text.
   if (input.format === 'authentication') {
     const auth = c.authentication ?? { codeExpiryMinutes: 10, addSecurityDisclaimer: true };
+    // Meta allows 1–90 minutes; clamp so an out-of-range value can't be rejected.
+    const expiry = Math.min(90, Math.max(1, Math.round(auth.codeExpiryMinutes || 10)));
     return {
       name,
       language,
       category: 'AUTHENTICATION',
       components: [
         { type: 'BODY', add_security_recommendation: auth.addSecurityDisclaimer },
-        { type: 'FOOTER', code_expiration_minutes: auth.codeExpiryMinutes },
+        { type: 'FOOTER', code_expiration_minutes: expiry },
         { type: 'BUTTONS', buttons: [{ type: 'OTP', otp_type: 'COPY_CODE' }] },
       ],
     };

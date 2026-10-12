@@ -74,6 +74,23 @@ function EditorModal({ template, onClose, onToast }: { template: StarterTemplate
   const copy = async () => { try { await navigator.clipboard.writeText(body); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* ignore */ } };
   const openInComposer = () => navigate(scopedHref('/templates/new', { source: 'starter', starterId: template.suggestedName, step: 'basics' }));
 
+  const saveForLater = async () => {
+    setBusy(true); setErr(null);
+    try {
+      const payload = {
+        name: name.trim() || template.suggestedName,
+        useCase: 'other', metaCategory: category, categoryConfirmedByUser: false,
+        locale: 'en', localeLabel: 'English', writingStyle: 'standard', format: 'standard',
+        components: { headerFormat: 'none', body: body.trim(), buttons: [], variables: [] },
+        wabaId: '', tags: [],
+      };
+      const r = await fetch('/api/crm/templates/drafts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ name: payload.name, payload }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { setErr(d.error ?? 'Could not save draft.'); return; }
+      navigate(scopedHref('/templates/drafts', { flash: `Saved “${payload.name}” to drafts.` }));
+    } finally { setBusy(false); }
+  };
+
   const submit = async () => {
     setBusy(true); setErr(null);
     try {
@@ -107,6 +124,7 @@ function EditorModal({ template, onClose, onToast }: { template: StarterTemplate
         <p className="rl-hint">Want a header, buttons, footer or variables? Open it in the full composer — the body carries over and every option is available.</p>
         <div className="rl-modal__foot">
           <Button variant="ghost" onClick={copy}>{copied ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy text</>}</Button>
+          <Button variant="ghost" onClick={saveForLater} disabled={busy || !body.trim()}>Save for later</Button>
           <Button variant="secondary" onClick={openInComposer}><SquarePen size={15} /> Edit in full composer</Button>
           <Button variant="primary" onClick={submit} disabled={busy || !body.trim() || !name.trim()}><Send size={15} /> {busy ? 'Submitting…' : 'Submit for approval'}</Button>
         </div>

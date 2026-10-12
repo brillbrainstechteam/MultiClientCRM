@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useScopedHref } from '@crm/app/use-scoped-href';
 import { useWorkspace } from '@crm/app/workspace-context';
@@ -33,7 +33,7 @@ export default function TemplateComposerScreen() {
 
   const draftKey = [
     searchParams.get('source') ?? 'scratch',
-    searchParams.get('cloneFrom') ?? searchParams.get('templateId') ?? searchParams.get('libraryId') ?? searchParams.get('starterId') ?? searchParams.get('familyId') ?? 'new',
+    searchParams.get('cloneFrom') ?? searchParams.get('templateId') ?? searchParams.get('libraryId') ?? searchParams.get('starterId') ?? searchParams.get('draftId') ?? searchParams.get('familyId') ?? 'new',
   ].join(':');
 
   return <ComposerInner key={draftKey} defaultWabaId={targetWaba.id} />;
@@ -68,6 +68,19 @@ function ComposerInner({ defaultWabaId }: { defaultWabaId: string }) {
 
   const [confirmExit, setConfirmExit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(searchParams.get('draftId'));
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+
+  // Resume a saved draft: load its full composer payload once on mount.
+  useEffect(() => {
+    const did = searchParams.get('draftId');
+    if (searchParams.get('source') !== 'draft' || !did) return;
+    fetch(`/api/crm/templates/drafts?id=${did}`, { credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.payload) { setDraft(d.payload as ComposerDraft); setCurrentDraftId(d.id); } })
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [outcome, setOutcome] = useState<SubmissionOutcome>({ metaTemplateId: '', status: '', error: '' });
 
   const step = searchParams.get('step') ?? 'basics';
@@ -99,7 +112,20 @@ function ComposerInner({ defaultWabaId }: { defaultWabaId: string }) {
 
   const goCompose = (format?: string) => setStep('compose', format ? { format } : undefined);
 
-  const saveDraft = () => navigate(scopedHref('/templates', { view: 'draft' }));
+  const saveDraft = async () => {
+    try {
+      const r = await fetch('/api/crm/templates/drafts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+        body: JSON.stringify({ id: currentDraftId ?? undefined, name: draft.name, payload: draft }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { setSaveMsg((d as { error?: string }).error ?? 'Could not save draft.'); return; }
+      setCurrentDraftId((d as { id?: string }).id ?? currentDraftId);
+      navigate(scopedHref('/templates/drafts', { flash: `Saved “${draft.name || 'Untitled template'}” to drafts.` }));
+    } catch {
+      setSaveMsg('Could not save draft.');
+    }
+  };
 
   const exitWithoutSaving = () => navigate(scopedHref(returnTo));
 
@@ -258,6 +284,10 @@ function ComposerInner({ defaultWabaId }: { defaultWabaId: string }) {
         onCancel={() => setConfirmExit(false)}
         onConfirm={exitWithoutSaving}
       />
+
+      {saveMsg ? (
+        <div role="status" style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 80, background: '#b91c1c', color: '#fff', fontWeight: 600, fontSize: 13.5, padding: '11px 18px', borderRadius: 10 }} onClick={() => setSaveMsg(null)}>{saveMsg}</div>
+      ) : null}
     </div>
   );
 }

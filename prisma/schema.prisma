@@ -606,6 +606,21 @@ model CrmStageTransition {
   @@index([tenantId, contactId])
 }
 
+// A saved, not-yet-submitted template the user can resume later. Holds the full
+// composer draft as JSON; distinct from Meta-backed templates (which live on
+// Meta, not in our DB).
+model CrmTemplateDraft {
+  id              String   @id @default(cuid())
+  tenantId        String
+  createdByUserId String?
+  name            String                            // the draft's template name (may be blank early)
+  payload         Json                              // the full ComposerDraft
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId, updatedAt])
+}
+
 // ---- Campaigns (V1 broadcast) ---------------------------------------------
 
 model CrmCampaign {

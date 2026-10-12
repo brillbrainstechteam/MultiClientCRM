@@ -42,6 +42,7 @@ export function AuthenticationFields({
           type="number"
           min={1}
           max={90}
+          hint="How long the OTP stays valid. Meta allows 1–90 minutes."
           value={auth.codeExpiryMinutes}
           onChange={(e) => setComponents((c) => ({ ...c, authentication: { ...auth, codeExpiryMinutes: Number(e.target.value) } }))}
         />
