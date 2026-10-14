@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
-import { visibleUserIds } from '@/lib/crm/scope';
+import { visibleUserIds, canSeeContact } from '@/lib/crm/scope';
+import { propagateContactOwner } from '@/lib/crm/assignment';
 
 const EDITABLE = new Set([
   'name', 'company', 'contactPerson', 'customerType', 'mobile', 'email', 'city',
-  'ownerId', 'stage', 'leadStatus', 'lifecycleStage', 'lifecycleState',
+  'ownerId', 'marketingOwnerId', 'stage', 'leadStatus', 'lifecycleStage', 'lifecycleState',
   'tags', 'productInterests', 'source', 'consent', 'consentOptInSource', 'salesTier',
   'businessValue', 'gstin', 'legalName', 'billingAddress', 'shippingAddress',
   'state', 'zone', 'pincode', 'primaryWhatsAppNumberId', 'branchId',
@@ -32,8 +33,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const existing = await prisma.crmContact.findFirst({ where: { id, tenantId: user.tenantId } });
   if (!existing) return NextResponse.json({ error: 'Contact not found.' }, { status: 404 });
   // Row-level guard: agents/managers can only edit contacts within their scope.
+  // Either named owner slot is enough — a marketing owner works the contact too.
   const vis = await visibleUserIds(user);
-  if (vis !== 'all' && !vis.includes(existing.ownerId)) {
+  if (!canSeeContact(vis, existing)) {
     return NextResponse.json({ error: 'This contact is not assigned to you.' }, { status: 403 });
   }
 
@@ -47,13 +49,34 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     else { data[k] = v; }
   }
 
-  // jewelleryProfile is a flexible JSON bucket (type of lead, reference, funnel
-  // owners, and the prospect-journey milestone dates). MERGE it so a partial
-  // patch never clobbers other keys, and mirror the journey into the legacy
-  // boolean checkpoints the older UI still reads.
+  // jewelleryProfile is a flexible JSON bucket (type of lead, reference, and the
+  // prospect-journey milestone dates). MERGE it so a partial patch never
+  // clobbers other keys, and mirror the journey into the legacy boolean
+  // checkpoints the older UI still reads.
+  //
+  // The owner slots are lifted OUT of the bucket into their real columns. The
+  // contact drawer still posts them under jewelleryProfile, and while they lived
+  // only in JSON the UI showed one owner while visibility used another.
   if (body.jewelleryProfile && typeof body.jewelleryProfile === 'object') {
     const cur = (existing.jewelleryProfile ?? {}) as Record<string, unknown>;
-    const inc = body.jewelleryProfile as Record<string, unknown>;
+    const inc = { ...(body.jewelleryProfile as Record<string, unknown>) };
+
+    if ('salesOwnerId' in inc) {
+      // ownerId is required, so an empty choice leaves the current owner alone
+      // rather than stranding the contact with nobody.
+      if (typeof inc.salesOwnerId === 'string' && inc.salesOwnerId) data.ownerId = inc.salesOwnerId;
+      delete inc.salesOwnerId;
+    }
+    if ('marketingOwnerId' in inc) {
+      data.marketingOwnerId = typeof inc.marketingOwnerId === 'string' && inc.marketingOwnerId
+        ? inc.marketingOwnerId
+        : null;
+      delete inc.marketingOwnerId;
+    }
+    // Drop any stale copies so the columns stay the only source of truth.
+    delete (cur as Record<string, unknown>).salesOwnerId;
+    delete (cur as Record<string, unknown>).marketingOwnerId;
+
     const journey = { ...((cur.journey as Record<string, unknown>) ?? {}), ...((inc.journey as Record<string, unknown>) ?? {}) };
     const merged = { ...cur, ...inc, journey };
     data.jewelleryProfile = merged;
@@ -84,7 +107,21 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       }),
     ),
   ]);
-  return NextResponse.json({ ok: true });
+
+  // A new sales owner takes the contact's open conversations with them, so the
+  // chat does not stay in the previous owner's inbox. Threads deliberately
+  // handed to a third person are left alone (lib/crm/assignment.ts).
+  let conversationsMoved = 0;
+  if (typeof data.ownerId === 'string' && data.ownerId && data.ownerId !== existing.ownerId) {
+    conversationsMoved = await propagateContactOwner({
+      tenantId: user.tenantId,
+      contacts: [{ id, mobile: existing.mobile, ownerId: existing.ownerId }],
+      newOwnerId: data.ownerId,
+      actorId: user.id,
+    });
+  }
+
+  return NextResponse.json({ ok: true, conversationsMoved });
 }
 
 /** Delete a tenant's contact. */

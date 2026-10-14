@@ -98,9 +98,13 @@ export async function deleteContact(id: string): Promise<void> {
 }
 
 export type BulkOp =
+  /** Sales owner — also moves the contacts' open conversations. */
   | { op: 'assign'; ownerId: string }
+  /** Marketing owner — the second named slot; null clears it. */
+  | { op: 'assignMarketing'; marketingOwnerId: string | null }
   | { op: 'stage'; stage: string }
-  | { op: 'consent'; consent: string }
+  /** Consent always carries its proof; the server refuses an opt-in without wording. */
+  | { op: 'consent'; consent: string; consentChannel?: string; consentWording?: string; consentSource?: string }
   | { op: 'tags'; tags: string[]; tagMode: 'add' | 'remove' }
   | { op: 'delete' };
 

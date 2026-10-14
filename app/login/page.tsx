@@ -28,12 +28,13 @@ export default function LoginPage() {
       <form action={formAction}>
         <div className="crm-authform__fields">
           <Input
-            label="Business email"
-            name="email"
-            type="email"
+            label="Email or mobile number"
+            name="identifier"
+            type="text"
             required
-            placeholder="you@yourbusiness.com"
-            autoComplete="email"
+            placeholder="you@yourbusiness.com or 98100 11234"
+            autoComplete="username"
+            hint="Team members can sign in with whichever the owner set up for them."
           />
           <div>
             <div className="crm-authform__label-row">

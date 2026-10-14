@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { audit } from '@/lib/crm/audit';
+import { adoptContactOwnerFromConversation } from '@/lib/crm/assignment';
 
 /** Assign (or unassign) a conversation to an agent. Persisted + audited. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -12,7 +13,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: 'Your role cannot reassign conversations.' }, { status: 403 });
   }
   const { id } = await params;
-  const convo = await prisma.conversation.findFirst({ where: { id, tenantId: user.tenantId }, select: { id: true } });
+  const convo = await prisma.conversation.findFirst({
+    where: { id, tenantId: user.tenantId },
+    select: { id: true, contactPhone: true },
+  });
   if (!convo) return NextResponse.json({ error: 'Conversation not found.' }, { status: 404 });
 
   const b = (await req.json().catch(() => ({}))) as { assigneeUserId?: string | null };
@@ -23,5 +27,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     tenantId: user.tenantId, actorId: user.id, action: 'conversation.assigned',
     targetType: 'conversation', targetId: id, detail: assigneeUserId ? `-> ${assigneeUserId}` : 'unassigned',
   });
-  return NextResponse.json({ ok: true });
+
+  // If the contact behind this chat has no sales owner yet, the person now
+  // answering becomes it. An existing owner is never overwritten — see
+  // lib/crm/assignment.ts for why the link only runs one way here.
+  const adoptedContactId = await adoptContactOwnerFromConversation({
+    tenantId: user.tenantId,
+    contactPhone: convo.contactPhone,
+    assigneeUserId,
+    actorId: user.id,
+  });
+
+  return NextResponse.json({ ok: true, adoptedContactId });
 }

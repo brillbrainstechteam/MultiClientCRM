@@ -41,6 +41,9 @@ model User {
   tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name         String
   email        String   @unique
+  /// Optional second login identifier. Stored in E.164 without the '+' so the
+  /// unique index cannot be defeated by formatting ("+91 98…" vs "9198…").
+  phone        String?  @unique
   passwordHash String
   role         String   @default("owner") // owner | admin | manager | agent
   teamFunction String?  // sales | marketing | support | other (department, orthogonal to role)
@@ -428,7 +431,14 @@ model CrmContact {
   mobile                   String
   email                    String?
   city                     String
+  /// Sales owner — the primary assignment. Drives row-level visibility and is
+  /// what "the contact owner" means everywhere in the UI.
   ownerId                  String
+  /// Marketing owner — the second named slot, so one contact can sit with a
+  /// sales person and a marketing person at once. Also grants visibility.
+  /// Deliberately two fixed slots rather than a join table: scoping stays a
+  /// single indexed OR instead of a subquery on every contact read.
+  marketingOwnerId         String?
   stage                    String   // legacy generic stage (kept for existing UI badges)
   tags                     String[]
   source                   String
@@ -489,6 +499,8 @@ model CrmContact {
   kundli                   Json?
   kundliGeneratedAt        DateTime?
 
+  enquiries                CrmEnquiry[]
+
   // --- Jewellery B2B enrichment (formalised from the marketing/sales Excels) ---
   // Segment drives talking-points, templates and tiering ("Contact Type" in the
   // sheets): chain_stores | corporate | boutique | exports | standalone | small_store
@@ -517,8 +529,9 @@ model CrmContact {
   inBroadcastList          Boolean  @default(false)
   inCommunity              Boolean  @default(false)
   // Flexible extras kept out of columns: showroomCount, teamStrength, sqFeet,
-  // creditLimitWt, kycStatus, dataManagerId, marketingOwnerId, salesOwnerId,
-  // spouse/family important dates, logistics prefs.
+  // creditLimitWt, kycStatus, dataManagerId, spouse/family important dates,
+  // logistics prefs. (The sales/marketing owners are real columns — ownerId
+  // and marketingOwnerId — because visibility queries filter on them.)
   jewelleryProfile         Json?
 
   @@unique([tenantId, mobile])
@@ -527,6 +540,7 @@ model CrmContact {
   @@index([tenantId, leadStatus])
   @@index([tenantId, lifecycleStage])
   @@index([tenantId, ownerId])
+  @@index([tenantId, marketingOwnerId])
   @@index([tenantId, nextFollowUpAt])
   @@index([tenantId, businessSegment])
 }
@@ -538,6 +552,12 @@ model CrmEnquiry {
   id              String    @id @default(cuid())
   tenantId        String
   contactId       String?                          // linked contact (customer 360)
+  /// A contact may have any number of enquiries — this is the many side, and
+  /// the relation is what stops an enquiry being filed against an id that does
+  /// not exist. Cascade matches the hard delete in /contacts/bulk: removing a
+  /// customer removes their enquiries rather than orphaning rows that would
+  /// keep inflating the funnel counts.
+  contact         CrmContact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
   conversationId  String?                          // originating Inbox conversation
   enquiryNo       String                           // human-facing enquiry number
   source          String?                          // whatsapp | exhibition | referral | telecalling | ...
@@ -556,6 +576,7 @@ model CrmEnquiry {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
+  @@unique([tenantId, enquiryNo])
   @@index([tenantId, status])
   @@index([tenantId, contactId])
   @@index([conversationId])

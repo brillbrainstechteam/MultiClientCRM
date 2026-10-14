@@ -71,6 +71,8 @@ export async function POST(req: Request) {
           email: str(b?.email) || null,
           city,
           ownerId,
+          // Second named slot; optional at creation.
+          marketingOwnerId: str(b?.marketingOwnerId) || null,
           stage: str(b?.stage, 'new'),
           leadStatus,
           lifecycleStage: str(b?.lifecycleStage, 'prospect'),

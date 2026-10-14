@@ -3,13 +3,17 @@ import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { hashPassword } from '@/lib/auth/password';
 import { audit } from '@/lib/crm/audit';
+import { phoneKey } from '@/lib/auth/identifier';
 
 // Slugify a free-text role/department so custom values render cleanly
 // (e.g. "Field Sales" -> "field_sales", shown back as "Field Sales").
 const slug = (s: string) => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40);
 
-function serialize(u: { id: string; name: string; email: string; role: string; teamFunction: string | null; status: string; createdAt: Date }) {
-  return { id: u.id, name: u.name, email: u.email, role: u.role, department: u.teamFunction, status: u.status, createdAt: u.createdAt.toISOString() };
+function serialize(u: { id: string; name: string; email: string; phone?: string | null; role: string; teamFunction: string | null; status: string; createdAt: Date }) {
+  return {
+    id: u.id, name: u.name, email: u.email, phone: u.phone ?? null, role: u.role,
+    department: u.teamFunction, status: u.status, createdAt: u.createdAt.toISOString(),
+  };
 }
 
 /** Included seats + overage price from the tenant's plan. */
@@ -72,6 +76,18 @@ export async function POST(req: Request) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return NextResponse.json({ error: 'A user with this email already exists.' }, { status: 400 });
 
+  // Optional mobile login. Field sales people often know their number and not
+  // much else, so this is the identifier they will actually use. Stored as
+  // digits only (E.164 without the '+') so formatting cannot create a duplicate.
+  const phoneRaw = str(b?.phone);
+  let phone: string | null = null;
+  if (phoneRaw) {
+    phone = phoneKey(phoneRaw);
+    if (!phone) return NextResponse.json({ error: 'Enter a valid mobile number, or leave it blank.' }, { status: 400 });
+    const phoneTaken = await prisma.user.findUnique({ where: { phone } });
+    if (phoneTaken) return NextResponse.json({ error: 'A user with this mobile number already exists.' }, { status: 400 });
+  }
+
   // Seat handling: within included seats = free; beyond = allowed as paid
   // overage IF the plan supports it, else blocked (e.g. trial).
   const [activeSeats, plan] = await Promise.all([
@@ -84,7 +100,7 @@ export async function POST(req: Request) {
 
   const created = await prisma.user.create({
     data: {
-      tenantId: user.tenantId, name, email, passwordHash: await hashPassword(password),
+      tenantId: user.tenantId, name, email, phone, passwordHash: await hashPassword(password),
       role, teamFunction: department, status: 'active', createdByUserId: user.id,
     },
   });

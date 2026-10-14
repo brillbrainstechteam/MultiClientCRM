@@ -6,7 +6,7 @@ import type { SelectOption } from '@crm/design-system';
 import { useWorkspace } from '@crm/app/workspace-context';
 import './TeamMembersReal.css';
 
-interface Member { id: string; name: string; email: string; role: string; department: string | null; status: string; createdAt: string; }
+interface Member { id: string; name: string; email: string; phone: string | null; role: string; department: string | null; status: string; createdAt: string; }
 interface Seats { used: number; included: number | null; overage: number; overagePrice: number; currency: string; monthlyOverage: number; }
 const inr = (n: number) => '₹' + n.toLocaleString('en-IN');
 
@@ -150,7 +150,7 @@ export default function TeamMembersReal() {
 }
 
 function AddMemberForm({ onCreated, onCancel, onError, overageNote, roleOpts, deptOpts }: { onCreated: (m: Member) => void; onCancel: () => void; onError: (s: string) => void; overageNote: string | null; roleOpts: SelectOption[]; deptOpts: SelectOption[] }) {
-  const [f, setF] = useState({ name: '', email: '', role: 'agent', department: 'sales', password: '' });
+  const [f, setF] = useState({ name: '', email: '', phone: '', role: 'agent', department: 'sales', password: '' });
   const [busy, setBusy] = useState(false);
   // Locally-added custom values so the Select can display the freshly-typed one.
   const [extraRole, setExtraRole] = useState<SelectOption | null>(null);
@@ -185,6 +185,7 @@ function AddMemberForm({ onCreated, onCancel, onError, overageNote, roleOpts, de
       <div className="tm__grid">
         <Input label="Full name" value={f.name} onChange={(e) => up('name', e.target.value)} placeholder="e.g. Rahul Sharma" />
         <Input label="Email" type="email" value={f.email} onChange={(e) => up('email', e.target.value)} placeholder="rahul@company.com" />
+        <Input label="Mobile (optional)" type="tel" value={f.phone} onChange={(e) => up('phone', e.target.value)} placeholder="98100 11234" hint="A second way to sign in — easier for field sales than an email address." />
         <Select label="Role" options={roleList} value={f.role} onChange={(e) => pickRole(e.target.value)} />
         <Select label="Department" options={deptList} value={f.department} onChange={(e) => pickDept(e.target.value)} />
         <Input label="Initial password" type="text" value={f.password} onChange={(e) => up('password', e.target.value)} hint="Share this with the member; they can change it after signing in." />

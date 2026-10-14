@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
-import { contactScopeWhere } from '@/lib/crm/scope';
+import { contactScopeClause } from '@/lib/crm/scope';
 import {
   consentFunnel, consentStage, needsConsentWhere, CONSENT_RULES, CONSENT_TEMPLATE,
   CONSENT_OPTED_IN, CONSENT_OPTED_OUT, STAGE_LABEL, type ConsentStage,
@@ -27,7 +27,7 @@ export async function GET(req: Request) {
   const page = Math.max(1, Number(searchParams.get('page') || 1) || 1);
 
   // Agents and managers only see their own scope, same as the contact list.
-  const scope = await contactScopeWhere(user);
+  const scopeClause = await contactScopeClause(user);
 
   const now = new Date();
   const window = new Date(now.getTime() - 7 * 86_400_000);
@@ -49,9 +49,17 @@ export async function GET(req: Request) {
           { mobile: { contains: q } },
         ],
       }
-    : {};
+    : null;
 
-  const where = { ...(stageWhere[stage] ?? stageWhere.askable), ...scope, ...search };
+  // Three fragments here are OR-shaped — the askable stage's re-ask window, the
+  // text search, and the two-slot visibility clause. Spread into one object,
+  // only the last OR would survive and the filter would quietly be wrong, so
+  // they are composed under AND.
+  const where = {
+    tenantId: user.tenantId,
+    AND: [stageWhere[stage] ?? stageWhere.askable, scopeClause, search]
+      .filter((c): c is Record<string, unknown> => !!c),
+  };
 
   const [funnel, total, rows] = await Promise.all([
     consentFunnel(user.tenantId, now),

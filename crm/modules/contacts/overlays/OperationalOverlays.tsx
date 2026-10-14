@@ -74,7 +74,7 @@ export function OperationalOverlays() {
     <>
       {drawer === 'advanced-filter' ? <AdvancedFilterDrawer onClose={closeAll} /> : null}
       {drawer === 'assign' ? (
-        <AssignDrawer targetLabel={targetLabel} affected={affected} contactOwnerId={contact?.ownerId} onClose={closeAll} onApply={apply} targetIds={targetIds} />
+        <AssignDrawer targetLabel={targetLabel} affected={affected} contactOwnerId={contact?.ownerId} contactMarketingOwnerId={contact?.marketingOwnerId ?? null} onClose={closeAll} onApply={apply} targetIds={targetIds} />
       ) : null}
       {drawer === 'assign-zone' ? (
         <AssignZoneDrawer
@@ -185,6 +185,7 @@ function AssignDrawer({
   targetLabel,
   affected,
   contactOwnerId,
+  contactMarketingOwnerId,
   onClose,
   onApply,
   targetIds,
@@ -192,13 +193,48 @@ function AssignDrawer({
   targetLabel: string;
   affected: number;
   contactOwnerId?: string;
+  contactMarketingOwnerId?: string | null;
   onClose: () => void;
   onApply: (message: string) => void;
   targetIds: string[];
 }) {
   const currentOwner = contactOwnerId ? users.find((u) => u.id === contactOwnerId) : undefined;
-  const [ownerId, setOwnerId] = useState(users[0].id);
+  const currentMarketing = contactMarketingOwnerId ? users.find((u) => u.id === contactMarketingOwnerId) : undefined;
+  const [ownerId, setOwnerId] = useState(contactOwnerId || users[0].id);
+  // Second slot. '' means "leave as it is"; CLEAR removes it. A contact can sit
+  // with a sales person and a marketing person at the same time.
+  const [marketingOwnerId, setMarketingOwnerId] = useState('');
   const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const apply = async () => {
+    setBusy(true); setError('');
+    try {
+      if (targetIds.length) {
+        if (ownerId && ownerId !== contactOwnerId) {
+          await bulkContacts(targetIds, { op: 'assign', ownerId });
+        }
+        if (marketingOwnerId) {
+          await bulkContacts(targetIds, {
+            op: 'assignMarketing',
+            marketingOwnerId: marketingOwnerId === 'CLEAR' ? null : marketingOwnerId,
+          });
+        }
+      }
+      const parts = [
+        ownerId && ownerId !== contactOwnerId ? `sales to ${users.find((u) => u.id === ownerId)?.name}` : null,
+        marketingOwnerId === 'CLEAR'
+          ? 'marketing owner cleared'
+          : marketingOwnerId ? `marketing to ${users.find((u) => u.id === marketingOwnerId)?.name}` : null,
+      ].filter(Boolean);
+      onApply(parts.length ? `Reassigned ${targetLabel}: ${parts.join(', ')}` : `No change to ${targetLabel}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not reassign.');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <Drawer
@@ -211,8 +247,8 @@ function AssignDrawer({
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={async () => { if (targetIds.length) { try { await bulkContacts(targetIds, { op: 'assign', ownerId }); } catch { return; } } onApply(`Reassigned ${targetLabel} to ${users.find((u) => u.id === ownerId)?.name}`); }}>
-            Confirm assignment
+          <Button variant="primary" disabled={busy} onClick={() => void apply()}>
+            {busy ? 'Assigning…' : 'Confirm assignment'}
           </Button>
         </>
       }
@@ -220,12 +256,36 @@ function AssignDrawer({
       <div className="crm-ov-form">
         {currentOwner ? (
           <div className="crm-ov-field-static">
-            <span className="crm-ov-field-static__label">Current owner</span>
+            <span className="crm-ov-field-static__label">Current sales owner</span>
             <span>{currentOwner.name} — {currentOwner.roleLabel}</span>
           </div>
         ) : null}
-        <Select label="New owner" options={users.map((u) => ({ value: u.id, label: `${u.name} — ${u.roleLabel}` }))} value={ownerId} onChange={(e) => setOwnerId(e.target.value)} />
+        {currentMarketing ? (
+          <div className="crm-ov-field-static">
+            <span className="crm-ov-field-static__label">Current marketing owner</span>
+            <span>{currentMarketing.name} — {currentMarketing.roleLabel}</span>
+          </div>
+        ) : null}
+        <Select
+          label="Sales owner"
+          hint="Holds the relationship, and takes the open WhatsApp chats with them."
+          options={users.map((u) => ({ value: u.id, label: `${u.name} — ${u.roleLabel}` }))}
+          value={ownerId}
+          onChange={(e) => setOwnerId(e.target.value)}
+        />
+        <Select
+          label="Marketing owner"
+          hint="Optional second owner. Can see and work the contact, but does not answer the chat."
+          options={[
+            { value: '', label: 'Leave unchanged' },
+            { value: 'CLEAR', label: 'Remove marketing owner' },
+            ...users.map((u) => ({ value: u.id, label: `${u.name} — ${u.roleLabel}` })),
+          ]}
+          value={marketingOwnerId}
+          onChange={(e) => setMarketingOwnerId(e.target.value)}
+        />
         <Textarea label="Reason" hint="Optional — recorded in the audit trail" value={reason} onChange={(e) => setReason(e.target.value)} />
+        {error ? <p className="crm-ov-error">{error}</p> : null}
       </div>
       <div className="crm-ov-banner crm-ov-banner--info">
         <Info aria-hidden="true" />

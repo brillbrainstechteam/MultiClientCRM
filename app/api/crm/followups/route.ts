@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
-import { contactScopeWhere, visibleUserIds } from '@/lib/crm/scope';
+import { contactScopeClause, contactAssignedToUserClause, visibleUserIds } from '@/lib/crm/scope';
 
 /**
  * Datewise call plan / follow-up queue: contacts with a nextFollowUpAt, bucketed
@@ -19,14 +19,22 @@ export async function GET(req: Request) {
   const startOfToday = new Date(now); startOfToday.setHours(0, 0, 0, 0);
   const horizon = new Date(startOfToday.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-  const scope = await contactScopeWhere(user);
+  // Both the visibility clause and the ?assignee= filter are OR-shaped (either
+  // owner slot counts), so they are composed under AND rather than spread —
+  // spreading would leave only one of the two OR keys.
+  const scopeClause = await contactScopeClause(user);
   // Optional ?assignee=<userId> filter (admin drilling into one member's plan).
   const assignee = new URL(req.url).searchParams.get('assignee');
-  const assigneeWhere = assignee ? { ownerId: assignee } : {};
+  const clauses = [scopeClause, assignee ? contactAssignedToUserClause(assignee) : null]
+    .filter((c): c is Record<string, unknown> => c !== null);
 
   const [rows, members] = await Promise.all([
     prisma.crmContact.findMany({
-      where: { tenantId: user.tenantId, nextFollowUpAt: { not: null, lt: horizon }, ...scope, ...assigneeWhere },
+      where: {
+        tenantId: user.tenantId,
+        nextFollowUpAt: { not: null, lt: horizon },
+        ...(clauses.length ? { AND: clauses } : {}),
+      },
       orderBy: { nextFollowUpAt: 'asc' },
       take: 500,
       select: {

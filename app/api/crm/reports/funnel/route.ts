@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
-import { visibleUserIds } from '@/lib/crm/scope';
+import { visibleUserIds, contactAssignedToClause, contactAssignedToUserClause } from '@/lib/crm/scope';
 
 /**
  * Marketing funnel + geographic conversion (Prospects/Enquiry Tracker dashboards).
@@ -24,12 +24,20 @@ export async function GET(req: Request) {
   // Owner/admin can narrow to one assignee; agents/managers stay scoped to theirs.
   const assignee = searchParams.get('assignee');
   const allowedAssignee = assignee && (vis === 'all' || vis.includes(assignee)) ? assignee : null;
-  const ownerIn = allowedAssignee ? { ownerId: allowedAssignee } : (vis === 'all' ? {} : { ownerId: { in: vis } });
+  // Either owner slot counts, so the filter is an OR clause carried under AND
+  // (spreading it would collide with any other OR in the same where).
+  const ownerClause = allowedAssignee
+    ? contactAssignedToUserClause(allowedAssignee)
+    : (vis === 'all' ? null : contactAssignedToClause(vis));
+  const ownerIn = ownerClause ? { AND: [ownerClause] } : {};
   const base = { tenantId, ...ownerIn };
+  // An enquiry has its own handling rep, but the funnel asks "enquiries from
+  // the contacts this person works", so it is scoped through the contact.
+  const enquiryScope = ownerClause ? { contact: { is: ownerClause } } : {};
 
   const [reach, enquiries, activations, dataByZone, actByZone, dataByState, actByState, dataByCity, actByCity] = await Promise.all([
     prisma.crmContact.count({ where: { ...base, ...(range ? { createdAt: range } : {}) } }),
-    prisma.crmEnquiry.count({ where: { tenantId, ...ownerIn, ...(range ? { createdAt: range } : {}) } }),
+    prisma.crmEnquiry.count({ where: { tenantId, ...enquiryScope, ...(range ? { createdAt: range } : {}) } }),
     prisma.crmContact.count({ where: { ...base, lifecycleStage: 'customer', ...(range ? { activatedAt: range } : { activatedAt: { not: null } }) } }),
     prisma.crmContact.groupBy({ by: ['zone'], where: base, _count: true }),
     prisma.crmContact.groupBy({ by: ['zone'], where: { ...base, lifecycleStage: 'customer' }, _count: true }),

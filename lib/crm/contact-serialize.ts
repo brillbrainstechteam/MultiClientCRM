@@ -15,6 +15,7 @@ export function serializeCrmContact(c: CrmContact) {
     email: c.email,
     city: c.city,
     ownerId: c.ownerId,
+    marketingOwnerId: c.marketingOwnerId,
     stage: c.stage,
     tags: c.tags,
     source: c.source,
@@ -64,12 +65,15 @@ export function serializeCrmContact(c: CrmContact) {
     inBroadcastList: c.inBroadcastList,
     inCommunity: c.inCommunity,
     jewelleryProfile: c.jewelleryProfile ?? null,
-    // --- Prospect journey + funnel ownership (Prospects Tracker, stored in JSON) ---
+    // --- Prospect journey (Prospects Tracker, stored in JSON) ---
     typeOfLead: (jp.typeOfLead as string) ?? null,
     reference: (jp.reference as string) ?? null,
     dataManagerId: (jp.dataManagerId as string) ?? null,
-    marketingOwnerId: (jp.marketingOwnerId as string) ?? null,
-    salesOwnerId: (jp.salesOwnerId as string) ?? null,
+    // The two owner slots are real columns — `ownerId` IS the sales owner.
+    // `salesOwnerId` is kept as an alias because the drawer and Customer 360
+    // read it under that name. They used to come out of jewelleryProfile,
+    // which meant the UI showed one thing and visibility used another.
+    salesOwnerId: c.ownerId || null,
     whichExhibition: (jp.whichExhibition as string) ?? null,
     invoiceNo: (jp.invoiceNo as string) ?? null,
     journey: (jp.journey as Record<string, string | null>) ?? {},

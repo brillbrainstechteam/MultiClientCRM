@@ -4,8 +4,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDashboardHref } from '../dashboard-links';
 import type { SetupStep } from '@crm/mock-data';
 
+/** The live API adds a one-line explanation and marks the next action. */
+type ChecklistStep = SetupStep & { detail?: string; isNext?: boolean };
+
 export interface SetupChecklistBarProps {
-  steps: SetupStep[];
+  steps: ChecklistStep[];
   percent: number;
 }
 
@@ -58,7 +61,10 @@ export function SetupChecklistBar({ steps, percent }: SetupChecklistBarProps) {
           {steps.map((step) => {
             const Icon = step.status === 'complete' ? CheckCircle2 : step.status === 'blocked' ? Lock : Circle;
             return (
-              <li key={step.id} className={`crm-setup-bar__step crm-setup-bar__step--${step.status}`}>
+              <li
+                key={step.id}
+                className={`crm-setup-bar__step crm-setup-bar__step--${step.status}${step.isNext ? ' crm-setup-bar__step--next' : ''}`}
+              >
                 <Icon className="crm-setup-bar__step-icon" aria-hidden="true" />
                 <button
                   className="crm-setup-bar__step-label"
@@ -67,8 +73,12 @@ export function SetupChecklistBar({ steps, percent }: SetupChecklistBarProps) {
                   onClick={() => step.to && navigate(dashHref(step.to))}
                 >
                   {step.label}
+                  {step.isNext ? <span className="crm-setup-bar__next-tag">Next</span> : null}
                   {step.status === 'blocked' && step.blockedReason ? (
                     <span className="crm-setup-bar__blocked"> — {step.blockedReason}</span>
+                  ) : null}
+                  {step.detail && step.status !== 'complete' ? (
+                    <span className="crm-setup-bar__detail">{step.detail}</span>
                   ) : null}
                 </button>
               </li>

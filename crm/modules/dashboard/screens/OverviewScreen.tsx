@@ -4,6 +4,7 @@ import { PageHeader } from '@crm/components';
 import { useScreenState } from '@crm/app/use-screen-state';
 import { useConnectionStatus } from '@crm/app/use-connection-status';
 import { useAlertStatus } from '../alert-status-context';
+import { useSetupState } from '../use-setup-state';
 import { ALL_SCOPE, useWorkspace } from '@crm/app/workspace-context';
 import DashboardZeroState from './DashboardZeroState';
 import { Banner, Button, EmptyState, ErrorState, LoadingSkeleton } from '@crm/design-system';
@@ -24,6 +25,7 @@ import {
   PlanCreditsStrip,
   PriorityAlerts,
   SetupChecklistBar,
+  TeamSetupPanel,
   TeamWorkloadWidget,
   TodaysWorkPanel,
   WhatsAppHealthIndicator,
@@ -53,6 +55,7 @@ export default function OverviewScreen() {
   const { role, branchId, whatsappNumberId, whatsappNumber, currentUser, availableBranches, availableWhatsAppNumbers } =
     useWorkspace();
   const { state } = useScreenState();
+  const { setup } = useSetupState();
   const { connected } = useConnectionStatus();
   const { overrides } = useAlertStatus();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -155,8 +158,12 @@ export default function OverviewScreen() {
     );
   }
 
-  const steps = isHealthy ? setupStepsAllComplete() : setupSteps;
-  const setupPercent = setupCompletionPercent(steps);
+  // Onboarding state comes from the database (/api/crm/setup), not from a
+  // constant — the fixture version reported the same progress to every
+  // workspace whatever was actually connected. The fixtures stay only as the
+  // fallback for the brief moment before the first response lands.
+  const steps = setup?.steps ?? (isHealthy ? setupStepsAllComplete() : setupSteps);
+  const setupPercent = setup?.percent ?? setupCompletionPercent(steps);
   const alerts = isHealthy
     ? []
     : role === 'agent'
@@ -181,6 +188,12 @@ export default function OverviewScreen() {
       ) : null}
 
       {policy.setupChecklist ? <SetupChecklistBar steps={steps} percent={setupPercent} /> : null}
+
+      {/* Building the team is what turns a single-user account into a working
+          CRM, so it gets the landing page until the owner has done it. */}
+      {setup ? (
+        <TeamSetupPanel team={setup.team} canManage={role === 'owner' || role === 'admin'} />
+      ) : null}
 
       {/* Plan & credits — billing-relevant roles only. */}
       {role !== 'agent' ? <PlanCreditsStrip /> : null}

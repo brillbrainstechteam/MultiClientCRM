@@ -23,4 +23,5 @@ export { BranchPerformanceTable } from './BranchPerformanceTable';
 export { TodaysWorkPanel } from './TodaysWorkPanel';
 export { NumberHealthTable } from './NumberHealthTable';
 export { SetupChecklistBar } from './SetupChecklistBar';
+export { TeamSetupPanel } from './TeamSetupPanel';
 export { PlanCreditsStrip } from './PlanCreditsStrip';

@@ -128,3 +128,8 @@
   font-size: var(--crm-font-size-xs);
   color: var(--crm-text-muted);
 }
+
+/* The one step the operator should do now. */
+.crm-setup-bar__step--next .crm-setup-bar__step-label { color: var(--crm-text-title); font-weight: var(--crm-weight-semibold); }
+.crm-setup-bar__next-tag { margin-left: 6px; padding: 1px 7px; border-radius: var(--crm-radius-pill); background: var(--crm-brand-50); color: var(--crm-brand-700); font-size: 10px; font-weight: var(--crm-weight-bold); text-transform: uppercase; letter-spacing: .04em; }
+.crm-setup-bar__detail { display: block; margin-top: 2px; font-size: var(--crm-font-size-xs); font-weight: var(--crm-weight-regular); line-height: 1.45; color: var(--crm-text-muted); white-space: normal; }

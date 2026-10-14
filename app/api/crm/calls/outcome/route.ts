@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
-import { visibleUserIds } from '@/lib/crm/scope';
+import { visibleUserIds, canSeeContact } from '@/lib/crm/scope';
 import { audit } from '@/lib/crm/audit';
 
 /**
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
   // Scope guard: agents/managers can only log for contacts in their scope.
   const vis = await visibleUserIds(user);
-  if (vis !== 'all' && !vis.includes(contact.ownerId)) {
+  if (!canSeeContact(vis, contact)) {
     return NextResponse.json({ error: 'This contact is not assigned to you.' }, { status: 403 });
   }
 
