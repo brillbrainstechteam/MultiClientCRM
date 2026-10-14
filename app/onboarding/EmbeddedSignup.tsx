@@ -2,32 +2,87 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
-import { Check, Info, MessageCircle, Phone, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Check, Info, MessageCircle, Phone, RefreshCw, ShieldCheck, X } from 'lucide-react';
 import { Button } from '@/lib/ui/Button';
 import './onboarding.css';
 
 type Path = 'coexistence' | 'new' | 'existing';
 
-const PATHS: { id: Path; title: string; tip: string; icon: typeof Phone }[] = [
+/**
+ * The question is framed by outcome, not by Meta's vocabulary. An SME owner
+ * does not know what "coexistence" or "Cloud API" mean; they know whether
+ * WhatsApp is on their phone today, and they care whether their chats survive.
+ */
+const PATHS: {
+  id: Path;
+  title: string;
+  subtitle: string;
+  tip: string;
+  icon: typeof Phone;
+  recommended?: boolean;
+}[] = [
+  {
+    id: 'coexistence',
+    title: 'I use WhatsApp Business on my phone',
+    subtitle: 'Keep using it, and add TalkTrack alongside',
+    tip: 'Coexistence: the number keeps working in the WhatsApp Business app and in TalkTrack at the same time, and WhatsApp can bring across your recent conversations.',
+    icon: RefreshCw,
+    recommended: true,
+  },
   {
     id: 'existing',
-    title: 'Use my existing account',
-    tip: 'You already have a WhatsApp Business Account (WABA) on the Cloud API. Links it to TalkTrack. Use this if your number is already on the API.',
+    title: 'This number is with another WhatsApp provider',
+    subtitle: 'Move it to TalkTrack',
+    tip: 'The number is already on the WhatsApp Cloud API through another provider or your own account. TalkTrack takes over the connection.',
     icon: MessageCircle,
   },
   {
     id: 'new',
-    title: 'Set up a new number',
-    tip: 'Registers a brand-new number on the WhatsApp Cloud API through TalkTrack. Use this if the number has never been on WhatsApp Business API.',
+    title: 'This is a new number',
+    subtitle: 'Set up WhatsApp for the first time',
+    tip: 'Registers a number that has never been used on WhatsApp Business. Nothing to import.',
     icon: Phone,
   },
-  {
-    id: 'coexistence',
-    title: 'Keep the WhatsApp Business app',
-    tip: 'Coexistence: your number keeps working in the WhatsApp Business app and on TalkTrack at the same time. Requires Meta Tech Provider approval — use the other options until it is granted.',
-    icon: RefreshCw,
-  },
 ];
+
+/** What each path actually does to the customer's existing chats. */
+const PATH_DETAIL: Record<Path, { keeps: string[]; loses: string[] }> = {
+  coexistence: {
+    keeps: [
+      'Keep the same number',
+      'Keep using WhatsApp Business on your phone',
+      'Bring up to 6 months of recent one-to-one chats',
+      'Bring your WhatsApp contacts',
+      'Messages you send from your phone also appear in TalkTrack',
+      'Your team can reply from TalkTrack',
+    ],
+    loses: [
+      'Group chats, broadcast lists and labels do not come across',
+      'Images and files older than about 2 weeks arrive as a note, without the original file',
+    ],
+  },
+  existing: {
+    keeps: [
+      'Keep the same number',
+      'Customers can keep messaging you throughout',
+      'TalkTrack becomes your team inbox',
+    ],
+    loses: [
+      'Conversation history held by your previous provider does not transfer automatically',
+      'Ask us about importing it separately if you need it',
+    ],
+  },
+  new: {
+    keeps: [
+      'A fresh WhatsApp Business number set up for your team',
+      'TalkTrack is your inbox from the first message',
+    ],
+    loses: [
+      'If this number is currently in the WhatsApp Business app, that app will stop working for it and those chats will NOT be imported',
+      'To keep the app and your chats, choose the first option instead',
+    ],
+  },
+};
 
 declare global {
   interface Window {
@@ -59,7 +114,7 @@ function postProgress(body: Record<string, unknown>) {
 
 export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeature, initialStrategy }: Props) {
   const isPath = (v?: string): v is Path => v === 'coexistence' || v === 'new' || v === 'existing';
-  const [path, setPath] = useState<Path>(isPath(initialStrategy) ? initialStrategy : 'existing');
+  const [path, setPath] = useState<Path>(isPath(initialStrategy) ? initialStrategy : 'coexistence');
   const [status, setStatus] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const sdkReady = useRef(false);
@@ -150,7 +205,9 @@ export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeatu
           .then((j) => {
             if (j.pinRequired) { window.location.href = '/onboarding?connect=pin'; return; }
             setStatus('Connected! Redirecting…');
-            window.location.href = '/crm/dashboard';
+            // Coexistence goes to the import screen so the owner watches their
+            // chats arrive instead of meeting an inbox that looks empty.
+            window.location.href = path === 'coexistence' ? '/onboarding/importing' : '/crm/dashboard';
           })
           .catch((err: Error) => {
             setBusy(false);
@@ -182,7 +239,13 @@ export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeatu
               aria-pressed={active}
             >
               <span className="tt-onb__path-icon"><Icon /></span>
-              <span className="tt-onb__path-title">{p.title}</span>
+              <span className="tt-onb__path-text">
+                <span className="tt-onb__path-title">
+                  {p.title}
+                  {p.recommended ? <span className="tt-onb__rec">Recommended</span> : null}
+                </span>
+                <span className="tt-onb__path-sub">{p.subtitle}</span>
+              </span>
               <span className="tt-onb__path-info" title={p.tip} aria-label={p.tip} role="img">
                 <Info />
               </span>
@@ -192,8 +255,51 @@ export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeatu
         })}
       </div>
 
+      {/* What this choice does to their existing chats, before they commit. */}
+      <div className="tt-onb__detail">
+        <h2 className="tt-onb__detail-title">
+          {path === 'coexistence' ? 'Keep your WhatsApp. Add TalkTrack.'
+            : path === 'existing' ? 'Move your number to TalkTrack'
+              : 'Set up a new WhatsApp number'}
+        </h2>
+        <ul className="tt-onb__list">
+          {PATH_DETAIL[path].keeps.map((line) => (
+            <li key={line} className="tt-onb__li tt-onb__li--yes"><Check aria-hidden="true" />{line}</li>
+          ))}
+          {PATH_DETAIL[path].loses.map((line) => (
+            <li key={line} className="tt-onb__li tt-onb__li--no"><X aria-hidden="true" />{line}</li>
+          ))}
+        </ul>
+
+        {/* The single instruction that decides whether history arrives at all.
+            Meta asks this inside its own popup, where it is easy to dismiss —
+            and the choice cannot be undone without offboarding entirely. */}
+        {path === 'coexistence' ? (
+          <p className="tt-onb__callout">
+            <ShieldCheck aria-hidden="true" />
+            <span>
+              <strong>When WhatsApp asks whether to share your chat history, choose
+              &ldquo;Share chats&rdquo;.</strong> That is what lets TalkTrack bring your recent
+              customer conversations into the team inbox. It can only be done during this
+              setup — not afterwards.
+            </span>
+          </p>
+        ) : null}
+
+        {path === 'new' ? (
+          <p className="tt-onb__callout tt-onb__callout--warn">
+            <AlertTriangle aria-hidden="true" />
+            <span>
+              Only choose this if the number is <strong>not</strong> in use in the WhatsApp
+              Business app. Registering a number that is in the app removes it from the app
+              and its existing chats cannot be recovered into TalkTrack.
+            </span>
+          </p>
+        ) : null}
+      </div>
+
       <Button variant="primary" size="lg" fullWidth disabled={busy} onClick={launch}>
-        {busy ? 'Connecting…' : 'Connect WhatsApp'}
+        {busy ? 'Connecting…' : path === 'coexistence' ? 'Connect WhatsApp' : 'Continue'}
       </Button>
 
       <button type="button" className="tt-onb__alt" disabled={busy} onClick={launchViaSdk}>

@@ -102,6 +102,40 @@ model WhatsAppAccount {
   // Null for coexistence numbers and for existing numbers whose PIN the client owns.
   twoStepPin        String?
 
+  // --- How this number came to us -----------------------------------------
+  // new_cloud_api            brand-new number registered through us
+  // coexistence              stays live in the WhatsApp Business app alongside us
+  // migrated_from_business_app  the app account was deleted; no history comes across
+  // migrated_from_bsp        moved from another provider; their CRM history does not
+  //
+  // This is not cosmetic: it decides whether we may ask Meta for history at all,
+  // and what we are allowed to promise the customer about their old chats.
+  connectionMode    String   @default("new_cloud_api")
+
+  // --- Coexistence: contacts + 180-day history sync ------------------------
+  // Meta gives a ONE-TIME, 24-hour window after onboarding to request each sync.
+  // Miss it, or ask twice, and the customer must offboard and redo Embedded
+  // Signup — so these fields exist to make the window visible and auditable
+  // rather than something support discovers weeks later.
+  onboardedAt         DateTime?   // day 0: the clock Meta's 24h window runs from
+  historyPermission   String   @default("unknown")      // approved | declined | unknown
+  historySyncStatus   String   @default("not_started")  // not_started | requested | syncing | completed | partial | failed | expired
+  historyRequestId    String?                           // Meta's request_id, for support
+  historyStartedAt    DateTime?
+  historyCompletedAt  DateTime?
+  historyPhase        Int?                              // 0 (day 0-1) | 1 (1-90) | 2 (90-180)
+  historyProgress     Int      @default(0)              // 0-100, as Meta reports it
+  historyMessages     Int      @default(0)
+  historyThreads      Int      @default(0)
+  historyMediaPlaceholders Int @default(0)              // older than 14 days: record kept, media gone
+  historyError        String?
+
+  contactsSyncStatus  String   @default("not_started")  // not_started | requested | syncing | completed | failed | expired
+  contactsRequestId   String?
+  contactsImported    Int      @default(0)
+  contactsSyncedAt    DateTime?
+  contactsError       String?
+
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -158,9 +192,17 @@ model Conversation {
   // Zone routing: the zone this thread resolved to (from the contact's city/state).
   // If assigneeUserId is null and the zone has >1 members, the admin picks one.
   zoneId         String?
-  status         String  @default("open") // open | pending | resolved
+  // open | pending | resolved | imported
+  // `imported` is the backfill state: the thread exists for context but is not
+  // work. A live inbound message is what promotes it to `open`.
+  status         String  @default("open")
   labels         String[] @default([])    // applied label ids/names
   isSpam         Boolean  @default(false)
+  /// True while the thread holds only backfilled history. Keeps 500 imported
+  /// conversations out of the Open queue on a customer's first morning.
+  isHistorical   Boolean  @default(false)
+  /// Oldest backfilled message, so the UI can say how far back context goes.
+  historyFrom    DateTime?
   lastReadAt     DateTime?                 // when an agent last read this thread (unread = inbound after this)
   lastMessageAt DateTime @default(now())
   createdAt     DateTime @default(now())
@@ -342,9 +384,22 @@ model Message {
   type           String   @default("text")
   text           String?
   status         String?  // outbound: sent | delivered | read | failed
+  /// Where the message entered the CRM. An agent needs to know why a reply they
+  /// did not write is in the thread, and automations need to know what is real
+  /// traffic versus backfill.
+  ///   customer | crm_agent | whatsapp_business_app | automation | ai_agent
+  ///   | campaign | history_import | external_crm_import
+  source         String   @default("customer")
+  /// True for anything backfilled. Never opens the 24-hour service window,
+  /// never triggers automations, assignment, SLA or notifications.
+  isHistorical   Boolean  @default(false)
+  /// Media older than 14 days arrives as a record with no retrievable asset —
+  /// the UI shows "older WhatsApp image" rather than a broken thumbnail.
+  mediaUnavailable Boolean @default(false)
   at             DateTime @default(now())
 
   @@index([conversationId])
+  @@index([conversationId, at])
 }
 
 // Per-tenant Google account connection (OAuth) for Contacts + Sheets sync.

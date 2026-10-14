@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { startCoexistenceSync } from '@/lib/whatsapp/coexistence';
 import { encrypt } from '@/lib/crypto';
 import {
   getPhoneNumbers, getPhoneNumberHealth, registerPhoneNumber, subscribeAppToWaba,
@@ -96,11 +97,39 @@ export async function finalizeConnection(input: FinalizeInput): Promise<Finalize
     connectedAt: new Date(),
   };
 
+  // How the number arrived decides what we may ask Meta for, and what we are
+  // allowed to tell the customer about their old chats.
+  const connectionMode = coexistence
+    ? 'coexistence'
+    : input.strategy === 'existing' ? 'migrated_from_bsp' : 'new_cloud_api';
+
   const existing = phoneNumberId
     ? await prisma.whatsAppAccount.findFirst({ where: { tenantId, phoneNumberId } })
     : null;
-  if (existing) await prisma.whatsAppAccount.update({ where: { id: existing.id }, data });
-  else await prisma.whatsAppAccount.create({ data: { tenantId, ...data } });
+  let accountId: string;
+  if (existing) {
+    await prisma.whatsAppAccount.update({
+      where: { id: existing.id },
+      // onboardedAt is day 0 for Meta's 24-hour sync window — set once.
+      data: { ...data, connectionMode, onboardedAt: existing.onboardedAt ?? new Date() },
+    });
+    accountId = existing.id;
+  } else {
+    const created = await prisma.whatsAppAccount.create({
+      data: { tenantId, ...data, connectionMode, onboardedAt: new Date() },
+    });
+    accountId = created.id;
+  }
+
+  // Coexistence: ask for contacts and history NOW.
+  //
+  // Meta allows each request once, inside 24 hours of onboarding, and the only
+  // recovery is offboarding and repeating Embedded Signup. A button in Settings
+  // that the owner might find next week would therefore cost them their history
+  // outright — so this fires automatically and never blocks the connection.
+  if (coexistence && accountId) {
+    void startCoexistenceSync(accountId).catch(() => { /* state records the failure */ });
+  }
 
   await prisma.onboardingSession
     .upsert({

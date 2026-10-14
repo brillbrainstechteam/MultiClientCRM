@@ -43,8 +43,18 @@ export async function GET() {
 
   const mapped = conversations.map((c) => {
     const d = digits(c.contactPhone);
-    const lastInbound = [...c.messages].reverse().find((m) => m.direction === 'inbound');
-    const unread = c.messages.filter((m) => m.direction === 'inbound' && (!c.lastReadAt || m.at > c.lastReadAt)).length;
+    // The 24-hour service window is anchored on LIVE customer messages only.
+    // Backfilled history must never open it: Meta is explicit that Business-app
+    // and historical messages do not create or extend the Cloud API window, and
+    // a day-old imported message would otherwise show the window as open and
+    // get the agent's free-form reply rejected.
+    const lastInbound = [...c.messages]
+      .reverse()
+      .find((m) => m.direction === 'inbound' && !m.isHistorical);
+    // Imported history is not unread work — the owner already saw it on their phone.
+    const unread = c.messages.filter(
+      (m) => m.direction === 'inbound' && !m.isHistorical && (!c.lastReadAt || m.at > c.lastReadAt),
+    ).length;
     return {
       id: c.id,
       whatsappNumberId: numberByPhoneId.get(c.phoneNumberId) ?? fallbackNumberId,
@@ -52,6 +62,8 @@ export async function GET() {
       rawMobile: c.contactPhone ? `+${c.contactPhone}` : null,
       contactName: c.contactName ?? null,
       status: c.status,
+      isHistorical: c.isHistorical,
+      historyFrom: c.historyFrom ? c.historyFrom.toISOString() : null,
       assigneeUserId: c.assigneeUserId ?? null,
       labels: c.labels ?? [],
       isSpam: c.isSpam,
@@ -63,8 +75,14 @@ export async function GET() {
         id: m.id,
         waMessageId: m.waMessageId ?? null,
         direction: m.direction,
+        type: m.type,
         text: m.text ?? '',
         status: m.status ?? null,
+        // Where it came from, so the thread can show "sent from phone" or
+        // "imported" rather than leaving an agent guessing.
+        source: m.source,
+        isHistorical: m.isHistorical,
+        mediaUnavailable: m.mediaUnavailable,
         at: m.at.toISOString(),
       })),
       notes: c.notes.map((n) => ({ id: n.id, text: n.text, authorUserId: n.authorUserId, createdAt: n.createdAt.toISOString() })),

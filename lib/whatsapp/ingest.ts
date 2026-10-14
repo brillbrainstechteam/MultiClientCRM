@@ -6,6 +6,10 @@ import {
 import { routeLocation } from '@/lib/crm/zone-routing';
 import { notify, type NotifySeverity } from '@/lib/billing/notify';
 import { applyTemplateEvent } from '@/lib/meta/template-cache';
+import {
+  ingestHistoryChunk, ingestStateSync, promoteHistoricalConversation,
+  type HistoryChunk, type StateSyncEntry,
+} from '@/lib/whatsapp/coexistence';
 
 /**
  * Routing for a WhatsApp webhook payload.
@@ -15,6 +19,9 @@ import { applyTemplateEvent } from '@/lib/meta/template-cache';
  * all of them and dispatch by field:
  *
  *   messages                        inbound messages + delivery statuses
+ *   history                         coexistence backfill (180 days of 1:1 chats)
+ *   smb_message_echoes              messages the owner sent from the Business app
+ *   smb_app_state_sync              the Business app's contact list
  *   message_template_status_update  a template was approved / rejected / paused / disabled
  *   template_category_update        Meta re-categorised a template (changes pricing)
  *   message_template_quality_update a template's quality score changed
@@ -128,6 +135,13 @@ export async function ingestWebhookPayload(payload: any): Promise<IngestResult> 
         result.tenantId = account.tenantId;
 
         switch (field) {
+          // ---- Coexistence ---------------------------------------------
+          case 'history':
+            await handleHistory(value, account, result); break;
+          case 'smb_message_echoes':
+            await handleMessageEchoes(value, account, result); break;
+          case 'smb_app_state_sync':
+            await handleStateSync(value, account, result); break;
           case 'message_template_status_update':
             await handleTemplateStatus(value, account, result); break;
           case 'template_category_update':
@@ -184,6 +198,12 @@ async function handleMessages(value: any, account: ResolvedAccount, result: Inge
       });
       result.conversationsTouched += 1;
 
+      // A live message on an imported thread is the moment it becomes work:
+      // it leaves the `imported` state, joins the Open queue, and from here on
+      // assignment, SLA and automations apply to it as normal.
+      const promoted = await promoteHistoricalConversation(convo.id).catch(() => false);
+      if (promoted) result.systemEventsSeen += 1;
+
       await prisma.contact.upsert({
         where: { tenantId_phone: { tenantId, phone: from } },
         update: { lastMessageAt: at, name: nameByWaId[from] || undefined },
@@ -223,6 +243,7 @@ async function handleMessages(value: any, account: ResolvedAccount, result: Inge
             direction: 'inbound',
             type: m.type ?? 'text',
             text,
+            source: 'customer',
             at,
           },
         });
@@ -234,7 +255,12 @@ async function handleMessages(value: any, account: ResolvedAccount, result: Inge
       await applyConsentFromInbound({ tenantId, from, message: m, at })
         .catch((e) => result.errors.push(`Consent: ${e instanceof Error ? e.message : String(e)}`));
 
-      const inboundCount = await prisma.message.count({ where: { conversationId: convo.id, direction: 'inbound' } });
+      // "First message" means the first LIVE one. An imported thread carrying six
+      // months of history is not a new customer, and a welcome automation firing
+      // on backfill would be both wrong and embarrassing.
+      const inboundCount = await prisma.message.count({
+        where: { conversationId: convo.id, direction: 'inbound', isHistorical: false },
+      });
       await runInboundAutomations({
         tenantId,
         phoneNumberId,
@@ -324,6 +350,155 @@ async function handleStatuses(value: any, result: IngestResult): Promise<void> {
       }
     }
   }
+}
+
+// ---- coexistence ----------------------------------------------------------
+
+/**
+ * Backfilled WhatsApp Business app history (field: `history`).
+ *
+ * Chunks can arrive out of order and Meta retries, so this is written to be
+ * idempotent and order-independent — see lib/whatsapp/coexistence.ts. Nothing
+ * here touches the live inbox: imported threads land in the `imported` state,
+ * every message is flagged historical, and no automation, assignment, SLA or
+ * notification is triggered by any of it.
+ *
+ * Progress is tracked on the account so the onboarding screen can show the
+ * import filling in. Meta signals completion with phase 2 at 100%.
+ */
+async function handleHistory(value: any, account: ResolvedAccount, result: IngestResult): Promise<void> {
+  const chunks: HistoryChunk[] = value?.history ?? [];
+  if (!chunks.length) return;
+
+  let threads = 0, messages = 0, placeholders = 0, declined = false;
+  let phase: number | null = null, progress: number | null = null;
+
+  for (const chunk of chunks) {
+    const r = await ingestHistoryChunk({
+      tenantId: account.tenantId,
+      phoneNumberId: value?.metadata?.phone_number_id ?? account.phoneNumberId ?? '',
+      businessPhone: value?.metadata?.display_phone_number ?? account.displayPhone ?? '',
+      chunk,
+    });
+    threads += r.threads;
+    messages += r.messages;
+    placeholders += r.mediaPlaceholders;
+    declined = declined || r.declined;
+    // Chunks arrive out of order, so keep the furthest point reached, not the last seen.
+    if (r.phase !== null) phase = Math.max(phase ?? 0, r.phase);
+    if (r.progress !== null) progress = Math.max(progress ?? 0, r.progress);
+  }
+
+  if (declined) {
+    // Not a failure: the customer chose to keep their chats on the phone.
+    await prisma.whatsAppAccount.update({
+      where: { id: account.id },
+      data: { historyPermission: 'declined', historySyncStatus: 'completed', historyCompletedAt: new Date() },
+    });
+    result.systemEventsSeen += 1;
+    return;
+  }
+
+  // Meta marks the end with the final phase at 100%.
+  const done = phase === 2 && progress === 100;
+  await prisma.whatsAppAccount.update({
+    where: { id: account.id },
+    data: {
+      historyPermission: 'approved',
+      historySyncStatus: done ? 'completed' : 'syncing',
+      ...(done ? { historyCompletedAt: new Date() } : {}),
+      ...(phase !== null ? { historyPhase: phase } : {}),
+      ...(progress !== null ? { historyProgress: progress } : {}),
+      historyThreads: { increment: threads },
+      historyMessages: { increment: messages },
+      historyMediaPlaceholders: { increment: placeholders },
+    },
+  });
+
+  if (done) {
+    await notify({
+      tenantId: account.tenantId,
+      category: 'whatsapp',
+      kind: 'history_imported',
+      severity: 'info',
+      title: 'Previous WhatsApp history imported',
+      body: 'Your recent one-to-one conversations are now in the Inbox for context.',
+      data: { wabaId: account.wabaId },
+      dedupeKey: `history:${account.id}:done`,
+    });
+  }
+  result.systemEventsSeen += 1;
+}
+
+/**
+ * Messages the owner sent from the WhatsApp Business app (`smb_message_echoes`).
+ *
+ * Mandatory for a credible coexistence inbox. Without it the CRM sees a
+ * customer question with no answer, marks the thread unanswered, and an
+ * automation or AI agent cheerfully repeats what the owner already said from
+ * their phone five minutes earlier.
+ *
+ * An echo is real outbound traffic, so unlike history it DOES update the
+ * thread's position and clear the unanswered state — but it is not a customer
+ * message, so it does not open the 24-hour service window.
+ */
+async function handleMessageEchoes(value: any, account: ResolvedAccount, result: IngestResult): Promise<void> {
+  const { tenantId } = account;
+  const phoneNumberId = value?.metadata?.phone_number_id ?? account.phoneNumberId ?? '';
+
+  for (const m of value?.message_echoes ?? []) {
+    try {
+      const contactPhone = String(m?.to ?? '').replace(/\D/g, '');
+      if (!contactPhone) continue;
+      const at = m?.timestamp ? new Date(Number(m.timestamp) * 1000) : new Date();
+      const text: string = m?.text?.body ?? `[${m?.type ?? 'message'}]`;
+
+      const convo = await prisma.conversation.upsert({
+        where: { tenantId_phoneNumberId_contactPhone: { tenantId, phoneNumberId, contactPhone } },
+        update: { lastMessageAt: at },
+        create: { tenantId, phoneNumberId, contactPhone, lastMessageAt: at },
+      });
+
+      if (m?.id) {
+        const seen = await prisma.message.findUnique({ where: { waMessageId: m.id } });
+        if (seen) continue;
+      }
+      await prisma.message.create({
+        data: {
+          conversationId: convo.id,
+          waMessageId: m?.id ?? null,
+          direction: 'outbound',
+          type: m?.type ?? 'text',
+          text,
+          status: 'sent',
+          // The agent needs to know this reply came from someone's phone.
+          source: 'whatsapp_business_app',
+          at,
+        },
+      });
+      result.messagesStored += 1;
+      result.conversationsTouched += 1;
+    } catch (e) {
+      result.errors.push(`Echo ${m?.id ?? '?'}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+}
+
+/** The Business app's contact list (`smb_app_state_sync`) — names for the threads. */
+async function handleStateSync(value: any, account: ResolvedAccount, result: IngestResult): Promise<void> {
+  const entries: StateSyncEntry[] = value?.state_sync ?? [];
+  if (!entries.length) return;
+
+  const { added } = await ingestStateSync({ tenantId: account.tenantId, entries });
+  await prisma.whatsAppAccount.update({
+    where: { id: account.id },
+    data: {
+      contactsSyncStatus: 'completed',
+      contactsSyncedAt: new Date(),
+      contactsImported: { increment: added },
+    },
+  });
+  result.systemEventsSeen += 1;
 }
 
 // ---- template / account / quality events ----------------------------------
