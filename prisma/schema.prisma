@@ -652,6 +652,42 @@ model CrmTemplateDraft {
   @@index([tenantId, updatedAt])
 }
 
+// ---- Quick replies ---------------------------------------------------------
+
+/// Canned replies an agent inserts into the composer with a `/shortcut`.
+///
+/// This is a CRM-owned feature, not a Meta one: the WhatsApp Business *app* has
+/// quick replies (device-local, capped at 50, lost when you change phone) but
+/// the Cloud API has no store for them at all. Keeping them here means the whole
+/// team shares one set, they survive a device change, and usage is measurable.
+///
+/// Quick replies are free-form session text, so they only go out inside the
+/// 24-hour customer service window. Outside it an approved template is the only
+/// option — a different object entirely (CrmTemplateDraft / Meta's template API).
+model CrmQuickReply {
+  id              String   @id @default(cuid())
+  tenantId        String
+  /// Typed as "/<shortcut>" in the composer. Lowercase, unique per tenant.
+  shortcut        String
+  title           String
+  /// Supports {{1}}-style positional and {{name}}-style named placeholders.
+  body            String
+  category        String   @default("General")
+  language        String   @default("en")
+  /// workspace = everyone; personal = only its owner.
+  scope           String   @default("workspace")
+  ownerId         String?
+  createdByUserId String?
+  usageCount      Int      @default(0)
+  lastUsedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([tenantId, shortcut])
+  @@index([tenantId, category])
+  @@index([tenantId, usageCount])
+}
+
 // ---- Consent ---------------------------------------------------------------
 
 /// Append-only consent ledger. The decision lives on CrmContact so queries stay

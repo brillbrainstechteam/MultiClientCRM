@@ -1,129 +1,161 @@
-import { useState, useMemo } from 'react';
-import { Search, Zap } from 'lucide-react';
-import { Popover } from '@crm/design-system';
-import { quickReplies } from '../inbox-mock-data';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { Zap, Plus, Settings2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Button, Popover, SearchField } from '@crm/design-system';
+import { renderQuickReply, type QuickReplyContext } from '@/lib/crm/quick-replies';
+import './QuickRepliesPopover.css';
+
+/**
+ * Pick a saved reply and drop it into the composer.
+ *
+ * These are the CRM's own canned replies, not anything Meta stores — see
+ * lib/crm/quick-replies.ts for why the two senses of "quick reply" are not the
+ * same thing. They go out as free-form session text, so they only work while the
+ * 24-hour window is open; the template picker is the route when it is not.
+ *
+ * The list used to come from a fixture array, so nothing an operator added ever
+ * appeared. It now reads the workspace's real replies, sorted most-used first.
+ */
+
+interface QuickReplyDTO {
+  id: string;
+  shortcut: string;
+  title: string;
+  body: string;
+  category: string;
+  scope: string;
+  usageCount: number;
+}
 
 interface QuickRepliesPopoverProps {
   open: boolean;
   onClose: () => void;
+  /** Values used to fill {{name}}, {{company}} and friends before inserting. */
+  context?: QuickReplyContext;
   contactName?: string;
   onInsert: (text: string) => void;
 }
 
-export function QuickRepliesPopover({ open, onClose, contactName, onInsert }: QuickRepliesPopoverProps) {
+export function QuickRepliesPopover({
+  open, onClose, context, contactName, onInsert,
+}: QuickRepliesPopoverProps) {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string>('all');
+  const [replies, setReplies] = useState<QuickReplyDTO[] | null>(null);
+
+  const load = useCallback(() => {
+    fetch('/api/crm/quick-replies', { credentials: 'same-origin' })
+      .then((r) => r.json())
+      .then((d: { quickReplies?: QuickReplyDTO[] }) => setReplies(d.quickReplies ?? []))
+      .catch(() => setReplies([]));
+  }, []);
+
+  useEffect(() => { if (open) load(); }, [open, load]);
+  useEffect(() => { if (!open) { setQuery(''); setCategory('all'); } }, [open]);
 
   const categories = useMemo(
-    () => ['all', ...Array.from(new Set(quickReplies.map((r) => r.category)))],
-    [],
+    () => ['all', ...Array.from(new Set((replies ?? []).map((r) => r.category)))],
+    [replies],
   );
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
-    return quickReplies.filter((r) => {
-      const matchesQuery =
-        !q ||
-        r.name.toLowerCase().includes(q) ||
-        r.content.toLowerCase().includes(q);
-      const matchesCategory = category === 'all' || r.category === category;
-      return matchesQuery && matchesCategory;
+    return (replies ?? []).filter((r) => {
+      const matchesQuery = !q
+        || r.shortcut.includes(q)
+        || r.title.toLowerCase().includes(q)
+        || r.body.toLowerCase().includes(q);
+      return matchesQuery && (category === 'all' || r.category === category);
     });
-  }, [query, category]);
+  }, [replies, query, category]);
 
-  function resolveContent(content: string): string {
-    // Replace {{1}} with contactName for templates that use it as customer_name
-    return content.replace(/\{\{1\}\}/g, contactName ?? '{{customer_name}}');
-  }
-
-  function handleInsert(content: string) {
-    onInsert(resolveContent(content));
+  const handleInsert = (reply: QuickReplyDTO) => {
+    onInsert(renderQuickReply(reply.body, { name: contactName, ...context }));
+    // Usage drives the ordering; a failure here must not block the insert.
+    void fetch(`/api/crm/quick-replies/${reply.id}`, { method: 'POST', credentials: 'same-origin' })
+      .catch(() => {});
     setQuery('');
     onClose();
-  }
+  };
 
   return (
-    <Popover open={open} title="Quick Replies" onClose={onClose}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {/* Search */}
-        <div style={{ position: 'relative' }}>
-          <Search size={13} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--crm-text-muted)', pointerEvents: 'none' }} />
-          <input
-            type="text"
-            placeholder="Search or type / to filter…"
-            value={query}
-            onChange={(e) => {
-              let v = e.target.value;
-              // Strip leading slash for shortcut UX
-              if (v.startsWith('/')) v = v.slice(1);
-              setQuery(v);
-            }}
-            autoFocus
-            style={{
-              width: '100%', boxSizing: 'border-box', paddingLeft: 28, paddingRight: 10,
-              height: 32, border: '1px solid var(--crm-border)', borderRadius: 6,
-              fontSize: 12, background: 'var(--crm-bg-secondary)', color: 'var(--crm-text-primary)',
-            }}
-          />
-        </div>
+    <Popover open={open} title="Quick replies" onClose={onClose}>
+      <div className="crm-qr">
+        <SearchField
+          label="Search quick replies"
+          hideLabel
+          autoFocus
+          placeholder="Search, or type a /shortcut"
+          value={query}
+          onChange={(e) => setQuery(e.target.value.replace(/^\/+/, ''))}
+        />
 
-        {/* Category tabs */}
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              style={{
-                padding: '2px 8px', borderRadius: 999, fontSize: 11, cursor: 'pointer',
-                border: '1px solid var(--crm-border)',
-                background: category === cat ? 'var(--crm-text-brand)' : 'transparent',
-                color: category === cat ? 'var(--crm-on-dark)' : 'var(--crm-text-secondary)',
-                fontWeight: category === cat ? 600 : 400,
-              }}
-            >
-              {cat === 'all' ? 'All' : cat}
-            </button>
-          ))}
-        </div>
-
-        {/* List */}
-        {filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--crm-text-muted)', fontSize: 12 }}>
-            <Zap size={20} style={{ display: 'block', margin: '0 auto 6px', opacity: 0.4 }} />
-            No quick replies found.
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 260, overflowY: 'auto' }}>
-            {filtered.map((r) => (
+        {categories.length > 1 ? (
+          <div className="crm-qr__cats">
+            {categories.map((cat) => (
               <button
-                key={r.id}
-                onClick={() => handleInsert(r.content)}
-                style={{
-                  textAlign: 'left', padding: '8px 10px', borderRadius: 6, cursor: 'pointer',
-                  border: 'none', background: 'transparent',
-                  transition: 'background 0.1s',
-                }}
-                onMouseOver={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--crm-bg-tertiary)'; }}
-                onMouseOut={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                key={cat}
+                className={category === cat ? 'crm-qr__cat crm-qr__cat--on' : 'crm-qr__cat'}
+                onClick={() => setCategory(cat)}
               >
-                <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--crm-text-primary)', marginBottom: 2 }}>
-                  {r.name}
-                  {r.hasVariables && (
-                    <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--crm-text-muted)', fontWeight: 400 }}>
-                      has variables
-                    </span>
-                  )}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--crm-text-secondary)', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>
-                  {r.content}
-                </div>
+                {cat === 'all' ? 'All' : cat}
               </button>
             ))}
           </div>
+        ) : null}
+
+        {replies === null ? (
+          <p className="crm-qr__empty">Loading…</p>
+        ) : filtered.length === 0 ? (
+          <div className="crm-qr__empty">
+            <Zap aria-hidden="true" />
+            {replies.length === 0 ? (
+              <>
+                <span>No quick replies yet.</span>
+                <span className="crm-qr__empty-sub">
+                  Save the answers your team types every day — store timings, rate
+                  enquiries, catalogue links — and insert them with one click.
+                </span>
+              </>
+            ) : (
+              <span>Nothing matches that search.</span>
+            )}
+          </div>
+        ) : (
+          <ul className="crm-qr__list">
+            {filtered.map((r) => (
+              <li key={r.id}>
+                <button className="crm-qr__item" onClick={() => handleInsert(r)}>
+                  <span className="crm-qr__item-head">
+                    <span className="crm-qr__shortcut">/{r.shortcut}</span>
+                    <span className="crm-qr__title">{r.title}</span>
+                    {r.scope === 'personal' ? <span className="crm-qr__tag">Personal</span> : null}
+                  </span>
+                  <span className="crm-qr__body">{r.body}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
 
-        <div style={{ fontSize: 10, color: 'var(--crm-text-muted)', paddingTop: 4, borderTop: '1px solid var(--crm-border)' }}>
-          Click to insert into composer. Variables will be pre-filled where possible.
+        <div className="crm-qr__foot">
+          <Button
+            variant="ghost"
+            size="sm"
+            iconLeft={<Plus />}
+            onClick={() => { onClose(); navigate('/settings/quick-replies?new=1'); }}
+          >
+            New
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconLeft={<Settings2 />}
+            onClick={() => { onClose(); navigate('/settings/quick-replies'); }}
+          >
+            Manage
+          </Button>
         </div>
       </div>
     </Popover>

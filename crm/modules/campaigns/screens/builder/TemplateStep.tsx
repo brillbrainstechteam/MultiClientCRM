@@ -8,6 +8,7 @@ import { findTemplate, templates as allTemplates } from '@crm/modules/templates/
 import { isActive } from '@crm/modules/templates/domain/types';
 import { wabaForSender } from '../../domain/senderWaba';
 import type { Campaign } from '../../domain/types';
+import { isMediaHeader } from '@crm/modules/templates/domain/types';
 
 /** CAM-S04 — Builder Template: approved-template-only selection, scoped to the sender's WABA. */
 export function TemplateStep({
@@ -40,7 +41,7 @@ export function TemplateStep({
   const changeTemplate = () => setDraft((d) => ({ ...d, templateId: null, templateLocale: null, headerMediaUrl: null }));
 
   // Image/video/document header templates need a public media URL supplied per send.
-  const mediaHeaderFormat = selectedTemplate && ['image', 'video', 'document'].includes(selectedTemplate.components.headerFormat)
+  const mediaHeaderFormat = selectedTemplate && isMediaHeader(selectedTemplate.components.headerFormat)
     ? selectedTemplate.components.headerFormat
     : null;
 

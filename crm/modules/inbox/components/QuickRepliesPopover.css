@@ -1,0 +1,151 @@
+/* ---- Quick replies popover ---------------------------------------------- */
+
+.crm-qr {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+  min-width: 300px;
+}
+
+.crm-qr__cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.crm-qr__cat {
+  font: inherit;
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-medium);
+  padding: 3px 9px;
+  border-radius: var(--crm-radius-pill);
+  border: 1px solid var(--crm-border-strong);
+  background: transparent;
+  color: var(--crm-text-secondary);
+  cursor: pointer;
+  transition: background var(--crm-motion-fast), color var(--crm-motion-fast);
+}
+
+.crm-qr__cat:hover {
+  background: var(--crm-surface-hover);
+  color: var(--crm-text-primary);
+}
+
+.crm-qr__cat--on {
+  background: var(--crm-brand-600);
+  border-color: var(--crm-brand-600);
+  color: var(--crm-text-inverse);
+  font-weight: var(--crm-weight-semibold);
+}
+
+.crm-qr__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.crm-qr__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border: 0;
+  border-radius: var(--crm-radius-md);
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--crm-motion-fast);
+}
+
+.crm-qr__item:hover {
+  background: var(--crm-surface-hover);
+}
+
+.crm-qr__item-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* The shortcut is the thing an agent actually memorises. */
+.crm-qr__shortcut {
+  font-family: var(--crm-font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: var(--crm-weight-semibold);
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--crm-surface-band);
+  color: var(--crm-text-brand);
+  flex-shrink: 0;
+}
+
+.crm-qr__title {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-qr__tag {
+  font-size: 9.5px;
+  font-weight: var(--crm-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-surface-band);
+  color: var(--crm-text-muted);
+  flex-shrink: 0;
+}
+
+.crm-qr__body {
+  font-size: var(--crm-font-size-xs);
+  line-height: 1.45;
+  color: var(--crm-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.crm-qr__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--crm-space-5) var(--crm-space-3);
+  text-align: center;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-qr__empty svg {
+  width: 20px;
+  height: 20px;
+  opacity: 0.4;
+}
+
+.crm-qr__empty-sub {
+  font-size: var(--crm-font-size-xs);
+  line-height: 1.5;
+  color: var(--crm-text-muted);
+  max-width: 34ch;
+}
+
+.crm-qr__foot {
+  display: flex;
+  gap: var(--crm-space-2);
+  padding-top: var(--crm-space-2);
+  border-top: 1px solid var(--crm-border-subtle);
+}

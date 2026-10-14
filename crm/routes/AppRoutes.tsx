@@ -19,6 +19,7 @@ import { OnboardingRoutes } from '@crm/modules/onboarding/OnboardingRoutes';
 import { ProviderAdminRoutes } from '@crm/modules/provider-admin/ProviderAdminRoutes';
 import ReportsPage from '@crm/modules/reports/ReportsPage';
 import HistoryCentre from '@crm/modules/settings/history/HistoryCentre';
+import QuickRepliesSettings from '@crm/modules/settings/quick-replies/QuickRepliesSettings';
 import SettingsPage from '@crm/modules/settings/SettingsPage';
 import { WhatsAppSettingsRoutes } from '@crm/modules/settings/whatsapp/WhatsAppSettingsRoutes';
 import { RolesSettingsRoutes } from '@crm/modules/team-access/settings/RolesSettingsRoutes';
@@ -74,6 +75,7 @@ export function AppRoutes() {
         <Route path="settings/team/*" element={<RolesSettingsRoutes />} />
         <Route path="settings/routing/*" element={<RoutingSettingsRoutes />} />
         <Route path="settings/whatsapp/*" element={<WhatsAppSettingsRoutes />} />
+        <Route path="settings/quick-replies" element={<QuickRepliesSettings />} />
         <Route path="settings/history" element={<HistoryCentre />} />
         <Route path="settings/*" element={<SettingsPage />} />
 

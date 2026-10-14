@@ -1237,6 +1237,14 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
             ? contacts.find((c) => c.id === activeConv.contactId)?.name
             : undefined
         }
+        context={(() => {
+          const c = activeConv?.contactId
+            ? contacts.find((ct) => ct.id === activeConv.contactId)
+            : undefined;
+          // Placeholders are filled before the text reaches the composer, so the
+          // agent sees exactly what the customer will.
+          return { name: c?.name, company: c?.company, city: c?.city, agent: currentUser.name };
+        })()}
         onInsert={(text) => {
           setPendingComposerInsert(text);
           closeOverlay('popover');

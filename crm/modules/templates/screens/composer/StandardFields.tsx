@@ -3,6 +3,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { Button, Input, Select, Textarea } from '@crm/design-system';
 import type { ButtonType, HeaderFormat, TemplateComponents } from '../../domain/types';
 import { characterCount } from '../../domain/validation';
+import { isMediaHeader } from '@crm/modules/templates/domain/types';
 
 const headerFormatOptions: { value: HeaderFormat; label: string }[] = [
   { value: 'none', label: 'None' },
@@ -76,7 +77,7 @@ export function StandardFields({
             onChange={(e) => setComponents((c) => ({ ...c, headerText: e.target.value }))}
           />
         ) : null}
-        {components.headerFormat === 'image' || components.headerFormat === 'video' || components.headerFormat === 'document' ? (
+        {isMediaHeader(components.headerFormat) ? (
           <div>
             <input
               ref={mediaInputRef}

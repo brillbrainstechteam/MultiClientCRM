@@ -693,7 +693,7 @@ interface RawGraphTemplate {
 }
 
 const META_STATUS = new Set<MetaTemplateStatus>(['pending', 'approved', 'rejected', 'in_appeal', 'disabled', 'paused', 'unknown']);
-const HEADER_FORMAT: Record<string, HeaderFormat> = { TEXT: 'text', IMAGE: 'image', VIDEO: 'video', DOCUMENT: 'document' };
+const HEADER_FORMAT: Record<string, HeaderFormat> = { TEXT: 'text', IMAGE: 'image', VIDEO: 'video', GIF: 'gif', DOCUMENT: 'document', LOCATION: 'location' };
 const BUTTON_TYPE: Record<string, ButtonType> = { QUICK_REPLY: 'quick-reply', URL: 'website', PHONE_NUMBER: 'call-phone', COPY_CODE: 'coupon' };
 
 const localeLabelFor = (locale: string): string => {

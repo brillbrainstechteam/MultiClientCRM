@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import {
   Building2, Contact as ContactIcon, History, KeyRound, MessageSquare, Plug,
-  Route as RouteIcon, ShieldCheck, Users, ExternalLink, ArrowLeft,
+  Route as RouteIcon, ShieldCheck, Users, ExternalLink, ArrowLeft, Zap,
 } from 'lucide-react';
 import { PageHeader } from '@crm/components';
 import { Button, Input, Select, StatusBadge, Toast } from '@crm/design-system';
@@ -38,6 +38,7 @@ function SettingsHub() {
     { icon: <Users />, title: 'Team & roles', desc: 'Members, roles and permissions.', to: '/settings/team' },
     { icon: <RouteIcon />, title: 'Routing & assignment', desc: 'How conversations are assigned.', to: '/settings/routing' },
     { icon: <ContactIcon />, title: 'Contact settings', desc: 'Fields, tags and contact rules.', to: '/settings/contacts' },
+    { icon: <Zap />, title: 'Quick replies', desc: 'Canned answers your team inserts with a /shortcut.', to: '/settings/quick-replies' },
     { icon: <Plug />, title: 'Integrations', desc: 'Google, telephony and other connections.', to: '/settings/integrations' },
     { icon: <KeyRound />, title: 'Plan & billing', desc: 'Your subscription and usage.', to: '/billing' },
     { icon: <History />, title: 'Import history', desc: 'Past imports and activity.', to: '/settings/history' },

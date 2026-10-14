@@ -93,7 +93,11 @@ export function toMetaTemplate(input: TemplateDraftInput, opts: { isEdit?: boole
       throw new TemplateMappingError('Header variables are not supported yet — keep variables in the message body.');
     }
     components.push({ type: 'HEADER', format: 'TEXT', text: c.headerText.trim() });
-  } else if (['image', 'video', 'document'].includes(c.headerFormat)) {
+  } else if (c.headerFormat === 'location') {
+    // Meta takes no creation parameters for a location header — latitude,
+    // longitude, name and address are all supplied at send time.
+    components.push({ type: 'HEADER', format: 'LOCATION' });
+  } else if (['image', 'video', 'gif', 'document'].includes(c.headerFormat)) {
     // Meta reviews a media header against a sample file, referenced by the
     // handle returned from the Resumable Upload API (done in the submit route).
     if (c.headerHandle) {

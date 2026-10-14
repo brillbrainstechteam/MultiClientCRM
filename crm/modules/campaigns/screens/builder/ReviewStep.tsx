@@ -12,6 +12,7 @@ import { formatCurrency, formatDateTime } from '../../campaigns-labels';
 import { resolveSampleValue } from '../../data/personalisationSources';
 import { resolveCampaignCapabilities } from '../../domain/capabilityResolver';
 import type { Campaign } from '../../domain/types';
+import { isMediaHeader, headerParamType } from '@crm/modules/templates/domain/types';
 
 const timezoneOptions = [
   { value: 'Asia/Kolkata', label: 'Asia/Kolkata (IST, UTC+5:30)' },
@@ -118,7 +119,7 @@ export function ReviewStep({
   if (!capabilities.templateUsable) {
     blockers.push({ id: 'template', message: capabilities.templateUnusableReason ?? 'No usable template selected.', step: 'template' });
   }
-  if (template && ['image', 'video', 'document'].includes(template.components.headerFormat) && !(draft.headerMediaUrl ?? '').trim()) {
+  if (template && isMediaHeader(template.components.headerFormat) && !(draft.headerMediaUrl ?? '').trim()) {
     blockers.push({ id: 'header-media', message: `This template has a ${template.components.headerFormat} header — add a public media URL on the Template step.`, step: 'template' });
   }
   if (draft.audience.finalEligible === 0) {
@@ -174,9 +175,9 @@ export function ReviewStep({
         templateLocale: template?.locale,
         templateCategory: template?.metaCategory?.toUpperCase(),
         headerMediaUrl: draft.headerMediaUrl ?? null,
-        headerMediaType: template && ['image', 'video', 'document'].includes(template.components.headerFormat)
-          ? template.components.headerFormat
-          : null,
+        // headerParamType, not the raw format: a GIF header is an mp4 and must
+        // be sent as `video` — the Cloud API rejects a `gif` parameter type.
+        headerMediaType: template ? headerParamType(template.components.headerFormat) : null,
         whatsappNumberId: draft.whatsappNumberId,
         scheduledAt,
       }),

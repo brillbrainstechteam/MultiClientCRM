@@ -1,0 +1,208 @@
+/* ---- Settings: quick replies -------------------------------------------- */
+
+.crm-qrs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  padding: var(--crm-space-5);
+  min-width: 0;
+}
+
+.crm-qrs__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--crm-space-3);
+  flex-wrap: wrap;
+}
+
+.crm-qrs__count {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}
+
+/* ---- Editor ------------------------------------------------------------- */
+.crm-qrs__editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-lg, 10px);
+  background: var(--crm-surface-raised);
+}
+
+.crm-qrs__editor-title {
+  margin: 0;
+  font-size: var(--crm-font-size-lg);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.crm-qrs__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--crm-space-3);
+}
+
+.crm-qrs__placeholders {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.crm-qrs__placeholders-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}
+
+.crm-qrs__placeholders-label svg {
+  width: 13px;
+  height: 13px;
+}
+
+.crm-qrs__chip {
+  font-family: var(--crm-font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: var(--crm-weight-semibold);
+  padding: 3px 8px;
+  border-radius: var(--crm-radius-pill);
+  border: 1px solid var(--crm-border-strong);
+  background: var(--crm-surface-band);
+  color: var(--crm-text-brand);
+  cursor: pointer;
+}
+
+.crm-qrs__chip:hover {
+  background: var(--crm-surface-hover);
+}
+
+/* A preview shaped like the message the customer receives. */
+.crm-qrs__preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.crm-qrs__preview-label {
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--crm-text-muted);
+}
+
+.crm-qrs__bubble {
+  margin: 0;
+  max-width: 46ch;
+  padding: var(--crm-space-3);
+  border-radius: 10px 10px 10px 2px;
+  background: var(--crm-green-tint);
+  font-size: var(--crm-font-size-md);
+  line-height: 1.5;
+  color: var(--crm-text-primary);
+  white-space: pre-wrap;
+}
+
+.crm-qrs__issues {
+  margin: 0;
+  padding-left: 18px;
+  font-size: var(--crm-font-size-xs);
+  line-height: 1.6;
+  color: var(--crm-danger-600);
+}
+
+.crm-qrs__editor-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--crm-space-2);
+  padding-top: var(--crm-space-2);
+  border-top: 1px solid var(--crm-border-subtle);
+}
+
+/* ---- List --------------------------------------------------------------- */
+.crm-qrs__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.crm-qrs__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-3) var(--crm-space-4);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-raised);
+}
+
+.crm-qrs__row-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.crm-qrs__row-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.crm-qrs__shortcut {
+  font-family: var(--crm-font-mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  font-weight: var(--crm-weight-semibold);
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--crm-surface-band);
+  color: var(--crm-text-brand);
+}
+
+.crm-qrs__name {
+  font-size: var(--crm-font-size-row);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.crm-qrs__text {
+  margin: 0 0 4px;
+  max-width: 80ch;
+  font-size: var(--crm-font-size-sm);
+  line-height: 1.5;
+  color: var(--crm-text-secondary);
+  white-space: pre-wrap;
+}
+
+.crm-qrs__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}
+
+.crm-qrs__meta svg {
+  width: 12px;
+  height: 12px;
+}
+
+.crm-qrs__row-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  .crm-qrs { padding: var(--crm-space-4) var(--crm-space-3); }
+  .crm-qrs__row { flex-direction: column; }
+}

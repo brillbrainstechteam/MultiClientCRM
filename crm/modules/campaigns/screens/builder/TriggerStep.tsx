@@ -4,6 +4,7 @@ import { useScopedHref } from '@crm/app/use-scoped-href';
 import { Banner, Button, Input, Select, Toast } from '@crm/design-system';
 import { templates } from '@crm/modules/templates/data/mockTemplates';
 import type { Campaign } from '../../domain/types';
+import { isMediaHeader } from '@crm/modules/templates/domain/types';
 
 const EVENT_OPTIONS = [
   { value: 'first_message', label: 'First message from a new contact' },
@@ -30,7 +31,7 @@ export function TriggerStep({ draft }: { draft: Campaign }) {
   const [toast, setToast] = useState<string | null>(null);
 
   const selectedTpl = approved.find((t) => t.id === templateId);
-  const mediaHeaderFormat = selectedTpl && ['image', 'video', 'document'].includes(selectedTpl.components.headerFormat)
+  const mediaHeaderFormat = selectedTpl && isMediaHeader(selectedTpl.components.headerFormat)
     ? selectedTpl.components.headerFormat
     : null;
 

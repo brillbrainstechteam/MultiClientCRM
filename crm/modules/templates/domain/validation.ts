@@ -31,6 +31,8 @@ export interface ValidationResult {
 }
 
 const URL_RE = /^https?:\/\/[^\s]+$/i;
+/** Header formats that carry an uploaded file (Meta: IMAGE, VIDEO, GIF, DOCUMENT). */
+const MEDIA_HEADERS = new Set<string>(['image', 'video', 'gif', 'document']);
 const PHONE_RE = /^\+?[0-9][0-9\s-]{6,}$/;
 
 export function validateTemplate(
@@ -53,12 +55,30 @@ export function validateTemplate(
 
   const c = template.components;
 
-  // Header
-  if (c.headerFormat === 'text' && !c.headerText?.trim()) {
-    push(errors, 'header', 'header-text-required', 'Header text is empty.');
+  // Header — Meta: one header per template; text ≤ 60 chars with at most ONE
+  // parameter; media is IMAGE/VIDEO/GIF/DOCUMENT; a location header is allowed
+  // only on UTILITY and MARKETING templates.
+  if (c.headerFormat === 'text') {
+    if (!c.headerText?.trim()) {
+      push(errors, 'header', 'header-text-required', 'Header text is empty.');
+    } else {
+      if (c.headerText.length > 60) {
+        push(errors, 'header', 'header-text-length', 'Header exceeds the 60 character limit.');
+      }
+      const headerParams = c.headerText.match(/\{\{\s*[a-zA-Z0-9_]+\s*\}\}/g) ?? [];
+      if (headerParams.length > 1) {
+        push(errors, 'header', 'header-params', 'A text header may contain only one variable.');
+      }
+    }
   }
-  if ((c.headerFormat === 'image' || c.headerFormat === 'video' || c.headerFormat === 'document') && !c.headerMediaLabel) {
+  if (MEDIA_HEADERS.has(c.headerFormat) && !c.headerMediaLabel) {
     push(errors, 'header', 'header-media-required', 'Upload header media before submitting.');
+  }
+  if (c.headerFormat === 'gif' && template.metaCategory !== 'marketing') {
+    push(errors, 'header', 'header-gif-category', 'GIF headers are only available on Marketing templates.');
+  }
+  if (c.headerFormat === 'location' && template.metaCategory === 'authentication') {
+    push(errors, 'header', 'header-location-category', 'A location header is only allowed on Utility and Marketing templates.');
   }
 
   // Body
@@ -86,6 +106,10 @@ export function validateTemplate(
   if (c.footer && c.footer.length > 60) {
     push(errors, 'footer', 'footer-length', 'Footer exceeds the 60 character limit.');
   }
+  // Meta: the footer is text only — a variable there is rejected at review.
+  if (c.footer && /\{\{\s*[a-zA-Z0-9_]+\s*\}\}/.test(c.footer)) {
+    push(errors, 'footer', 'footer-variables', 'Footers cannot contain variables — Meta allows plain text only.');
+  }
 
   // Buttons — Meta's limits (templates/components): max 10 total; URL ≤ 2;
   // phone ≤ 1; copy-code ≤ 1; button text ≤ 25; URL ≤ 2000; phone ≤ 20.
@@ -109,8 +133,20 @@ export function validateTemplate(
   if (couponCount > 1) {
     push(errors, 'buttons', 'buttons-coupon-count', 'Meta allows only 1 copy-code button.');
   }
-  if (quickReplyCount > 0 && ctaButtons.length > 0 && template.format === 'standard') {
-    push(warnings, 'buttons', 'buttons-mixed', 'Mixing Quick Reply with call-to-action buttons changes button ordering on some clients. Group all quick-reply buttons together.');
+  // Meta groups buttons strictly: every quick reply first, then every other
+  // type. Interleaving them is rejected by the API outright, so this is an
+  // error rather than the styling warning it used to be.
+  if (quickReplyCount > 0 && ctaButtons.length > 0) {
+    const firstCta = c.buttons.findIndex((b) => b.type !== 'quick-reply');
+    const lastQuickReply = c.buttons.map((b) => b.type).lastIndexOf('quick-reply');
+    if (firstCta !== -1 && lastQuickReply > firstCta) {
+      push(errors, 'buttons', 'buttons-order', 'Meta rejects interleaved buttons — list every quick-reply button first, then the call-to-action buttons.');
+    }
+    push(warnings, 'buttons', 'buttons-mixed', 'Quick-reply and call-to-action buttons together do not render on WhatsApp Desktop.');
+  }
+  // Beyond three, WhatsApp shows two and hides the rest behind "See all options".
+  if (c.buttons.length > 3) {
+    push(warnings, 'buttons', 'buttons-overflow', `Only two of these ${c.buttons.length} buttons show on the phone — the rest sit behind "See all options", and none render on WhatsApp Desktop.`);
   }
   for (const button of c.buttons) {
     if ((button.type === 'website' || button.type === 'dynamic-website') && button.value && !URL_RE.test(button.value)) {
@@ -127,6 +163,20 @@ export function validateTemplate(
     }
     if (button.type === 'coupon' && !button.value?.trim()) {
       push(errors, 'buttons', `button-coupon-${button.id}`, `"${button.label}" needs a coupon code.`);
+    }
+    if (button.type === 'coupon' && (button.value?.length ?? 0) > 20) {
+      push(errors, 'buttons', `button-coupon-len-${button.id}`, `"${button.label}" coupon code exceeds 20 characters.`);
+    }
+    // Meta allows one variable on a URL button and only at the very end, because
+    // the value is appended to the URL rather than substituted into it.
+    if (button.type === 'website' || button.type === 'dynamic-website') {
+      const vars = button.value?.match(/\{\{\s*[a-zA-Z0-9_]+\s*\}\}/g) ?? [];
+      if (vars.length > 1) {
+        push(errors, 'buttons', `button-url-vars-${button.id}`, `"${button.label}" may contain only one variable.`);
+      }
+      if (vars.length === 1 && !button.value?.trimEnd().endsWith(vars[0])) {
+        push(errors, 'buttons', `button-url-var-pos-${button.id}`, `"${button.label}" must end with its variable — Meta appends the value to the URL.`);
+      }
     }
     if (!button.label.trim()) {
       push(errors, 'buttons', `button-label-${button.id}`, 'Every button needs a label.');

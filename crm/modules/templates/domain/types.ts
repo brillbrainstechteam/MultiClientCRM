@@ -44,7 +44,30 @@ export type BusinessUseCase =
   | 'otp'
   | 'other';
 
-export type HeaderFormat = 'none' | 'text' | 'image' | 'video' | 'document';
+/**
+ * Meta's header formats. A template has at most one header: text (≤60 chars,
+ * one variable), an uploaded media file, or a location supplied at send time.
+ * GIF is Marketing-only and is an mp4 of at most 3.5MB.
+ */
+export type HeaderFormat =
+  | 'none' | 'text' | 'image' | 'video' | 'gif' | 'document' | 'location';
+
+/** Header formats that carry an uploaded file and so need media at send time. */
+export const MEDIA_HEADER_FORMATS: HeaderFormat[] = ['image', 'video', 'gif', 'document'];
+
+export function isMediaHeader(format: string): boolean {
+  return (MEDIA_HEADER_FORMATS as string[]).includes(format);
+}
+
+/**
+ * The parameter type the Cloud API expects when sending a media header.
+ * A GIF header is an mp4, so it travels as `video` — sending `gif` is rejected.
+ */
+export function headerParamType(format: string): 'image' | 'video' | 'document' | null {
+  if (format === 'image' || format === 'document') return format;
+  if (format === 'video' || format === 'gif') return 'video';
+  return null;
+}
 
 export type ButtonType =
   | 'quick-reply'
