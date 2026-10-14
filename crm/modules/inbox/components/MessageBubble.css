@@ -257,3 +257,83 @@
   color: var(--crm-text-muted);
   white-space: nowrap;
 }
+
+/* ---- Provenance ---------------------------------------------------------- */
+
+/* Shown only when the source changes how the thread should be read — a reply
+   from the owner's phone, or a line backfilled from WhatsApp history. */
+.crm-msg-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-surface-band);
+  color: var(--crm-text-muted);
+  font-size: 10px;
+  font-weight: var(--crm-weight-semibold);
+  white-space: nowrap;
+}
+
+.crm-msg-source--whatsapp_business_app {
+  background: var(--crm-green-tint);
+  color: var(--crm-green-dark);
+}
+
+.crm-msg-source--ai_agent,
+.crm-msg-source--campaign {
+  background: var(--crm-info-50);
+  color: var(--crm-info-600);
+}
+
+/* Imported lines are context, so they sit back from the live conversation. */
+.crm-msg-bubble--historical .crm-msg-bubble__bubble {
+  opacity: 0.82;
+  border-style: dashed;
+}
+
+/* ---- Media the history sync could not carry ------------------------------ */
+.crm-msg-missing {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: var(--crm-space-3);
+  border: 1px dashed var(--crm-border-strong);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-band);
+  max-width: 320px;
+}
+
+.crm-msg-missing svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--crm-text-muted);
+}
+
+.crm-msg-missing__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.crm-msg-missing__title {
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-secondary);
+}
+
+.crm-msg-missing__sub {
+  font-size: var(--crm-font-size-xs);
+  line-height: 1.45;
+  color: var(--crm-text-muted);
+}
+
+/* ---- "Imported from WhatsApp" divider ------------------------------------ */
+.crm-msg-day-sep--history .crm-msg-day-sep__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--crm-text-muted);
+  font-style: italic;
+}

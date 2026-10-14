@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCheck, Check, AlertCircle, Bot, Lock, Reply, Forward } from 'lucide-react';
+import { CheckCheck, Check, AlertCircle, Bot, Lock, Reply, Forward, Smartphone, ImageOff, Megaphone, Sparkles, History } from 'lucide-react';
 import { Avatar } from '@crm/design-system';
 import { findUser } from '@crm/mock-data';
 import type { InboxMessage } from '../inbox-types';
@@ -47,6 +47,35 @@ function formatMentions(text: string, mentionedUserIds: string[]): React.ReactNo
   });
   parts.push(result.slice(lastIndex));
   return parts;
+}
+
+/**
+ * Where a message came from, when that is not obvious.
+ *
+ * Only shown when it changes how an agent should read the thread. A customer's
+ * own message and a reply typed here need no explanation; a reply the owner
+ * sent from their phone, or a line backfilled from WhatsApp history, very much
+ * do — otherwise the agent sees answers nobody on the team appears to have
+ * written.
+ */
+const SOURCE_BADGE: Partial<Record<NonNullable<InboxMessage['source']>, { label: string; icon: typeof Smartphone }>> = {
+  whatsapp_business_app: { label: 'Sent from phone', icon: Smartphone },
+  history_import: { label: 'Imported history', icon: History },
+  external_crm_import: { label: 'Imported', icon: History },
+  campaign: { label: 'Campaign', icon: Megaphone },
+  ai_agent: { label: 'AI agent', icon: Sparkles },
+};
+
+function SourceBadge({ source }: { source?: InboxMessage['source'] }) {
+  const badge = source ? SOURCE_BADGE[source] : undefined;
+  if (!badge) return null;
+  const Icon = badge.icon;
+  return (
+    <span className={`crm-msg-source crm-msg-source--${source}`}>
+      <Icon size={10} aria-hidden="true" />
+      {badge.label}
+    </span>
+  );
 }
 
 function MessageStatus({ status, onClick }: { status: InboxMessage['status']; onClick?: () => void }) {
@@ -164,13 +193,39 @@ export function MessageBubble({ message: m, inboundName, onShowStatus, onShowFai
     );
   }
 
+  // Media WhatsApp can no longer hand over. History reaches 180 days but media
+  // only about 14, so the rest arrive as a record of what was sent. Showing a
+  // broken thumbnail here would read as a bug in the CRM rather than a limit of
+  // the import.
+  if (m.mediaUnavailable) {
+    return (
+      <div className={`crm-msg-bubble crm-msg-bubble--${m.direction === 'outbound' ? 'outbound' : 'inbound'}`}>
+        <div className="crm-msg-bubble__content">
+          <div className="crm-msg-missing">
+            <ImageOff size={15} aria-hidden="true" />
+            <span className="crm-msg-missing__text">
+              <span className="crm-msg-missing__title">Older WhatsApp attachment</span>
+              <span className="crm-msg-missing__sub">
+                The original file is no longer available through the history import.
+              </span>
+            </span>
+          </div>
+          <div className="crm-msg-bubble__meta">
+            <SourceBadge source={m.source} />
+            <span>{formatTime(m.at)}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Regular inbound / outbound messages
   const isOutbound = m.direction === 'outbound';
   const sender = m.sentById ? findUser(m.sentById) : null;
 
   return (
     <div
-      className={`crm-msg-bubble crm-msg-bubble--${isOutbound ? 'outbound' : 'inbound'}`}
+      className={`crm-msg-bubble crm-msg-bubble--${isOutbound ? 'outbound' : 'inbound'}${m.isHistorical ? ' crm-msg-bubble--historical' : ''}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{ position: 'relative' }}
@@ -196,8 +251,11 @@ export function MessageBubble({ message: m, inboundName, onShowStatus, onShowFai
         </div>
         <div className="crm-msg-bubble__meta">
           {isOutbound && sender && <span>{sender.name.split(' ')[0]}</span>}
+          <SourceBadge source={m.source} />
           <span>{formatTime(m.at)}</span>
-          {isOutbound && (
+          {/* Imported messages carry WhatsApp's own status, not ours — a tick
+              against a six-month-old line would be meaningless. */}
+          {isOutbound && !m.isHistorical && (
             <MessageStatus status={m.status} onClick={() => onShowStatus?.(m.id)} />
           )}
         </div>
@@ -226,6 +284,28 @@ export function MessageBubble({ message: m, inboundName, onShowStatus, onShowFai
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Marks where imported history ends and the live conversation begins.
+ *
+ * Without it an agent cannot tell which part of a thread their team actually
+ * handled and which came off someone's phone before TalkTrack existed.
+ */
+export function HistoryDivider({ from }: { from?: string | null }) {
+  const since = from
+    ? new Date(from).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+    : null;
+  return (
+    <div className="crm-msg-day-sep crm-msg-day-sep--history">
+      <div className="crm-msg-day-sep__line" />
+      <span className="crm-msg-day-sep__label">
+        <History size={11} aria-hidden="true" />
+        {since ? `Imported from WhatsApp — since ${since}` : 'Imported from WhatsApp'}
+      </span>
+      <div className="crm-msg-day-sep__line" />
     </div>
   );
 }

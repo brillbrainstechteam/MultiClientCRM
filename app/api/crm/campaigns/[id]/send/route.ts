@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { checkLimit } from '@/lib/billing/limits';
 import { decrypt } from '@/lib/crypto';
 import { graphBase } from '@/lib/meta/config';
 import { audit } from '@/lib/crm/audit';
@@ -83,6 +84,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         : 'No eligible recipients for this audience.',
     }, { status: 400 });
   }
+
+  // Checked against the whole audience, not one message at a time: a 5,000
+  // recipient send that dies at message 900 is worse than one refused up front.
+  const cap = await checkLimit(user.tenantId, 'messages', audience.length);
+  if (!cap.allowed) return NextResponse.json({ error: cap.reason, code: 'plan_limit' }, { status: 402 });
 
   await prisma.crmCampaign.update({ where: { id }, data: { status: 'sending', totalRecipients: audience.length } });
 

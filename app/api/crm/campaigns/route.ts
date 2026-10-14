@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { checkLimit } from '@/lib/billing/limits';
 
 /** List the tenant's campaigns (newest first) with live counts. */
 export async function GET() {
@@ -47,6 +48,11 @@ export async function POST(req: Request) {
   const b = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const name = typeof b?.name === 'string' ? b.name.trim() : '';
   if (!name) return NextResponse.json({ error: 'Campaign name is required.' }, { status: 400 });
+
+  // Campaigns are a per-month allowance, counted from the start of the billing
+  // period so the cap resets rather than walling the tenant off permanently.
+  const cap = await checkLimit(user.tenantId, 'campaigns');
+  if (!cap.allowed) return NextResponse.json({ error: cap.reason, code: 'plan_limit' }, { status: 402 });
 
   const scheduledAt = typeof b?.scheduledAt === 'string' && b.scheduledAt ? new Date(b.scheduledAt) : null;
   const isTrigger = b?.type === 'trigger';

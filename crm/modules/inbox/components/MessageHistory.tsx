@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { LoadingSkeleton } from '@crm/design-system';
 import type { InboxMessage } from '../inbox-types';
-import { MessageBubble, DaySeparator } from './MessageBubble';
+import { MessageBubble, DaySeparator, HistoryDivider } from './MessageBubble';
 
 interface MessageHistoryProps {
   messages: InboxMessage[];
@@ -68,11 +68,29 @@ export function MessageHistory({
     );
   }
 
-  // Insert day separators
-  const items: Array<{ type: 'sep'; label: string } | { type: 'msg'; message: InboxMessage }> = [];
+  // Day separators, plus one divider where imported history ends and the live
+  // conversation begins — an agent needs to see which half their team handled.
+  const items: Array<
+    | { type: 'sep'; label: string }
+    | { type: 'history-start'; from: string | null }
+    | { type: 'history-end' }
+    | { type: 'msg'; message: InboxMessage }
+  > = [];
   let lastDay = '';
+  let inHistory = false;
+  const firstHistorical = messages.find((m) => m.isHistorical);
 
   for (const msg of messages) {
+    const historical = !!msg.isHistorical;
+    if (historical && !inHistory) {
+      items.push({ type: 'history-start', from: firstHistorical?.at ?? null });
+      inHistory = true;
+    } else if (!historical && inHistory) {
+      items.push({ type: 'history-end' });
+      inHistory = false;
+      // The live stretch starts its own day grouping.
+      lastDay = '';
+    }
     const day = msg.at.slice(0, 10);
     if (day !== lastDay) {
       items.push({ type: 'sep', label: formatDateLabel(msg.at) });
@@ -96,6 +114,12 @@ export function MessageHistory({
       {items.map((item, i) => {
         if (item.type === 'sep') {
           return <DaySeparator key={`sep-${i}`} label={item.label} />;
+        }
+        if (item.type === 'history-start') {
+          return <HistoryDivider key={`hist-${i}`} from={item.from} />;
+        }
+        if (item.type === 'history-end') {
+          return <DaySeparator key={`live-${i}`} label="In TalkTrack from here" />;
         }
         const isFocused = focusMessageId === item.message.id;
         return (

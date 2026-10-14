@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { checkLimit } from '@/lib/billing/limits';
 import { importContactRows, type ImportRow } from '@/lib/crm/import-contacts';
 
 /**
@@ -20,6 +21,12 @@ export async function POST(req: Request) {
   const source = (typeof body?.source === 'string' && body.source.trim()) ? body.source.trim() : 'CSV upload';
   const fileName = typeof body?.fileName === 'string' && body.fileName.trim() ? body.fileName.trim() : null;
   if (rows.length === 0) return NextResponse.json({ error: 'No rows to import.' }, { status: 400 });
+
+  // Checked against the whole file before a single row is written. An import
+  // that stops half way leaves the book in a state nobody asked for, and the
+  // operator cannot tell which rows made it.
+  const cap = await checkLimit(user.tenantId, 'contacts', rows.length);
+  if (!cap.allowed) return NextResponse.json({ error: cap.reason, code: 'plan_limit' }, { status: 402 });
 
   const result = await importContactRows(user.tenantId, rows, onDuplicate);
 

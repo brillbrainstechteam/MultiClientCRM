@@ -48,6 +48,10 @@ export interface MessagePreview {
 // ---- Conversation ----------------------------------------------------------
 
 export interface InboxConversation {
+  /** True while the thread holds only backfilled history (not live work). */
+  isHistorical?: boolean;
+  /** Oldest backfilled message, so the thread can say how far context goes. */
+  historyFrom?: string | null;
   id: string;
   /** null = unknown WhatsApp number (no Contact record matched). */
   contactId: string | null;
@@ -120,8 +124,25 @@ export interface InboxMessage {
   mentionedUserIds: string[];
   replyToMessageId: string | null;
   templateId?: string;
+  /**
+   * Where the message entered the CRM. An agent needs to know why a reply they
+   * did not write is sitting in the thread — the owner answering from their
+   * phone is the common case on a coexistence number.
+   */
+  source?: MessageSource;
+  /** Backfilled from WhatsApp history: context, never live work. */
+  isHistorical?: boolean;
+  /**
+   * Media Meta can no longer hand over. History reaches 180 days but media only
+   * ~14, so older attachments arrive as a record with no retrievable file.
+   */
+  mediaUnavailable?: boolean;
   at: string;
 }
+
+export type MessageSource =
+  | 'customer' | 'crm_agent' | 'whatsapp_business_app' | 'automation'
+  | 'ai_agent' | 'campaign' | 'history_import' | 'external_crm_import';
 
 // ---- Conversation labels (distinct from Contact tags) ----------------------
 

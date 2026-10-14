@@ -225,3 +225,10 @@
   background: var(--crm-brand-400);
   flex-shrink: 0;
 }
+
+/* Backfilled WhatsApp history: present for context, never styled as new work. */
+.crm-conv-row__status--imported {
+  background: var(--crm-surface-band);
+  color: var(--crm-text-muted);
+  font-style: italic;
+}

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { checkLimit } from '@/lib/billing/limits';
 import { decrypt } from '@/lib/crypto';
 import { graphBase } from '@/lib/meta/config';
 
@@ -19,6 +20,9 @@ export async function POST(req: Request) {
   const text = body?.text?.trim();
   const contextMessageId = typeof body?.contextMessageId === 'string' && body.contextMessageId.trim() ? body.contextMessageId.trim() : null;
   if (!to || !text) return NextResponse.json({ error: 'Provide a recipient and a message.' }, { status: 400 });
+
+  const cap = await checkLimit(user.tenantId, 'messages');
+  if (!cap.allowed) return NextResponse.json({ error: cap.reason, code: 'plan_limit' }, { status: 402 });
 
   const account = await prisma.whatsAppAccount.findFirst({
     where: { tenantId: user.tenantId, status: 'connected' },

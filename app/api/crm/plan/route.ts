@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { checkFeature } from '@/lib/billing/limits';
 
 const normMobile = (m: string) => {
   const t = String(m ?? '').trim();
@@ -20,6 +21,10 @@ const normMobile = (m: string) => {
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
+
+  // Calling & visits is a paid-plan inclusion.
+  const feat = await checkFeature(user.tenantId, 'calling');
+  if (!feat.allowed) return NextResponse.json({ error: feat.reason, code: 'plan_feature' }, { status: 402 });
   if (!['owner', 'admin', 'manager'].includes(user.role)) {
     return NextResponse.json({ error: 'Your role cannot build plans.' }, { status: 403 });
   }

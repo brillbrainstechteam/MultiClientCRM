@@ -106,6 +106,14 @@ export function ConversationRow({
         </div>
 
         <div className="crm-conv-row__badges">
+          {/* Imported threads are context, not work — they carry no unread
+              count and say plainly where they came from, so the list does not
+              look like 500 conversations arrived needing answers. */}
+          {c.isHistorical && (
+            <span className="crm-conv-row__status crm-conv-row__status--imported">
+              Imported
+            </span>
+          )}
           {c.status === 'pending' && (
             <span className="crm-conv-row__status crm-conv-row__status--pending">Pending</span>
           )}

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { checkLimit } from '@/lib/billing/limits';
 import { startCoexistenceSync } from '@/lib/whatsapp/coexistence';
 import { encrypt } from '@/lib/crypto';
 import {
@@ -106,6 +107,14 @@ export async function finalizeConnection(input: FinalizeInput): Promise<Finalize
   const existing = phoneNumberId
     ? await prisma.whatsAppAccount.findFirst({ where: { tenantId, phoneNumberId } })
     : null;
+
+  // Reconnecting a number already on the account is always allowed; only a NEW
+  // number counts against the plan, and the check happens before anything is
+  // written so a blocked connection leaves no half-made account row.
+  if (!existing) {
+    const cap = await checkLimit(tenantId, 'numbers');
+    if (!cap.allowed) throw new Error(cap.reason ?? 'Your plan does not include another WhatsApp number.');
+  }
   let accountId: string;
   if (existing) {
     await prisma.whatsAppAccount.update({

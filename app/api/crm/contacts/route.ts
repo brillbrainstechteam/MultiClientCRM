@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { checkLimit } from '@/lib/billing/limits';
 import { serializeCrmContact } from '@/lib/crm/contact-serialize';
 import { routeLocation } from '@/lib/crm/zone-routing';
 
@@ -38,6 +39,9 @@ export async function POST(req: Request) {
   } else if (!name) {
     return NextResponse.json({ error: 'Contact name is required for a B2C contact.' }, { status: 400 });
   }
+
+  const cap = await checkLimit(user.tenantId, 'contacts');
+  if (!cap.allowed) return NextResponse.json({ error: cap.reason, code: 'plan_limit' }, { status: 402 });
 
   const displayName = name || contactPerson || company || 'Contact';
   const leadStatus = str(b?.leadStatus, 'new');

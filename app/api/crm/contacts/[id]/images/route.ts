@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { checkStorage } from '@/lib/billing/limits';
 import { audit } from '@/lib/crm/audit';
 import { putFile, storageStatus } from '@/lib/storage';
 
@@ -58,6 +59,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const base64 = typeof body?.fileBase64 === 'string' ? body.fileBase64 : '';
   const mimeType = typeof body?.mimeType === 'string' ? body.mimeType : '';
   if (!base64 || !mimeType) return NextResponse.json({ error: 'Missing file.' }, { status: 400 });
+
+  // base64 inflates by ~4/3, so the real byte count is what counts against the
+  // plan's storage allowance.
+  const incomingBytes = Math.floor((base64.length * 3) / 4);
+  const room = await checkStorage(user.tenantId, incomingBytes);
+  if (!room.allowed) return NextResponse.json({ error: room.reason, code: 'plan_limit' }, { status: 402 });
   if (base64.length > MAX_BASE64) return NextResponse.json({ error: 'Image too large — keep it under ~8MB.' }, { status: 400 });
   if (!ALLOWED.test(mimeType)) return NextResponse.json({ error: 'Upload a JPG, PNG, WEBP, GIF or HEIC image.' }, { status: 400 });
 

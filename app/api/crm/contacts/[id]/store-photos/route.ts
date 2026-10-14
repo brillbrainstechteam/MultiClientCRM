@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { checkStorage } from '@/lib/billing/limits';
 import { audit } from '@/lib/crm/audit';
 import { putFile, storageStatus } from '@/lib/storage';
 import { lookupPlaceWithPhotos, downloadPlacePhoto } from '@/lib/crm/places';
@@ -61,10 +62,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   const saved = [];
+  let storageFull: string | null = null;
   for (let i = 0; i < Math.min(place.photos.length, MAX_PHOTOS); i++) {
     try {
       const { bytes, mimeType } = await downloadPlacePhoto(place.photos[i].name, 1200);
       if (!bytes.length) continue;
+      // Checked per photo: the loop fetches several, and the allowance can run
+      // out part-way through. Stop cleanly rather than failing the whole run.
+      const room = await checkStorage(user.tenantId, bytes.length);
+      if (!room.allowed) { storageFull = room.reason ?? 'Storage limit reached.'; break; }
       const fileId = crypto.randomUUID();
       const key = `tenants/${user.tenantId}/contacts/${id}/${fileId}.${EXT[mimeType] ?? 'jpg'}`;
       const driver = await putFile(key, bytes, mimeType);
@@ -82,6 +88,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   if (saved.length === 0) {
+    // Distinguish "no room" from "download failed" — the fixes are different.
+    if (storageFull) return NextResponse.json({ error: storageFull, code: 'plan_limit' }, { status: 402 });
     return NextResponse.json({ error: 'Found photos on Google but could not download them. Try again.' }, { status: 502 });
   }
 
@@ -90,5 +98,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     targetType: 'contact', targetId: id, detail: `${saved.length} store photo(s) from Google for ${contact.name}`,
   });
 
-  return NextResponse.json({ ok: true, placeName: place.placeName, rating: place.rating, images: saved });
+  return NextResponse.json({
+    ok: true, placeName: place.placeName, rating: place.rating, images: saved,
+    // Some photos saved before the allowance ran out; say so rather than
+    // silently returning fewer than Google offered.
+    ...(storageFull ? { warning: storageFull } : {}),
+  });
 }

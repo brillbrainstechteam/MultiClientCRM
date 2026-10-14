@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { checkFeature } from '@/lib/billing/limits';
 import { generateKundli, type Kundli } from '@/lib/crm/kundli';
 import { fetchStorePresence } from '@/lib/crm/places';
 import { audit } from '@/lib/crm/audit';
@@ -22,6 +23,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
+
+  // The dossier is an AI feature: a generation costs a model call, so it is
+  // gated on the plan. A cached dossier still reads fine without it.
+  const feat = await checkFeature(user.tenantId, 'ai');
+  if (!feat.allowed) return NextResponse.json({ error: feat.reason, code: 'plan_feature' }, { status: 402 });
   const { id } = await params;
 
   // Stage 1 ("identity") spends one or two searches checking we have the right
