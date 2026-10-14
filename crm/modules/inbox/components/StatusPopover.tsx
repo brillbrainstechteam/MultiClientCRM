@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CheckCircle2, Clock, Archive, CalendarDays } from 'lucide-react';
 import { Popover, Button } from '@crm/design-system';
 import { users } from '@crm/mock-data';
@@ -33,18 +33,40 @@ export function StatusPopover({ open, currentStatus, onClose, onChangeStatus, on
   const [followUpNote, setFollowUpNote] = useState('');
   const [pendingTarget, setPendingTarget] = useState<'open' | 'pending' | 'resolved' | null>(null);
 
+  // Every sub-form is cleared on open, so a panel abandoned last time cannot
+  // reappear under a different status.
+  function reset() {
+    setPendingTarget(null);
+    setPendingReason('');
+    setShowFollowUp(false);
+    setFollowUpDate('');
+    setFollowUpOwner('');
+    setFollowUpNote('');
+  }
+
+  useEffect(() => { if (open) reset(); }, [open]);
+
   function handleStatusClick(status: 'open' | 'pending' | 'resolved') {
-    if (status === currentStatus) return;
+    // Re-picking Open does nothing; re-picking Pending or Resolved reopens its
+    // panel, which is how you change a reason or add a follow-up afterwards.
+    if (status === currentStatus && status === 'open') return;
+
     if (status === 'pending') {
+      setShowFollowUp(false);
       setPendingTarget('pending');
-    } else if (status === 'resolved') {
-      onChangeStatus('resolved');
+      return;
+    }
+    if (status === 'resolved') {
+      setPendingReason('');
       setPendingTarget('resolved');
       setShowFollowUp(true);
-    } else {
-      onChangeStatus('open');
-      onClose();
+      if (status !== currentStatus) onChangeStatus('resolved');
+      return;
     }
+    // Open: no follow-up panel applies, so drop whatever was on screen.
+    reset();
+    onChangeStatus('open');
+    onClose();
   }
 
   function confirmPending() {
@@ -128,7 +150,7 @@ export function StatusPopover({ open, currentStatus, onClose, onChangeStatus, on
               ))}
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
-              <Button variant="secondary" size="sm" onClick={() => setPendingTarget(null)}>Cancel</Button>
+              <Button variant="secondary" size="sm" onClick={reset}>Cancel</Button>
               <Button variant="primary" size="sm" onClick={confirmPending}>Set Pending</Button>
             </div>
           </div>

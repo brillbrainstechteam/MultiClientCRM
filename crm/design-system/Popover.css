@@ -18,7 +18,7 @@
   right: var(--crm-content-gutter);
   width: min(360px, calc(100vw - 2 * var(--crm-content-gutter)));
   max-height: calc(100vh - var(--crm-topbar-height) - var(--crm-scopebar-height) - var(--crm-space-6));
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   border-radius: var(--crm-radius-lg);
@@ -43,6 +43,9 @@
 }
 
 .crm-popover__body {
+  /* The only scrolling region, so the title stays put. */
+  overflow-y: auto;
+  min-height: 0;
   padding: var(--crm-space-4);
   display: flex;
   flex-direction: column;
