@@ -1,11 +1,12 @@
 import { prisma } from '@/lib/db';
+import { decrypt } from '@/lib/crypto';
 import { runInboundAutomations } from '@/lib/crm/automation';
 import {
   classifyConsentReply, recordConsent, consentStage, REQUEST_WINDOW_DAYS,
 } from '@/lib/crm/consent';
 import { routeLocation } from '@/lib/crm/zone-routing';
 import { notify, type NotifySeverity } from '@/lib/billing/notify';
-import { applyTemplateEvent } from '@/lib/meta/template-cache';
+import { applyTemplateEvent, syncTemplatesFromMeta } from '@/lib/meta/template-cache';
 import {
   ingestHistoryChunk, ingestStateSync, promoteHistoricalConversation,
   type HistoryChunk, type StateSyncEntry,
@@ -24,6 +25,7 @@ import {
  *   smb_app_state_sync              the Business app's contact list
  *   message_template_status_update  a template was approved / rejected / paused / disabled
  *   template_category_update        Meta re-categorised a template (changes pricing)
+ *   message_template_components_update  a template's header/body/buttons were edited
  *   message_template_quality_update a template's quality score changed
  *   phone_number_quality_update     a number's quality rating / limit changed
  *   phone_number_name_update        a display-name review completed
@@ -148,6 +150,8 @@ export async function ingestWebhookPayload(payload: any): Promise<IngestResult> 
             await handleTemplateCategory(value, account, result); break;
           case 'message_template_quality_update':
             await handleTemplateQuality(value, account, result); break;
+          case 'message_template_components_update':
+            await handleTemplateComponents(value, account, result); break;
           case 'phone_number_quality_update':
             await handleNumberQuality(value, account, result); break;
           case 'phone_number_name_update':
@@ -589,6 +593,39 @@ async function handleTemplateQuality(value: any, account: ResolvedAccount, resul
     body: `${name} quality is now ${score || 'updated'}${value?.previous_quality_score ? ` (was ${value.previous_quality_score})` : ''}.`,
     data: { ...value, wabaId: account.wabaId },
     dedupeKey: `tmplq:${value?.message_template_id ?? name}:${score}`,
+  });
+  result.systemEventsSeen += 1;
+}
+
+/**
+ * A template's components changed (header/body/footer/buttons).
+ *
+ * The payload carries the fact of the change but not reliably the full new
+ * component array, and the mirror stores components verbatim — so rather than
+ * guess at the shape, this re-syncs from Meta, which is one Graph call and
+ * always correct. Best-effort: a failed re-sync just leaves the mirror to catch
+ * up on its next staleness refresh.
+ */
+async function handleTemplateComponents(value: any, account: ResolvedAccount, result: IngestResult): Promise<void> {
+  const name = value?.message_template_name ?? value?.message_template_id ?? 'a template';
+
+  if (account.wabaId && account.accessToken) {
+    await syncTemplatesFromMeta({
+      tenantId: account.tenantId,
+      wabaId: account.wabaId,
+      accessToken: decrypt(account.accessToken),
+    }).catch(() => { /* the staleness refresh will pick it up */ });
+  }
+
+  await notify({
+    tenantId: account.tenantId,
+    category: 'whatsapp',
+    kind: 'template_components_changed',
+    severity: 'info',
+    title: `Template content changed: ${name}`,
+    body: `${name} was edited. Campaigns using it now send the updated content.`,
+    data: { ...value, wabaId: account.wabaId },
+    dedupeKey: `tmplcomp:${value?.message_template_id ?? name}:${value?.message_template_language ?? ''}`,
   });
   result.systemEventsSeen += 1;
 }
