@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Plus } from 'lucide-react';
+import { Button } from '@crm/design-system';
 import './EnquiriesPanel.css';
 
 /**
@@ -67,7 +69,11 @@ export function EnquiriesPanel({ contactId, conversationId, compact }: { contact
     <div className={`enq${compact ? ' enq--compact' : ''}`}>
       <div className="enq__head">
         <h3 className="enq__title">Enquiries {list.length ? <span className="enq__count">{list.length}</span> : null}</h3>
-        {!adding ? <button className="enq__add" onClick={() => setAdding(true)}>+ Log enquiry</button> : null}
+        {!adding ? (
+          <Button variant="secondary" size="sm" iconLeft={<Plus />} onClick={() => setAdding(true)}>
+            Log enquiry
+          </Button>
+        ) : null}
       </div>
 
       {adding ? <EnquiryForm busy={busy} onCancel={() => setAdding(false)} onSubmit={create} /> : null}
@@ -90,7 +96,14 @@ export function EnquiriesPanel({ contactId, conversationId, compact }: { contact
             {NEXT_ACTIONS[e.status] ? (
               <div className="enq__actions">
                 {NEXT_ACTIONS[e.status].map((a) => (
-                  <button key={a.to} className="enq__act" onClick={() => setStatus(e.id, a.to)}>{a.label}</button>
+                  <Button
+                    key={a.to}
+                    variant={a.to === 'lost' ? 'ghost' : 'secondary'}
+                    size="sm"
+                    onClick={() => setStatus(e.id, a.to)}
+                  >
+                    {a.label}
+                  </Button>
                 ))}
               </div>
             ) : null}
@@ -123,8 +136,10 @@ function EnquiryForm({ onSubmit, onCancel, busy }: { onSubmit: (f: Record<string
         <textarea value={f.description} onChange={(e) => up('description', e.target.value)} rows={2} placeholder="Bridal antique set for October wedding" />
       </label>
       <div className="enq__formfoot">
-        <button className="enq__cancel" onClick={onCancel} disabled={busy}>Cancel</button>
-        <button className="enq__save" onClick={() => onSubmit(f)} disabled={busy}>{busy ? 'Saving…' : 'Save enquiry'}</button>
+        <Button variant="ghost" size="md" onClick={onCancel} disabled={busy}>Cancel</Button>
+        <Button variant="primary" size="md" onClick={() => onSubmit(f)} disabled={busy}>
+          {busy ? 'Saving…' : 'Save enquiry'}
+        </Button>
       </div>
     </div>
   );

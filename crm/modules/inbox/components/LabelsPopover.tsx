@@ -208,7 +208,7 @@ export function LabelsPopover({ open, currentLabelIds, conversationId, onClose, 
         </div>
 
         <div style={{ fontSize: 11, color: 'var(--crm-text-muted)', paddingTop: 4, borderTop: '1px solid var(--crm-border)' }}>
-          Labels are conversation-scoped tags. Contact tags are managed in Customer Context.
+          Labels are conversation-scoped tags. Contact tags are managed in Customer details.
         </div>
       </div>
     </Popover>

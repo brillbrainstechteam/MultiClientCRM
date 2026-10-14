@@ -1158,6 +1158,7 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
           <CustomerContextShell
             conversation={activeConv}
             onSaveCustomer={() => openOverlay('drawer', 'save-customer')}
+            onAssignConversation={() => openOverlay('popover', 'assign')}
             onViewFullProfile={(contactId) => {
               window.location.href = scopedHref(`/contacts/${contactId}`);
             }}
@@ -1204,15 +1205,20 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
       {/* Customer context drawer (tablet/mobile) */}
       <Drawer
         open={activeDrawer === 'customer' && !!activeConv}
-        title="Customer Context"
+        title="Customer details"
         onClose={() => closeOverlay('drawer')}
       >
         {activeConv && (
           <CustomerContextShell
             conversation={activeConv}
+            hideHeader
             onSaveCustomer={() => {
               closeOverlay('drawer');
               openOverlay('drawer', 'save-customer');
+            }}
+            onAssignConversation={() => {
+              closeOverlay('drawer');
+              openOverlay('popover', 'assign');
             }}
             onViewFullProfile={(contactId) => {
               window.location.href = scopedHref(`/contacts/${contactId}`);

@@ -5,16 +5,29 @@
   gap: var(--crm-space-2);
   border: 1px solid transparent;
   border-radius: var(--crm-radius-md);
-  font-weight: var(--crm-weight-medium);
+  font-family: inherit;
+  font-weight: var(--crm-weight-semibold);
+  line-height: 1;
   cursor: pointer;
   white-space: nowrap;
   transition: background var(--crm-motion-fast), border-color var(--crm-motion-fast),
-    color var(--crm-motion-fast);
+    color var(--crm-motion-fast), box-shadow var(--crm-motion-fast);
+}
+
+.crm-button:focus-visible {
+  outline: none;
+  box-shadow: var(--crm-focus-ring);
 }
 
 .crm-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+/* An icon with no label stays square rather than stretching into a pill. */
+.crm-button:not(:has(.crm-button__label)) {
+  padding: 0;
+  aspect-ratio: 1;
 }
 
 .crm-button--full {
@@ -23,21 +36,21 @@
 
 /* ---- Sizes -------------------------------------------------------------- */
 .crm-button--sm {
-  height: 28px;
-  padding: 0 var(--crm-space-3);
+  height: 30px;
+  padding: 0 10px;
   font-size: var(--crm-font-size-sm);
 }
 
 .crm-button--md {
-  height: 34px;
+  height: 36px;
   padding: 0 var(--crm-space-4);
   font-size: var(--crm-font-size-md);
 }
 
 .crm-button--lg {
-  height: 40px;
+  height: 42px;
   padding: 0 var(--crm-space-5);
-  font-size: var(--crm-font-size-lg);
+  font-size: var(--crm-font-size-row);
 }
 
 /* ---- Variants ----------------------------------------------------------- */
@@ -92,4 +105,9 @@
 .crm-button__icon svg {
   width: 15px;
   height: 15px;
+}
+
+.crm-button--sm .crm-button__icon svg {
+  width: 13px;
+  height: 13px;
 }

@@ -48,6 +48,16 @@ export const navItems: NavItem[] = [
       'Operational control centre: business health, work requiring attention and cross-module summaries with drill-down to exact records.',
   },
   {
+    key: 'contacts',
+    label: 'Contacts & Leads',
+    path: '/contacts',
+    icon: Users,
+    group: 'work',
+    implemented: true,
+    ownership:
+      'Canonical customer identity, classification, consent, source, segmentation, ownership, data quality and Customer 360.',
+  },
+  {
     key: 'inbox',
     label: 'Inbox',
     path: '/inbox',
@@ -57,16 +67,6 @@ export const navItems: NavItem[] = [
     requiresConnection: true,
     ownership:
       'Shared conversation workspace: ownership, reply workflow, labels, notes, handoff, customer context and response-window guidance.',
-  },
-  {
-    key: 'contacts',
-    label: 'Contacts & Leads',
-    path: '/contacts',
-    icon: Users,
-    group: 'work',
-    implemented: true,
-    ownership:
-      'Canonical customer identity, classification, consent, source, segmentation, ownership, data quality and Customer 360.',
   },
   {
     key: 'calling',
