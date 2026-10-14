@@ -110,7 +110,6 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
             appId={metaConfig.appId}
             configId={metaConfig.configId}
             graphVersion={metaConfig.graphVersion}
-            coexistenceFeature={metaConfig.coexistenceFeature}
             initialStrategy={onboarding?.strategy ?? undefined}
           />
           <ManualConnect />

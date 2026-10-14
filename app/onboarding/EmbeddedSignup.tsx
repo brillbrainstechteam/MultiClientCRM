@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
 import { AlertTriangle, Check, Info, MessageCircle, Phone, RefreshCw, ShieldCheck, X } from 'lucide-react';
 import { Button } from '@/lib/ui/Button';
+import { launchExtras, parseSessionEvent } from '@/lib/meta/embedded-signup';
 import './onboarding.css';
 
 type Path = 'coexistence' | 'new' | 'existing';
@@ -97,7 +98,6 @@ interface Props {
   appId: string;
   configId: string;
   graphVersion: string;
-  coexistenceFeature: string;
   /** Resume: pre-select the strategy the client chose in a prior attempt. */
   initialStrategy?: string;
 }
@@ -112,13 +112,16 @@ function postProgress(body: Record<string, unknown>) {
   }).catch(() => undefined);
 }
 
-export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeature, initialStrategy }: Props) {
+export function EmbeddedSignup({ appId, configId, graphVersion, initialStrategy }: Props) {
   const isPath = (v?: string): v is Path => v === 'coexistence' || v === 'new' || v === 'existing';
   const [path, setPath] = useState<Path>(isPath(initialStrategy) ? initialStrategy : 'coexistence');
   const [status, setStatus] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const sdkReady = useRef(false);
-  const session = useRef<{ wabaId?: string; phoneNumberId?: string; event?: string; currentStep?: string }>({});
+  const session = useRef<{
+    wabaId?: string; phoneNumberId?: string; businessId?: string;
+    event?: string; currentStep?: string;
+  }>({});
 
   const choose = (id: Path) => { setPath(id); postProgress({ status: 'strategy_selected', strategy: id }); };
 
@@ -130,14 +133,32 @@ export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeatu
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
         if (data?.type === 'WA_EMBEDDED_SIGNUP') {
+          const parsed = parseSessionEvent(data);
           session.current = {
-            wabaId: data.data?.waba_id,
-            phoneNumberId: data.data?.phone_number_id,
-            event: data.event,
-            currentStep: data.data?.current_step,
+            wabaId: parsed.wabaId ?? undefined,
+            phoneNumberId: parsed.phoneNumberId ?? undefined,
+            businessId: parsed.businessId ?? undefined,
+            event: parsed.event ?? undefined,
+            currentStep: parsed.currentStep ?? undefined,
           };
-          if (data.event === 'CANCEL') postProgress({ status: 'cancelled', lastStep: data.data?.current_step ?? null });
-          else if (data.event === 'ERROR') postProgress({ status: 'error', errorMessage: data.data?.error_message ?? 'Embedded Signup error' });
+          // A reported error arrives as CANCEL carrying error fields, so the
+          // fields decide — not the event name. The code and session id are
+          // what Meta support asks for, so they are kept rather than dropped.
+          if (parsed.kind === 'error') {
+            postProgress({
+              status: 'error',
+              errorMessage: [parsed.errorMessage, parsed.errorCode && `(code ${parsed.errorCode})`, parsed.sessionId && `session ${parsed.sessionId}`]
+                .filter(Boolean).join(' ') || 'Embedded Signup error',
+              lastStep: parsed.currentStep ?? null,
+            });
+            setStatus(
+              parsed.errorMessage
+                ? `WhatsApp reported: ${parsed.errorMessage}`
+                : 'WhatsApp reported an error during setup.',
+            );
+          } else if (parsed.kind === 'cancel') {
+            postProgress({ status: 'cancelled', lastStep: parsed.currentStep ?? null });
+          }
         }
       } catch {
         /* not our message */
@@ -180,8 +201,9 @@ export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeatu
     setStatus('Opening WhatsApp onboarding…');
     postProgress({ status: 'meta_launched', strategy: path });
 
-    const extras: Record<string, unknown> = { setup: {}, sessionInfoVersion: '3' };
-    if (path === 'coexistence' && coexistenceFeature) extras.featureType = coexistenceFeature;
+    // Version-correct extras. sessionInfoVersion is a v2 field: sending it is
+    // what keeps an integration on the version Meta retires in October 2026.
+    const extras = launchExtras(path);
 
     window.FB.login(
       (res: unknown) => {
@@ -196,6 +218,7 @@ export function EmbeddedSignup({ appId, configId, graphVersion, coexistenceFeatu
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code, strategy: path, ...session.current }),
+          // The exchangeable code expires in 30 seconds — nothing slow here.
         })
           .then(async (r) => {
             const j = await r.json().catch(() => ({}));

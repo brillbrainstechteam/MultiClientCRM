@@ -4,6 +4,7 @@ import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { exchangeCodeWithRedirect, wabaIdsFromToken } from '@/lib/meta/graph';
 import { finalizeConnection } from '@/lib/meta/finalize';
+import { connectionModeFromEvent } from '@/lib/meta/embedded-signup';
 import { metaRedirectUri } from '../start/route';
 
 /** Record why onboarding didn't finish, so the client can resume. */
@@ -59,17 +60,28 @@ export async function GET(req: Request) {
     const { access_token } = await exchangeCodeWithRedirect(code, metaRedirectUri(url.origin));
     const wabaId = (await wabaIdsFromToken(access_token))[0] ?? null;
 
+    // The redirect flow carries no finish event, so the strategy the customer
+    // chose is all we have — connectionModeFromEvent falls back to it.
+    const connectionMode = connectionModeFromEvent(null, path);
+
     const { pinRequired } = await finalizeConnection({
       tenantId: user.tenantId,
       businessName: user.tenant.businessName,
       token: access_token,
       wabaId,
-      coexistence: path === 'coexistence',
+      coexistence: connectionMode === 'coexistence',
+      connectionMode,
       strategy: path,
     });
 
     // Existing number needs its 2-step PIN — send the client to enter it.
-    const dest = pinRequired ? new URL('/onboarding?connect=pin', req.url) : new URL('/crm/dashboard', req.url);
+    // A coexistence connection goes to the import screen instead, so the owner
+    // watches their history arrive rather than meeting an empty inbox.
+    const dest = pinRequired
+      ? new URL('/onboarding?connect=pin', req.url)
+      : connectionMode === 'coexistence'
+        ? new URL('/onboarding/importing', req.url)
+        : new URL('/crm/dashboard', req.url);
     return NextResponse.redirect(dest);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Meta connection failed.';

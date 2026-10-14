@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { metaConfig } from '@/lib/meta/config';
+import { launchExtras } from '@/lib/meta/embedded-signup';
 
 /** The redirect_uri we own — must be identical here and in the exchange. */
 export function metaRedirectUri(origin: string): string {
@@ -43,10 +44,9 @@ export async function GET(req: Request) {
   // number registration for coexistence.
   store.set('meta_oauth_path', path, cookieOpts);
 
-  const extras: Record<string, unknown> = { setup: {}, sessionInfoVersion: '3' };
-  if (path === 'coexistence' && metaConfig.coexistenceFeature) {
-    extras.featureType = metaConfig.coexistenceFeature;
-  }
+  // Version-correct extras — see lib/meta/embedded-signup.ts for why
+  // sessionInfoVersion must not be sent on v4.
+  const extras = launchExtras(path);
 
   const dialog = new URL(`https://www.facebook.com/${metaConfig.graphVersion}/dialog/oauth`);
   dialog.searchParams.set('client_id', metaConfig.appId);

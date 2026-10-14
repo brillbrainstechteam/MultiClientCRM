@@ -16,6 +16,10 @@ export interface FinalizeInput {
   coexistence: boolean;
   /** Number is already registered (e.g. manual System-User token connect) — skip /register. */
   skipRegister?: boolean;
+  /** Resolved from the Embedded Signup finish event (see embedded-signup.ts). */
+  connectionMode?: string;
+  /** The customer's business portfolio id, for support and asset lookup. */
+  businessId?: string | null;
   strategy?: string | null;
 }
 
@@ -100,9 +104,12 @@ export async function finalizeConnection(input: FinalizeInput): Promise<Finalize
 
   // How the number arrived decides what we may ask Meta for, and what we are
   // allowed to tell the customer about their old chats.
-  const connectionMode = coexistence
-    ? 'coexistence'
-    : input.strategy === 'existing' ? 'migrated_from_bsp' : 'new_cloud_api';
+  // The caller derives this from Meta's finish event, which is authoritative;
+  // the strategy the customer picked is only the fallback.
+  const connectionMode = input.connectionMode
+    ?? (coexistence
+      ? 'coexistence'
+      : input.strategy === 'existing' ? 'migrated_from_bsp' : 'new_cloud_api');
 
   const existing = phoneNumberId
     ? await prisma.whatsAppAccount.findFirst({ where: { tenantId, phoneNumberId } })
