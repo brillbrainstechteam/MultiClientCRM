@@ -5,6 +5,7 @@ import {
 } from '@/lib/crm/consent';
 import { routeLocation } from '@/lib/crm/zone-routing';
 import { notify, type NotifySeverity } from '@/lib/billing/notify';
+import { applyTemplateEvent } from '@/lib/meta/template-cache';
 
 /**
  * Routing for a WhatsApp webhook payload.
@@ -346,6 +347,16 @@ async function handleTemplateStatus(value: any, account: ResolvedAccount, result
     DISABLED: `Template disabled: ${name}`,
   };
 
+  // Write the new state into the local mirror first, so the Templates screen is
+  // right the moment Meta tells us rather than at the next ten-minute refresh.
+  await applyTemplateEvent({
+    tenantId: account.tenantId,
+    name: value?.message_template_name,
+    language: value?.message_template_language,
+    status: event || null,
+    rejectedReason: value?.reason ?? null,
+  }).catch(() => { /* the notification matters more than the mirror */ });
+
   await notify({
     tenantId: account.tenantId,
     category: 'whatsapp',
@@ -364,6 +375,12 @@ async function handleTemplateCategory(value: any, account: ResolvedAccount, resu
   const name = value?.message_template_name ?? value?.message_template_id ?? 'a template';
   const prev = value?.previous_category ?? value?.correct_category;
   const next = value?.new_category;
+  await applyTemplateEvent({
+    tenantId: account.tenantId,
+    name: value?.message_template_name,
+    language: value?.message_template_language,
+    category: next ?? null,
+  }).catch(() => {});
   await notify({
     tenantId: account.tenantId,
     category: 'whatsapp',
@@ -382,6 +399,12 @@ async function handleTemplateQuality(value: any, account: ResolvedAccount, resul
   const name = value?.message_template_name ?? value?.message_template_id ?? 'a template';
   const score = String(value?.new_quality_score ?? '').toUpperCase();
   const severity: NotifySeverity = score === 'RED' ? 'warning' : 'info';
+  await applyTemplateEvent({
+    tenantId: account.tenantId,
+    name: value?.message_template_name,
+    language: value?.message_template_language,
+    qualityScore: score || null,
+  }).catch(() => {});
   await notify({
     tenantId: account.tenantId,
     category: 'whatsapp',

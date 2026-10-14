@@ -4,50 +4,33 @@ import { prisma } from '@/lib/db';
 import { decrypt } from '@/lib/crypto';
 import { graphBase } from '@/lib/meta/config';
 import { graphErrorMessage, isAuthError, markTokenInvalid, type GraphErrorBody } from '@/lib/meta/account';
+import { readTemplates } from '@/lib/meta/template-cache';
 import { audit } from '@/lib/crm/audit';
 
 /**
- * The connected WABA's message templates, straight from Meta Graph. Returned
- * raw (name/language/status/category/components) — the Templates module maps
- * them into its repository shape. Empty when no number is connected yet.
+ * The connected WABA's message templates.
+ *
+ * Served from the local mirror (lib/meta/template-cache.ts), which refreshes
+ * itself from Meta when it is older than ten minutes or when `?refresh=1` asks.
+ * Shape is unchanged — name/language/status/category/components, raw, with the
+ * Templates module doing the mapping — plus `cachedAt` so the UI can say how
+ * fresh the list is.
+ *
+ * Every read used to be a Graph call: slow on each page load, rate-limited, and
+ * blank whenever the token or the network blinked.
  */
-export async function GET() {
+export async function GET(req: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
 
-  const account = await prisma.whatsAppAccount.findFirst({
-    where: { tenantId: user.tenantId, status: 'connected' },
-    orderBy: { connectedAt: 'desc' },
-  });
-  if (!account?.wabaId || !account.accessToken) {
-    return NextResponse.json({ connected: false, wabaId: null, account: null, templates: [] });
-  }
-
-  // The module's WABA scope selector is built from this, so the real account
-  // replaces the fixture WABAs rather than sitting alongside them.
-  const summary = {
-    wabaId: account.wabaId,
-    name: account.verifiedName ?? account.displayPhone ?? 'WhatsApp Business Account',
-    displayPhone: account.displayPhone,
-  };
-
+  const force = new URL(req.url).searchParams.get('refresh') === '1';
   try {
-    const token = decrypt(account.accessToken);
-    const url = `${graphBase()}/${account.wabaId}/message_templates?limit=200&fields=name,language,status,category,components,id,quality_score`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    const json = (await res.json().catch(() => ({}))) as { data?: unknown[] } & GraphErrorBody;
-    if (!res.ok) {
-      // A revoked Business Integration shows up here first — repair the row so
-      // the next sign-in routes back through Embedded Signup.
-      if (isAuthError(json)) {
-        await markTokenInvalid(account.id, json.error?.message ?? 'Meta rejected the stored token.');
-        return NextResponse.json({ connected: false, wabaId: null, account: null, templates: [], reconnectRequired: true });
-      }
-      return NextResponse.json({ error: json?.error?.message ?? 'Could not load templates from Meta.' }, { status: 502 });
-    }
-    return NextResponse.json({ connected: true, wabaId: account.wabaId, account: summary, templates: json.data ?? [] });
+    return NextResponse.json(await readTemplates(user.tenantId, { force }));
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : 'Could not load templates.' }, { status: 502 });
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : 'Could not load templates.' },
+      { status: 502 },
+    );
   }
 }
 
@@ -86,6 +69,18 @@ export async function DELETE(req: Request) {
     if (isAuthError(json)) await markTokenInvalid(account.id, graphErrorMessage(json, 'Meta rejected the stored token.'));
     return NextResponse.json({ error: graphErrorMessage(json, `Could not delete the template (${res.status}).`) }, { status: 502 });
   }
+
+  // Mark it gone locally straight away. Soft, so a campaign that already sent
+  // under this template can still say what it used.
+  await prisma.crmTemplate.updateMany({
+    where: {
+      tenantId: user.tenantId,
+      name,
+      ...(metaTemplateId ? { metaTemplateId } : {}),
+      deletedAt: null,
+    },
+    data: { deletedAt: new Date() },
+  }).catch(() => {});
 
   await audit({ tenantId: user.tenantId, actorId: user.id, action: 'template.delete', targetType: 'template', targetId: metaTemplateId ?? name, detail: name });
   return NextResponse.json({ ok: true });

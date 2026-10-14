@@ -770,15 +770,33 @@ export function setTemplates(next: Template[]): void {
   templates = next;
 }
 
-/** Fetch the connected WABA's approved templates and populate the repository. */
-export async function hydrateTemplates(): Promise<void> {
-  const res = await fetch('/api/crm/templates', { credentials: 'same-origin' });
+/** When the mirror was last reconciled with Meta, for the "synced" line. */
+let lastSyncedAt: string | null = null;
+let lastSyncError: string | null = null;
+
+export function templatesSyncState(): { cachedAt: string | null; error: string | null } {
+  return { cachedAt: lastSyncedAt, error: lastSyncError };
+}
+
+/**
+ * Fetch the connected WABA's templates and populate the repository.
+ *
+ * Served from the local mirror, which refreshes itself when stale. `force`
+ * makes the server reconcile with Meta first — for the explicit Refresh button
+ * and straight after a submission.
+ */
+export async function hydrateTemplates(force = false): Promise<void> {
+  const res = await fetch(`/api/crm/templates${force ? '?refresh=1' : ''}`, { credentials: 'same-origin' });
   if (!res.ok) { setTemplates([]); return; }
   const data = (await res.json()) as {
     wabaId?: string;
     account?: { wabaId: string; name: string; displayPhone?: string | null } | null;
     templates?: RawGraphTemplate[];
+    cachedAt?: string | null;
+    syncError?: string;
   };
+  lastSyncedAt = data.cachedAt ?? null;
+  lastSyncError = data.syncError ?? null;
   const wabaId = data.wabaId ?? 'waba_main';
 
   // Point the module's WABA scope at the real account, otherwise the selector

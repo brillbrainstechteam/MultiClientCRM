@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { CONSENT_OPTED_IN } from '@/lib/crm/consent';
+import { approvedTemplateCount } from '@/lib/meta/template-cache';
 
 /**
  * The real onboarding state of a workspace.
@@ -40,7 +41,7 @@ export async function GET() {
 
   const [
     tenant, subscription, connectedNumbers, members, contactCount,
-    delegatedContacts, templateDrafts, templateCampaigns, outboundMessages, optedIn,
+    delegatedContacts, approvedTemplates, outboundMessages, optedIn,
   ] = await Promise.all([
     prisma.tenant.findUnique({
       where: { id: tenantId },
@@ -59,8 +60,10 @@ export async function GET() {
       where: { tenantId },
       select: { ownerId: true, marketingOwnerId: true },
     }),
-    prisma.crmTemplateDraft.count({ where: { tenantId } }),
-    prisma.crmCampaign.count({ where: { tenantId, templateName: { not: null } } }),
+    // A real count now the templates are mirrored locally. This used to be a
+    // proxy (drafts + campaigns that named a template) because answering it
+    // properly meant a Graph call on every dashboard load.
+    approvedTemplateCount(tenantId),
     prisma.message.count({ where: { conversation: { tenantId }, direction: 'outbound' } }),
     prisma.crmContact.count({ where: { tenantId, consent: CONSENT_OPTED_IN } }),
   ]);
@@ -135,7 +138,7 @@ export async function GET() {
     {
       id: 'create-template',
       label: 'Get a message template approved',
-      status: (templateDrafts + templateCampaigns) > 0 ? 'complete' : numberDone ? 'incomplete' : 'blocked',
+      status: approvedTemplates > 0 ? 'complete' : numberDone ? 'incomplete' : 'blocked',
       blockedReason: numberDone ? undefined : 'Connect your WhatsApp number first.',
       detail: 'Meta must approve a template before you can message anyone who is not already in a conversation with you.',
       to: '/templates',

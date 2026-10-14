@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Copy, LayoutGrid, List, Plus, RefreshCw, Star } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@crm/components';
+import { hydrateTemplates, templatesSyncState } from '../data/mockTemplates';
 import { useScopedHref } from '@crm/app/use-scoped-href';
 import { useWorkspace } from '@crm/app/workspace-context';
 import {
@@ -56,7 +57,20 @@ const primaryTabs: { id: LifecycleView; label: string }[] = [
  * stored (spec default). Row/bulk actions wire into the Create/Detail/Bulk
  * surfaces built in later batches.
  */
+
+/** "4 minutes ago" — the list is a mirror, so its age is worth stating. */
+function syncedLabel(iso: string): string {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} minute${mins === 1 ? '' : 's'} ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs} hour${hrs === 1 ? '' : 's'} ago`;
+  return new Date(iso).toLocaleString('en-IN');
+}
+
 export default function TemplatesRepositoryScreen() {
+  const [syncState, setSyncState] = useState(templatesSyncState());
+  const [syncing, setSyncing] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const scopedHref = useScopedHref();
@@ -240,12 +254,26 @@ export default function TemplatesRepositoryScreen() {
     <div className="crm-tpl-repo">
       <PageHeader
         title="Templates"
-        description="Find, create and govern every WhatsApp message template."
+        description={
+          syncState.error
+            ? `Showing the last synced list — ${syncState.error}`
+            : syncState.cachedAt
+              ? `Find, create and govern every WhatsApp message template. Synced with Meta ${syncedLabel(syncState.cachedAt)}.`
+              : 'Find, create and govern every WhatsApp message template.'
+        }
         actions={
           <>
             {multiWaba ? (
               <Select label="WhatsApp account" hideLabel size="sm" options={wabaOptions} value={selectedWabaId} onChange={(e) => setWaba(e.target.value)} />
             ) : null}
+            <Button
+              variant="secondary"
+              iconLeft={<RefreshCw />}
+              onClick={() => { setSyncing(true); void hydrateTemplates(true).finally(() => { setSyncState(templatesSyncState()); setSyncing(false); }); }}
+              disabled={syncing}
+            >
+              {syncing ? 'Syncing…' : 'Sync with Meta'}
+            </Button>
             <Button
               variant="primary"
               iconLeft={<Plus />}

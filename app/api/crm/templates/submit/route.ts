@@ -7,6 +7,7 @@ import { graphErrorMessage, isAuthError, markTokenInvalid, type GraphErrorBody }
 import { toMetaTemplate, TemplateMappingError, type TemplateDraftInput } from '@/lib/meta/templates';
 import { uploadHeaderSample } from '@/lib/meta/upload';
 import { audit } from '@/lib/crm/audit';
+import { syncTemplatesFromMeta } from '@/lib/meta/template-cache';
 
 /**
  * Submit a template to Meta for review — create a new one on the connected
@@ -80,6 +81,14 @@ export async function POST(req: Request) {
   }
 
   const metaTemplateId = editing ?? json.id ?? '';
+  // The submitted template is new (or newly PENDING again); re-mirror now so
+  // the repository shows it without waiting for the staleness window.
+  await syncTemplatesFromMeta({
+    tenantId: user.tenantId,
+    wabaId: account.wabaId,
+    accessToken: decrypt(account.accessToken),
+  }).catch(() => { /* the submission succeeded; the mirror can catch up */ });
+
   await audit({
     tenantId: user.tenantId,
     actorId: user.id,

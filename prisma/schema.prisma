@@ -640,6 +640,44 @@ model CrmStageTransition {
 // A saved, not-yet-submitted template the user can resume later. Holds the full
 // composer draft as JSON; distinct from Meta-backed templates (which live on
 // Meta, not in our DB).
+/// Local mirror of the WABA's message templates.
+///
+/// Meta is the system of record — templates are created, reviewed and deleted
+/// there. This exists because every read used to be a Graph call: slow on each
+/// page load, rate-limited, and useless the moment the token or the network
+/// blinked. Cached here, the repository, the campaign builder and the inbox
+/// picker all read from Postgres, and the webhook writes status, category and
+/// quality changes back the instant Meta sends them instead of waiting for the
+/// next poll.
+model CrmTemplate {
+  id             String   @id @default(cuid())
+  tenantId       String
+  wabaId         String
+  metaTemplateId String?
+  name           String
+  language       String
+  /// APPROVED | PENDING | REJECTED | PAUSED | DISABLED | IN_APPEAL | ...
+  status         String
+  /// MARKETING | UTILITY | AUTHENTICATION
+  category       String
+  /// GREEN | YELLOW | RED | UNKNOWN — Meta's own template quality score.
+  qualityScore   String?
+  rejectedReason String?
+  /// The raw component array as Meta returns it, so nothing is lost in mapping.
+  components     Json
+  /// Set when Meta stops listing it. Soft so a campaign that referenced the
+  /// template can still say what it sent.
+  deletedAt      DateTime?
+  lastSyncedAt   DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([tenantId, name, language])
+  @@index([tenantId, status])
+  @@index([tenantId, category])
+  @@index([tenantId, deletedAt])
+}
+
 model CrmTemplateDraft {
   id              String   @id @default(cuid())
   tenantId        String
