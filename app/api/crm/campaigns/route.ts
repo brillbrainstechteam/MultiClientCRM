@@ -63,6 +63,12 @@ export async function POST(req: Request) {
       templateId: typeof b?.templateId === 'string' ? b.templateId : null,
       templateName: typeof b?.templateName === 'string' ? b.templateName : null,
       templateLocale: typeof b?.templateLocale === 'string' ? b.templateLocale : null,
+      // The category decides the consent gate at send time (MARKETING needs a
+      // positive opt-in). Absent, the send route assumes MARKETING, which is
+      // the safe default — never the other way round.
+      templateCategory: ['MARKETING', 'UTILITY', 'AUTHENTICATION'].includes(String(b?.templateCategory).toUpperCase())
+        ? String(b?.templateCategory).toUpperCase()
+        : null,
       headerMediaUrl: typeof b?.headerMediaUrl === 'string' && b.headerMediaUrl.trim() ? b.headerMediaUrl.trim() : null,
       headerMediaType: ['image', 'video', 'document'].includes(String(b?.headerMediaType)) ? String(b?.headerMediaType) : null,
       whatsappNumberId: typeof b?.whatsappNumberId === 'string' ? b.whatsappNumberId : null,

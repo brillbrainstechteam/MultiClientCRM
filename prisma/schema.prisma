@@ -466,8 +466,18 @@ model CrmContact {
   businessValue            String?  // high | medium | low
 
   // --- Req 29: consent detail ---
+  // `consent` above is the decision (opted-in | opted-out | pending). These
+  // carry the proof Meta and GDPR both expect: how it was collected, when, and
+  // the exact wording the customer agreed to. `consentRequestedAt` makes the
+  // "asked, waiting for a reply" state distinguishable from "never asked",
+  // which is what the consent funnel is built on.
   consentOptInSource       String?
   consentOptInAt           DateTime?
+  consentOptOutAt          DateTime?
+  consentOptOutReason      String?
+  consentRequestedAt       DateTime?
+  consentRequestWaId       String?   // message id of the request, to tie the reply back
+  consentWording           String?   // copy/template the customer actually saw
 
   createdSource            String?  // Req 16: original source / import source (audit)
 
@@ -619,6 +629,31 @@ model CrmTemplateDraft {
   updatedAt       DateTime @updatedAt
 
   @@index([tenantId, updatedAt])
+}
+
+// ---- Consent ---------------------------------------------------------------
+
+/// Append-only consent ledger. The decision lives on CrmContact so queries stay
+/// cheap; this is the evidence trail — every request, opt-in and opt-out with
+/// its channel, wording and actor. Rows are never updated or deleted, because
+/// proving *when* and *how* consent was given is the whole point.
+model CrmConsentEvent {
+  id          String   @id @default(cuid())
+  tenantId    String
+  contactId   String
+  mobile      String
+  event       String   // requested | opted_in | opted_out | reset
+  // whatsapp_button | whatsapp_keyword | whatsapp_reply | web_form | call
+  // | in_store | import | manual
+  channel     String
+  source      String?  // campaign name, agent note, form URL
+  wording     String?  // exact copy shown, or template name + body
+  actorId     String?  // null when the customer drove it
+  waMessageId String?
+  at          DateTime @default(now())
+
+  @@index([tenantId, contactId, at])
+  @@index([tenantId, event, at])
 }
 
 // ---- Campaigns (V1 broadcast) ---------------------------------------------

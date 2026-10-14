@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { decrypt } from '@/lib/crypto';
 import { graphBase } from '@/lib/meta/config';
 import { audit } from '@/lib/crm/audit';
+import { CONSENT_OPTED_IN, CONSENT_OPTED_OUT } from '@/lib/crm/consent';
 
 const MAX_RECIPIENTS = 1000;
 const digits = (s: string) => (s ?? '').replace(/\D/g, '');
@@ -56,16 +57,32 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const body = (await req.json().catch(() => ({}))) as { bodyParams?: string[]; nameAsFirstParam?: boolean };
   const fixedParams = Array.isArray(body.bodyParams) ? body.bodyParams.map(String) : [];
 
-  // Resolve audience: matching contacts, opted-out suppressed, deduped by mobile.
+  // Resolve audience: matching contacts, deduped by mobile, consent applied.
+  //
+  // MARKETING needs a positive opt-in — that is the whole basis for the send,
+  // and messaging people who never agreed is what drives the blocks and reports
+  // that lower a number's quality rating. UTILITY and AUTHENTICATION ride on an
+  // existing transaction, so there it is enough that the contact has not opted
+  // out. Either way an opt-out is absolute.
+  const isMarketing = (campaign.templateCategory ?? 'MARKETING').toUpperCase() === 'MARKETING';
+  const consentWhere = isMarketing
+    ? { consent: CONSENT_OPTED_IN }
+    : { consent: { not: CONSENT_OPTED_OUT } };
   const contacts = await prisma.crmContact.findMany({
-    where: { ...audienceWhere(user.tenantId, campaign.audienceFilter as Record<string, unknown> | null), consent: { not: 'opted-out' } },
+    where: { ...audienceWhere(user.tenantId, campaign.audienceFilter as Record<string, unknown> | null), ...consentWhere },
     select: { id: true, name: true, mobile: true },
     take: MAX_RECIPIENTS,
   });
   const seen = new Set<string>();
   const audience = contacts.filter((c) => { const d = digits(c.mobile); if (!d || seen.has(d)) return false; seen.add(d); return true; });
 
-  if (audience.length === 0) return NextResponse.json({ error: 'No eligible recipients for this audience.' }, { status: 400 });
+  if (audience.length === 0) {
+    return NextResponse.json({
+      error: isMarketing
+        ? 'No opted-in recipients in this audience. Collect consent first — Contacts & Leads → Consent.'
+        : 'No eligible recipients for this audience.',
+    }, { status: 400 });
+  }
 
   await prisma.crmCampaign.update({ where: { id }, data: { status: 'sending', totalRecipients: audience.length } });
 

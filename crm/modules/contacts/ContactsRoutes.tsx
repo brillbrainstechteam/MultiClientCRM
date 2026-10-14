@@ -13,6 +13,7 @@ import SegmentBuilderScreen from './screens/SegmentBuilderScreen';
 import ImportsHubScreen from './screens/ImportsHubScreen';
 import ProspectingScreen from './screens/ProspectingScreen';
 import ImportJobDetailScreen from './screens/ImportJobDetailScreen';
+import ConsentScreen from './screens/ConsentScreen';
 import DataQualityScreen from './screens/DataQualityScreen';
 import ContactReportsScreen from './screens/ContactReportsScreen';
 import DuplicateMergeScreen from './screens/DuplicateMergeScreen';
@@ -40,6 +41,7 @@ const implemented: Record<string, ComponentType> = {
   '/contacts/prospecting': ProspectingScreen,
   '/contacts/imports': ImportsHubScreen,
   '/contacts/imports/jobs/:jobId': ImportJobDetailScreen,
+  '/contacts/consent': ConsentScreen,
   '/contacts/data-quality': DataQualityScreen,
   '/contacts/data-quality/duplicates/:clusterId': DuplicateMergeScreen,
   '/contacts/reports': ContactReportsScreen,

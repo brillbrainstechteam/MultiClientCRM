@@ -1,5 +1,6 @@
 import {
   Binoculars,
+  BadgeCheck,
   ChartNoAxesCombined,
   LayoutGrid,
   MapPin,
@@ -31,6 +32,7 @@ const items: SecondaryNavItem[] = [
   { label: 'Segments', to: '/contacts/segments', icon: Layers, matchPrefix: '/contacts/segments' },
   { label: 'Import & Export', to: '/contacts/imports', icon: Upload, matchPrefix: '/contacts/imports', requires: 'manageImports' },
   { label: 'Find New Businesses', to: '/contacts/prospecting', icon: Binoculars, matchPrefix: '/contacts/prospecting', requires: 'manageImports' },
+  { label: 'Consent', to: '/contacts/consent', icon: BadgeCheck, matchPrefix: '/contacts/consent' },
   {
     label: 'Data Quality',
     to: '/contacts/data-quality',

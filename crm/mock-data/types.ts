@@ -123,6 +123,9 @@ export interface Contact {
   businessValue?: string | null;
   consentOptInSource?: string | null;
   consentOptInAt?: string | null;
+  consentOptOutAt?: string | null;
+  consentRequestedAt?: string | null;
+  consentWording?: string | null;
   // --- Jewellery B2B enrichment (formalised from the marketing/sales Excels) ---
   businessSegment?: string | null; // chain_stores | corporate | boutique | exports | standalone | small_store
   grade?: string | null;           // A | B | C | D

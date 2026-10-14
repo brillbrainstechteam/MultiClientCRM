@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CircleAlert, TriangleAlert } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useScopedHref } from '@crm/app/use-scoped-href';
@@ -26,6 +26,15 @@ interface Blocker {
 }
 
 /** CAM-S07 — Builder Review & Launch: final message preview, audience, timing, cost, blockers/warnings, Send/Schedule. */
+interface ConsentReach {
+  matching: number;
+  optedIn: number;
+  optedOut: number;
+  undecided: number;
+  reachable: number;
+  gate: string;
+}
+
 export function ReviewStep({
   draft,
   setDraft,
@@ -42,6 +51,7 @@ export function ReviewStep({
   const scopedHref = useScopedHref();
   const { role } = useWorkspace();
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [reach, setReach] = useState<ConsentReach | null>(null);
 
   const template = draft.templateId ? findTemplate(draft.templateId) : undefined;
   const capabilities = resolveCampaignCapabilities(role, draft, sender);
@@ -71,6 +81,24 @@ export function ReviewStep({
       return p;
     });
 
+  // How many of these contacts may actually be messaged. MARKETING needs a
+  // positive opt-in, so a 500-contact audience can legitimately be 0 reachable
+  // — the operator has to learn that here, not from the send result.
+  const category = (template?.metaCategory ?? 'marketing').toUpperCase();
+  useEffect(() => {
+    let live = true;
+    fetch('/api/crm/campaigns/audience', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ templateCategory: category }),
+    })
+      .then((r) => r.json())
+      .then((d: ConsentReach & { error?: string }) => { if (live && !d.error) setReach(d); })
+      .catch(() => { /* the gate still applies server-side; this is advisory */ });
+    return () => { live = false; };
+  }, [category]);
+
   const previewContact = contacts[0];
   const previewComponents = template
     ? {
@@ -96,6 +124,14 @@ export function ReviewStep({
   if (draft.audience.finalEligible === 0) {
     blockers.push({ id: 'audience', message: 'No eligible recipients remain after exclusions and personalisation.', step: 'audience' });
   }
+  if (reach && reach.reachable === 0) {
+    blockers.push({
+      id: 'consent',
+      message: category === 'MARKETING'
+        ? `No contact has opted in to marketing messages yet, so this send would reach nobody. Collect consent in Contacts & Leads → Consent (${reach.undecided} contact(s) have never answered a request).`
+        : 'Every matching contact has opted out, so this send would reach nobody.',
+    });
+  }
   if (timing === 'schedule' && !draft.scheduledAt) {
     blockers.push({ id: 'schedule-time', message: 'Choose a schedule date and time before continuing.' });
   }
@@ -111,6 +147,18 @@ export function ReviewStep({
   if (!draft.spend.estimateAvailable || costOverrideUnavailable) {
     warnings.push({ id: 'cost', message: 'Estimated cost is not available for this sender/template combination.' });
   }
+  if (reach && reach.reachable > 0 && reach.undecided > 0 && category === 'MARKETING') {
+    warnings.push({
+      id: 'consent-gap',
+      message: `${reach.reachable.toLocaleString('en-IN')} contact(s) have opted in and will receive this. ${reach.undecided.toLocaleString('en-IN')} have not answered a consent request and will be skipped.`,
+    });
+  }
+  if (reach && reach.optedOut > 0) {
+    warnings.push({
+      id: 'consent-optout',
+      message: `${reach.optedOut.toLocaleString('en-IN')} contact(s) opted out and are suppressed from every send.`,
+    });
+  }
 
   const canConfirmSend = capabilities.canSend && blockers.length === 0;
   const canConfirmSchedule = capabilities.canSchedule && blockers.filter((b) => b.id !== 'schedule-time').length === 0;
@@ -124,6 +172,7 @@ export function ReviewStep({
         templateId: template?.metaTemplateId ?? draft.templateId,
         templateName: template?.name,
         templateLocale: template?.locale,
+        templateCategory: template?.metaCategory?.toUpperCase(),
         headerMediaUrl: draft.headerMediaUrl ?? null,
         headerMediaType: template && ['image', 'video', 'document'].includes(template.components.headerFormat)
           ? template.components.headerFormat

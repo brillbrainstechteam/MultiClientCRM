@@ -1,5 +1,8 @@
 import { prisma } from '@/lib/db';
 import { runInboundAutomations } from '@/lib/crm/automation';
+import {
+  classifyConsentReply, recordConsent, consentStage, REQUEST_WINDOW_DAYS,
+} from '@/lib/crm/consent';
 import { routeLocation } from '@/lib/crm/zone-routing';
 import { notify, type NotifySeverity } from '@/lib/billing/notify';
 
@@ -225,6 +228,11 @@ async function handleMessages(value: any, account: ResolvedAccount, result: Inge
         result.messagesStored += 1;
       }
 
+      // Consent is decided before automations run: an opt-out must silence the
+      // auto-replies in the same breath, not after one more message goes out.
+      await applyConsentFromInbound({ tenantId, from, message: m, at })
+        .catch((e) => result.errors.push(`Consent: ${e instanceof Error ? e.message : String(e)}`));
+
       const inboundCount = await prisma.message.count({ where: { conversationId: convo.id, direction: 'inbound' } });
       await runInboundAutomations({
         tenantId,
@@ -238,6 +246,70 @@ async function handleMessages(value: any, account: ResolvedAccount, result: Inge
       result.errors.push(`Message ${m?.id ?? '?'}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
+}
+
+/**
+ * Turn an inbound message into a consent decision when it is one.
+ *
+ * Reads both shapes Meta uses for a tap: `button` for a template quick reply,
+ * `interactive.button_reply` for an interactive message. Falls back to keyword
+ * matching on the text, where STOP-style words always count and agreement words
+ * count only while a request is outstanding.
+ *
+ * Deliberately silent when the message is ordinary conversation — this runs on
+ * every inbound message, so it must never guess.
+ */
+async function applyConsentFromInbound(input: {
+  tenantId: string;
+  from: string;
+  message: any;
+  at: Date;
+}): Promise<void> {
+  const { tenantId, from, message: m, at } = input;
+
+  const buttonPayload: string | null =
+    m?.button?.payload ?? m?.button?.text
+    ?? m?.interactive?.button_reply?.id ?? m?.interactive?.button_reply?.title
+    ?? null;
+  const text: string | null = m?.text?.body ?? null;
+  if (!buttonPayload && !text) return;
+
+  const contact = await prisma.crmContact.findFirst({
+    where: { tenantId, mobile: { in: [`+${from}`, from] } },
+    select: { id: true, mobile: true, consent: true, consentRequestedAt: true, consentWording: true },
+  });
+  if (!contact) return;
+
+  const stage = consentStage(contact, at);
+  const decided = classifyConsentReply({
+    text,
+    buttonPayload,
+    requestPending: stage === 'awaiting_reply',
+  });
+  if (!decided.decision || !decided.channel) return;
+
+  // An opt-in only lands while we were actually waiting for one, or on an
+  // explicit button press. Re-confirming an existing opt-in is a no-op.
+  if (decided.decision === 'in') {
+    if (contact.consent === 'opted-in') return;
+    const freshRequest = contact.consentRequestedAt
+      && (at.getTime() - contact.consentRequestedAt.getTime()) / 86_400_000 <= REQUEST_WINDOW_DAYS;
+    if (decided.channel !== 'whatsapp_button' && !freshRequest) return;
+  } else if (contact.consent === 'opted-out') {
+    return;
+  }
+
+  await recordConsent({
+    tenantId,
+    contactId: contact.id,
+    mobile: contact.mobile,
+    decision: decided.decision,
+    channel: decided.channel,
+    source: decided.matched ?? undefined,
+    wording: contact.consentWording ?? undefined,
+    waMessageId: m?.id ?? null,
+    at,
+  });
 }
 
 async function handleStatuses(value: any, result: IngestResult): Promise<void> {

@@ -321,9 +321,15 @@ export default function Customer360Screen() {
             <FieldGrid
               fields={[
                 ['Consent state', consentLabel[contact.consent]],
-                ['Recorded via', whatsappNumber?.displayName ?? notSet()],
-                ['Consent date', formatDate(contact.createdAt)],
-                ['Campaign eligibility', contact.consent === 'opted-in' ? 'Eligible' : 'Excluded'],
+                ['Collected via', contact.consentOptInSource
+                  ? contact.consentOptInSource.replace(/_/g, ' ')
+                  : notSet()],
+                ['Opted in on', contact.consentOptInAt ? formatDate(contact.consentOptInAt) : notSet()],
+                ['Request sent', contact.consentRequestedAt ? formatDate(contact.consentRequestedAt) : 'Never asked'],
+                ['Opted out on', contact.consentOptOutAt ? formatDate(contact.consentOptOutAt) : notSet()],
+                // Only a positive opt-in makes a contact a valid marketing
+                // recipient; "not opted out" is not the same thing.
+                ['Marketing campaigns', contact.consent === 'opted-in' ? 'Eligible' : 'Excluded'],
               ]}
             />
             <p className="crm-c360__scope-note">

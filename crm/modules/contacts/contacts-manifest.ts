@@ -98,6 +98,15 @@ export const contactPages: ContactScreen[] = [
     batch: 3,
   },
   {
+    id: 'CON-S30',
+    path: '/contacts/consent',
+    title: 'Consent',
+    surface: 'page',
+    purpose:
+      'Consent funnel, the queue of contacts to ask, bulk consent requests via an approved template, offline capture and the per-contact consent ledger.',
+    batch: 4,
+  },
+  {
     id: 'CON-S09',
     path: '/contacts/data-quality',
     title: 'Data Quality',

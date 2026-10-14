@@ -41,6 +41,9 @@ export function serializeCrmContact(c: CrmContact) {
     businessValue: c.businessValue,
     consentOptInSource: c.consentOptInSource,
     consentOptInAt: c.consentOptInAt ? c.consentOptInAt.toISOString() : null,
+    consentOptOutAt: c.consentOptOutAt ? c.consentOptOutAt.toISOString() : null,
+    consentRequestedAt: c.consentRequestedAt ? c.consentRequestedAt.toISOString() : null,
+    consentWording: c.consentWording,
     // --- Jewellery B2B enrichment ---
     businessSegment: c.businessSegment,
     grade: c.grade,
