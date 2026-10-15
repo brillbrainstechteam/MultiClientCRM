@@ -714,3 +714,29 @@
   font-size: var(--crm-font-size-xs);
   color: var(--crm-danger-600);
 }
+
+/* ---- Standalone on/off filters ------------------------------------------- */
+
+/* These narrow the list on their own and combine, unlike the pick-one-of-many
+   groups around them, so each carries a line saying what it actually means. */
+.crm-flt-flag {
+  align-items: flex-start;
+}
+
+.crm-flt-flag input {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.crm-flt-flag__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.crm-flt-flag__hint {
+  font-size: var(--crm-font-size-xs);
+  line-height: 1.4;
+  color: var(--crm-text-muted);
+}

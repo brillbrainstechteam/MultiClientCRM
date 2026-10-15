@@ -47,6 +47,47 @@ function CheckGroup<T extends string>({
   );
 }
 
+/**
+ * A standalone on/off filter.
+ *
+ * These are not a choice from a set the way Status or Assignee are — each
+ * narrows the list on its own, and they combine. Rendering them as a CheckGroup
+ * would imply picking one of several, which is the opposite of how they work.
+ */
+function FlagRow({
+  label, hint, checked, onChange,
+}: {
+  label: string;
+  hint?: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <label className="crm-flt-group__row crm-flt-flag">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <span className="crm-flt-flag__text">
+        <span>{label}</span>
+        {hint ? <span className="crm-flt-flag__hint">{hint}</span> : null}
+      </span>
+    </label>
+  );
+}
+
+/**
+ * How long a customer has been waiting on us.
+ *
+ * Offered as thresholds rather than a free-text number because the question an
+ * operator actually asks is "who has been waiting too long", and the useful
+ * answers cluster at an hour, half a day and a day.
+ */
+const WAITING_OPTIONS: Array<{ value: number | null; label: string }> = [
+  { value: null, label: 'Any' },
+  { value: 60, label: 'More than 1 hour' },
+  { value: 240, label: 'More than 4 hours' },
+  { value: 1440, label: 'More than 1 day' },
+  { value: 4320, label: 'More than 3 days' },
+];
+
 export function InboxFilterDrawer({ open, onClose, current, onApply }: InboxFilterDrawerProps) {
   const [draft, setDraft] = useState<InboxFilterState>(current);
 
@@ -57,9 +98,12 @@ export function InboxFilterDrawer({ open, onClose, current, onApply }: InboxFilt
   }, [open]);
 
   const statusOptions = [
-    { value: 'open' as const, label: 'Open' },
-    { value: 'pending' as const, label: 'Pending' },
+    { value: 'open' as const, label: 'Open — needs action' },
+    { value: 'pending' as const, label: 'Pending — waiting on the customer' },
     { value: 'resolved' as const, label: 'Resolved' },
+    // Backfilled history. Filterable on purpose: it is context somebody may
+    // deliberately go looking for, even though it stays out of the queues.
+    { value: 'imported' as const, label: 'Imported history' },
   ];
 
   const assigneeOptions = [
@@ -115,6 +159,71 @@ export function InboxFilterDrawer({ open, onClose, current, onApply }: InboxFilt
       }
     >
       <div className="crm-flt-body">
+        {/* The same cuts the queue strip offers, available here so they can be
+            combined with each other and with everything below. */}
+        <div className="crm-flt-group">
+          <div className="crm-flt-group__title">Show only</div>
+          <FlagRow
+            label="Unread"
+            hint="Nobody has read the customer's latest message"
+            checked={!!draft.unreadOnly}
+            onChange={(v) => setDraft((d) => ({ ...d, unreadOnly: v }))}
+          />
+          <FlagRow
+            label="Favourites"
+            hint="Threads you starred"
+            checked={!!draft.favouritesOnly}
+            onChange={(v) => setDraft((d) => ({ ...d, favouritesOnly: v }))}
+          />
+          <FlagRow
+            label="New leads"
+            hint="Contacts nobody has worked yet"
+            checked={!!draft.newLeadsOnly}
+            onChange={(v) => setDraft((d) => ({ ...d, newLeadsOnly: v }))}
+          />
+          <FlagRow
+            label="Ad leads"
+            hint="Arrived through a Click-to-WhatsApp ad"
+            checked={!!draft.adLeadsOnly}
+            onChange={(v) => setDraft((d) => ({ ...d, adLeadsOnly: v }))}
+          />
+          <FlagRow
+            label="Campaign replies"
+            hint="Answered a campaign we sent"
+            checked={!!draft.campaignRepliesOnly}
+            onChange={(v) => setDraft((d) => ({ ...d, campaignRepliesOnly: v }))}
+          />
+          <FlagRow
+            label="Missed calls"
+            hint="A call to this number went unanswered"
+            checked={!!draft.missedCallsOnly}
+            onChange={(v) => setDraft((d) => ({ ...d, missedCallsOnly: v }))}
+          />
+          <FlagRow
+            label="Reply window closed"
+            hint="Only an approved template will deliver"
+            checked={!!draft.windowClosedOnly}
+            onChange={(v) => setDraft((d) => ({ ...d, windowClosedOnly: v }))}
+          />
+        </div>
+
+        {/* The piece that makes a view like "hot leads waiting over a day"
+            possible once combined with a label. */}
+        <div className="crm-flt-group">
+          <div className="crm-flt-group__title">Waiting on us for</div>
+          {WAITING_OPTIONS.map((opt) => (
+            <label key={String(opt.value)} className="crm-flt-group__row">
+              <input
+                type="radio"
+                name="crm-flt-waiting"
+                checked={(draft.waitingLongerThanMinutes ?? null) === opt.value}
+                onChange={() => setDraft((d) => ({ ...d, waitingLongerThanMinutes: opt.value }))}
+              />
+              <span>{opt.label}</span>
+            </label>
+          ))}
+        </div>
+
         <CheckGroup
           title="Status"
           options={statusOptions}
