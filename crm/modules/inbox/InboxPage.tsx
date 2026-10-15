@@ -954,7 +954,9 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
               <>
                 <span className="crm-inbox-sidebar__title">Inbox</span>
                 <div className="crm-inbox-sidebar__actions">
-                  <IconButton label="Search" icon={<Search size={16} />} onClick={() => openSearchMode('contacts')} />
+                  {/* No search icon here: the toolbar below carries a real
+                      search field. Two entry points for one action, one of them
+                      hidden behind an icon, is noise in a narrow column. */}
                   {!standalone && (
                     <IconButton
                       label="Open inbox in new window"
@@ -987,39 +989,48 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
           {/* Normal toolbar — Conversations · Sort · Filter · Search · Select (spec §7/§27) */}
           {!isSearchMode && !isBulkMode && (
             <div className="crm-inbox-list-toolbar">
-              <div className="crm-inbox-list-toolbar__head">
+              {/* Searching is the most frequent thing anyone does here, so it is
+                  a field rather than an icon that has to be found first. */}
+              <SearchField
+                label="Search conversations"
+                hideLabel
+                className="crm-inbox-list-toolbar__search"
+                placeholder="Search customers or messages"
+                value=""
+                onFocus={() => openSearchMode('contacts')}
+                readOnly
+              />
+              {/* Count and the controls that act on the list share one row, so
+                  the chrome above the list is two lines rather than three. */}
+              <div className="crm-inbox-list-toolbar__row">
                 <span className="crm-inbox-list-toolbar__count">
                   Conversations
                   {!isLoading && conversations.length > 0 && (
                     <span className="crm-inbox-list-toolbar__num">{conversations.length}</span>
                   )}
                 </span>
-                {policy.canBulkAction && conversations.length > 0 && (
-                  <button className="crm-inbox-select-btn" onClick={enterBulkMode}>
-                    <CheckSquare size={14} /> Select
-                  </button>
-                )}
-              </div>
-              <div className="crm-inbox-list-toolbar__controls">
-                <Select
-                  className="crm-inbox-sort"
-                  label="Sort"
-                  hideLabel
-                  value={sortKey}
-                  onChange={(e) => setSort(e.target.value)}
-                  options={SORT_OPTIONS}
-                  size="sm"
-                />
-                <IconButton
-                  label="Filters"
-                  icon={<SlidersHorizontal size={16} />}
-                  onClick={() => openOverlay('drawer', 'filters')}
-                />
-                <IconButton
-                  label="Search conversations"
-                  icon={<Search size={16} />}
-                  onClick={() => openSearchMode('contacts')}
-                />
+                <div className="crm-inbox-list-toolbar__controls">
+                  <Select
+                    className="crm-inbox-sort"
+                    label="Sort"
+                    hideLabel
+                    value={sortKey}
+                    onChange={(e) => setSort(e.target.value)}
+                    options={SORT_OPTIONS}
+                    size="sm"
+                  />
+                  <IconButton
+                    label={filtersActive ? 'Filters (active)' : 'Filters'}
+                    className={filtersActive ? 'crm-inbox-filter-btn--on' : undefined}
+                    icon={<SlidersHorizontal size={16} />}
+                    onClick={() => openOverlay('drawer', 'filters')}
+                  />
+                  {policy.canBulkAction && conversations.length > 0 && (
+                    <button className="crm-inbox-select-btn" onClick={enterBulkMode}>
+                      <CheckSquare size={14} /> Select
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

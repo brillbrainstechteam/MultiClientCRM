@@ -180,7 +180,17 @@
   flex-shrink: 0;
 }
 
-.crm-inbox-list-toolbar__head {
+/* Search sits at the top of the list controls because it is what people reach
+   for first; it used to be an icon they had to find. */
+.crm-inbox-list-toolbar__search .crm-field__control,
+.crm-inbox-list-toolbar__search input {
+  width: 100%;
+  cursor: text;
+}
+
+/* Count on the left, the controls that act on the list on the right — one row
+   instead of two, which matters in a column this narrow. */
+.crm-inbox-list-toolbar__row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -209,16 +219,24 @@
 .crm-inbox-list-toolbar__controls {
   display: flex;
   align-items: center;
-  gap: var(--crm-space-2);
+  gap: 4px;
+  min-width: 0;
 }
 
-/* Sort grows to fill the row so its label never truncates. */
+/* Sort is sized to its content now that it shares the row with the count —
+   it used to stretch the full width and push filter and search to the edge. */
 .crm-inbox-sort {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
 }
 .crm-inbox-sort .crm-select__control {
-  width: 100%;
+  max-width: 132px;
+}
+
+/* An active filter should be visible without opening the drawer. */
+.crm-inbox-filter-btn--on {
+  color: var(--crm-text-brand);
+  background: var(--crm-brand-50);
 }
 
 /* ---- Full-width queue strip above the workspace (spec §3/§4) ------------ */
