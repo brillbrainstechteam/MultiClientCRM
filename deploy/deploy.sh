@@ -24,8 +24,46 @@ echo "==> Applying database migrations"
 $COMPOSE run --rm --no-deps talktrack npx prisma migrate deploy
 
 echo "==> Restarting"
-$COMPOSE up -d
+# Docker can still be tearing down the old container when compose asks for the
+# new one, which fails with "removal of container ... is already in progress".
+# It is a race, not a real error: the removal finishes within a few seconds and
+# the same command then succeeds. Retrying beats leaving the site down because
+# `set -e` aborted the deploy one step from the end.
+restart() {
+  local attempt
+  for attempt in 1 2 3 4 5; do
+    # shellcheck disable=SC2086
+    if $COMPOSE up -d; then
+      return 0
+    fi
+    echo "    restart attempt $attempt failed; waiting for Docker to settle…"
+    sleep 5
+  done
+  return 1
+}
+
+if ! restart; then
+  echo "!! Could not start the container after several attempts." >&2
+  echo "   Check:  docker ps -a | grep talktrack" >&2
+  echo "   Then:   $COMPOSE up -d" >&2
+  exit 1
+fi
 
 echo "==> Health"
 sleep 5
+# shellcheck disable=SC2086
 $COMPOSE ps
+
+# Prove it actually serves, rather than just reporting a container exists. A
+# container can be "Up" and still be failing to boot.
+# APP_PORT is numeric, so keeping only the digits strips quotes, whitespace
+# and any Windows CR in one step, with no escapes to get mangled.
+PORT="$(grep -m1 '^APP_PORT=' .env.production | tr -cd '0-9')"
+PORT="${PORT:-3000}"
+if curl -fsS -o /dev/null -m 20 "http://127.0.0.1:${PORT}/login"; then
+  echo "==> OK: serving on 127.0.0.1:${PORT}"
+else
+  echo "!! The container is running but /login did not respond on port ${PORT}." >&2
+  echo "   Logs:  $COMPOSE logs --tail=50 talktrack" >&2
+  exit 1
+fi
