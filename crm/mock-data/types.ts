@@ -121,6 +121,13 @@ export interface Contact {
   pincode?: string | null;
   productInterests?: string[];
   businessValue?: string | null;
+  /** Click-to-WhatsApp acquisition — the ad that won this customer. */
+  adSourceId?: string | null;
+  adSourceType?: string | null;
+  adSourceUrl?: string | null;
+  adHeadline?: string | null;
+  ctwaClid?: string | null;
+  adReferralAt?: string | null;
   consentOptInSource?: string | null;
   consentOptInAt?: string | null;
   consentOptOutAt?: string | null;

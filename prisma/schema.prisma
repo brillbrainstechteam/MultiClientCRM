@@ -396,6 +396,10 @@ model Message {
   /// Media older than 14 days arrives as a record with no retrievable asset —
   /// the UI shows "older WhatsApp image" rather than a broken thumbnail.
   mediaUnavailable Boolean @default(false)
+  /// Click-to-WhatsApp attribution, exactly as Meta sent it. Stored verbatim
+  /// because the field set grows (ctwa_clid was added later) and discarding
+  /// anything would lose attribution we cannot reconstruct afterwards.
+  referral         Json?
   at             DateTime @default(now())
 
   @@index([conversationId])
@@ -545,6 +549,19 @@ model CrmContact {
   consentWording           String?   // copy/template the customer actually saw
 
   createdSource            String?  // Req 16: original source / import source (audit)
+
+  // --- Click-to-WhatsApp acquisition (first touch) ---
+  // Which ad produced this lead. Columns rather than JSON because the whole
+  // point is to segment and report on them — "every lead from the Diwali
+  // campaign" is a filter, not a curiosity. First touch wins: a later ad click
+  // is recorded on the message, but the contact keeps the ad that won them.
+  adSourceId               String?   // Meta ad or post id
+  adSourceType             String?   // ad | post
+  adSourceUrl              String?
+  adHeadline               String?
+  /// Click id — the key for reporting conversions back through Conversions API.
+  ctwaClid                 String?
+  adReferralAt             DateTime?
 
   // Kundli: AI-generated pre-call dossier (company research + call scripts),
   // cached so it is ready before calling. Regenerable.

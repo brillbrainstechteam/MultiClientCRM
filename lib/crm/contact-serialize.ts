@@ -19,6 +19,13 @@ export function serializeCrmContact(c: CrmContact) {
     stage: c.stage,
     tags: c.tags,
     source: c.source,
+    // Click-to-WhatsApp acquisition: which ad won this customer.
+    adSourceId: c.adSourceId,
+    adSourceType: c.adSourceType,
+    adSourceUrl: c.adSourceUrl,
+    adHeadline: c.adHeadline,
+    ctwaClid: c.ctwaClid,
+    adReferralAt: c.adReferralAt ? c.adReferralAt.toISOString() : null,
     consent: c.consent,
     salesTier: c.salesTier,
     branchId: c.branchId,

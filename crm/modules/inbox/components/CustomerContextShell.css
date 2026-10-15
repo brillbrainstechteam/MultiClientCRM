@@ -280,3 +280,20 @@
   background: var(--crm-surface-raised);
   flex-shrink: 0;
 }
+
+/* Click-to-WhatsApp acquisition: which ad produced this customer. */
+.crm-ctx-chip--ad {
+  background: var(--crm-info-50);
+  color: var(--crm-info-600);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-flex;
+}
+
+.crm-ctx-field__sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--crm-text-muted);
+}

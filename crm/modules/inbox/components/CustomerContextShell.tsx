@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, UserPlus, ExternalLink, ShoppingBag, ShieldCheck, ShieldAlert, ShieldQuestion } from 'lucide-react';
+import { ChevronDown, UserPlus, ExternalLink, ShoppingBag, ShieldCheck, ShieldAlert, ShieldQuestion, Megaphone } from 'lucide-react';
 import { Avatar, Button } from '@crm/design-system';
 import { contacts, findUser } from '@crm/mock-data';
 import { EnquiriesPanel } from '@crm/modules/contacts/components/EnquiriesPanel';
@@ -183,6 +183,25 @@ export function CustomerContextShell({
               {contact.preferredLanguage ? <ContextField label="Language" value={contact.preferredLanguage} /> : null}
               {contact.nextFollowUpAt ? <ContextField label="Next follow-up" value={new Date(contact.nextFollowUpAt).toLocaleDateString('en-IN')} /> : null}
               <ContextField label="Source" value={contact.source} />
+              {/* For a retailer running ads, which ad won this customer is the
+                  single most useful thing on this panel — it is what ties the
+                  spend to the person now typing. */}
+              {contact.adHeadline || contact.adSourceId ? (
+                <div className="crm-ctx-field">
+                  <span className="crm-ctx-field__label">From ad</span>
+                  <span className="crm-ctx-field__value">
+                    <span className="crm-ctx-chip crm-ctx-chip--ad">
+                      <Megaphone size={11} />
+                      {contact.adHeadline || `Ad ${contact.adSourceId}`}
+                    </span>
+                    {contact.adReferralAt ? (
+                      <span className="crm-ctx-field__sub">
+                        {new Date(contact.adReferralAt).toLocaleDateString('en-IN')}
+                      </span>
+                    ) : null}
+                  </span>
+                </div>
+              ) : null}
               <ConsentRow consent={contact.consent} />
             </CollapsibleSection>
 

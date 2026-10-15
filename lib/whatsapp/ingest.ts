@@ -11,6 +11,7 @@ import {
   ingestHistoryChunk, ingestStateSync, promoteHistoricalConversation,
   type HistoryChunk, type StateSyncEntry,
 } from '@/lib/whatsapp/coexistence';
+import { readReferral, applyReferralToContact, describeReferral } from '@/lib/whatsapp/referral';
 
 /**
  * Routing for a WhatsApp webhook payload.
@@ -194,6 +195,10 @@ async function handleMessages(value: any, account: ResolvedAccount, result: Inge
       const from: string = m.from;
       const text: string = m.text?.body ?? `[${m.type ?? 'message'}]`;
       const at = m.timestamp ? new Date(Number(m.timestamp) * 1000) : new Date();
+      // Present only on the first message after someone taps a Click-to-
+      // WhatsApp ad. It arrives on this ordinary messages webhook — no extra
+      // product is needed to receive it.
+      const referral = readReferral(m);
 
       const convo = await prisma.conversation.upsert({
         where: { tenantId_phoneNumberId_contactPhone: { tenantId, phoneNumberId, contactPhone: from } },
@@ -248,10 +253,31 @@ async function handleMessages(value: any, account: ResolvedAccount, result: Inge
             type: m.type ?? 'text',
             text,
             source: 'customer',
+            // Click-to-WhatsApp attribution, kept verbatim — see referral.ts.
+            referral: (referral ?? undefined) as object | undefined,
             at,
           },
         });
         result.messagesStored += 1;
+      }
+
+      // Stamp the ad that won this customer. First touch only, and never fatal:
+      // losing the stamp must not cost us the message.
+      if (referral) {
+        const applied = await applyReferralToContact({ tenantId, contactPhone: from, referral, at })
+          .catch(() => false);
+        if (applied) {
+          await notify({
+            tenantId,
+            category: 'whatsapp',
+            kind: 'ctwa_lead',
+            severity: 'info',
+            title: 'New lead from an ad',
+            body: `${nameByWaId[from] || `+${from}`} messaged from ${describeReferral(referral)}.`,
+            data: { referral, from },
+            dedupeKey: `ctwa:${m.id ?? from}`,
+          }).catch(() => { /* the attribution matters more than the notice */ });
+        }
       }
 
       // Consent is decided before automations run: an opt-out must silence the
