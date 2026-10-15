@@ -24,15 +24,24 @@ export const metaConfig = {
    */
   coexistenceFeature: process.env.NEXT_PUBLIC_META_COEXISTENCE_FEATURE ?? 'whatsapp_business_app_onboarding',
   /**
-   * Embedded Signup version. v2 is deprecated by Meta on 15 October 2026, so v4
-   * is the default; the env var exists only so a rollback needs no deploy.
+   * Embedded Signup version — and the default is deliberately the OLD one.
    *
-   * v4 selects itself from the Facebook Login for Business configuration — the
-   * products are chosen there — and returns session info for every flow. v2 and
-   * v3 instead had to ask for it with `sessionInfoVersion`, which is precisely
-   * what pins an integration to the retired version.
+   * The version is a property of the Facebook Login for Business configuration,
+   * not of this code: a v4 configuration is one created by selecting products,
+   * and Meta shows no version label, so the running configuration's version
+   * cannot be detected from here.
+   *
+   * That makes the risk asymmetric. `sessionInfoVersion` is the v2 field that
+   * asks for the session payload, and Meta states a v2 integration **must** send
+   * it to receive the callback at all — omit it against a v2 configuration and
+   * waba_id / phone_number_id never come back, which breaks onboarding outright.
+   * Send it against a v4 configuration and it is simply unnecessary, because v4
+   * returns session info regardless.
+   *
+   * So: keep sending it until the v4 configuration genuinely exists, then set
+   * NEXT_PUBLIC_META_ES_VERSION=v4. Config first, flag second.
    */
-  embeddedSignupVersion: process.env.NEXT_PUBLIC_META_ES_VERSION ?? 'v4',
+  embeddedSignupVersion: process.env.NEXT_PUBLIC_META_ES_VERSION ?? 'v2',
   /** Opt into v4-public-preview (the refreshed UI) without changing code. */
   embeddedSignupPreview: process.env.NEXT_PUBLIC_META_ES_PREVIEW === '1',
 };

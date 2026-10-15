@@ -131,19 +131,27 @@ export function isWabaOnly(event: string | null): boolean {
  *
  * v4 takes its product set from the Login configuration, so extras carry only
  * `setup`. v2 and v3 must ask for the session payload explicitly, which is what
- * `sessionInfoVersion` does — and asking for it is what pins an integration to
- * the version being retired.
+ * `sessionInfoVersion` does.
+ *
+ * The default stays on the v2 shape on purpose. The configuration's version is
+ * not visible from here, and the two mistakes are not equally bad: sending
+ * `sessionInfoVersion` to a v4 configuration is merely redundant, while
+ * omitting it from a v2 one stops the session payload coming back and breaks
+ * onboarding. Flip NEXT_PUBLIC_META_ES_VERSION to v4 only once the v4
+ * configuration exists and its id is in NEXT_PUBLIC_META_CONFIG_ID.
  */
 export function launchExtras(path: string): Record<string, unknown> {
   const version = metaConfig.embeddedSignupVersion;
   const extras: Record<string, unknown> = { setup: {} };
 
-  if (version !== 'v4') {
-    // Legacy path, kept only so a rollback is possible without a code change.
-    extras.version = version;
+  if (version === 'v4') {
+    if (metaConfig.embeddedSignupPreview) extras.version = 'v4-public-preview';
+  } else {
+    // v2 / v3: ask for the session payload, or nothing comes back.
     extras.sessionInfoVersion = '3';
-  } else if (metaConfig.embeddedSignupPreview) {
-    extras.version = 'v4-public-preview';
+    // `version` is the v2/v3 selector; only send it when explicitly pinned to
+    // v3, since v2 is selected by the configuration itself.
+    if (version === 'v3') extras.version = 'v3';
   }
 
   // Coexistence is requested per-launch. Harmless when the configuration

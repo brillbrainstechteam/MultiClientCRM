@@ -123,10 +123,15 @@ check('a numeric error code is coerced to a string',
 
 /* ---- Launch extras: the version trap -------------------------------------- */
 
+// The default is the v2 shape on purpose. A configuration's version cannot be
+// read from here, and the two mistakes are not equal: sending
+// sessionInfoVersion to a v4 configuration is redundant, while omitting it from
+// a v2 one stops the session payload coming back and breaks onboarding.
 const extras = launchExtras('new');
-check('v4 sends setup only', Object.keys(extras).sort(), ['setup']);
-check('v4 must NOT send sessionInfoVersion — that is the v2 field',
-  'sessionInfoVersion' in extras, false);
+check('the default still asks for the session payload',
+  (extras as { sessionInfoVersion?: string }).sessionInfoVersion, '3');
+check('and does not pin a version the configuration decides',
+  'version' in extras, false);
 
 const coexExtras = launchExtras('coexistence');
 check('coexistence still asks for its feature',
