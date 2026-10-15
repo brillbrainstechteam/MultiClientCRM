@@ -75,9 +75,33 @@ only the popup path works.
 **App Dashboard → Facebook Login for Business → Configurations → Create
 configuration.**
 
-> Use **Create configuration**, not **Create from template**. The template is
-> *"WhatsApp Embedded Signup Configuration With 60 Expiration Token"* — it would
-> reproduce the 60-day problem you are trying to leave behind.
+> ## Known blocker (tested 15 Oct 2026)
+>
+> **"Create configuration" does not offer a Products step**, on this app, under
+> any login variation we could select. Its steps are Name → Login variation →
+> Access token → Assets → Permissions, and the Assets list has no *WhatsApp
+> accounts* entry. Meta's rule is that selecting products is what makes a
+> configuration v4, so a configuration made this way is not v4 and cannot
+> onboard a WhatsApp number.
+>
+> Editing it afterwards does **not** reveal the Products step either — config
+> `1448781003477056` was created this way and is unusable. It is inert, so it
+> was left in place rather than risking anything.
+>
+> That leaves a bind. The only template offered is *"WhatsApp Embedded Signup
+> Configuration With 60 Expiration Token"*, which produces a proper v4
+> configuration **but fixes the token at 60 days**, and expiration cannot be
+> changed later. So today you can have Products **or** Never, not both.
+>
+> **Current decision: keep the existing configuration** (`1008244875575120`).
+> It has the Products step, the WhatsApp accounts asset, and the six products
+> selected. Its 60-day token expiry is covered by the `token-health` cron, which
+> warns at 14, 7, 3 and 1 days — an annoyance with a safety net, which is a far
+> better position than a configuration that cannot onboard anyone.
+>
+> Worth raising with Meta support: ask why the Products step is absent from the
+> create flow for this app. If they enable it, redo this procedure and pick
+> **Never**.
 
 | Step | Choose | Why |
 |---|---|---|
