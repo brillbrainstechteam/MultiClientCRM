@@ -272,25 +272,24 @@ cd /home/talktrackcrm/app
 docker compose --env-file .env.production -f deploy/docker-compose.vps.yml up -d
 ```
 
-Then add both jobs to root's crontab (`crontab -e`), substituting the secret:
+Then add both jobs to root's crontab (`crontab -e`). **No secret goes in
+here** — `deploy/cron.sh` reads it from `.env.production`, because a single
+dropped character when copying a 44-character secret produces a 403 that looks
+exactly like a wrong secret and sends you hunting everywhere except the
+clipboard:
 
 ```cron
 # TalkTrack scheduled jobs. Times are server-local.
-CRON_SECRET=paste-the-value-here
-BASE=https://talktrackcrm.brillbrainsconsultants.com
-
-# 07:30 daily — reminders for planning-calendar activities that fall due.
-30 7 * * * curl -fsS -m 120 -H "x-cron-secret: $CRON_SECRET" "$BASE/api/cron/plan-reminders" >> /var/log/talktrack-cron.log 2>&1
-
-# 08:00 daily — check every connected number's access token is still alive,
-# and warn before one lapses. See "Access tokens" below for why this matters.
-0 8 * * * curl -fsS -m 300 -H "x-cron-secret: $CRON_SECRET" "$BASE/api/cron/token-health" >> /var/log/talktrack-cron.log 2>&1
+# 07:30 — reminders for planning-calendar activities that fall due.
+30 7 * * * /home/talktrackcrm/app/deploy/cron.sh plan-reminders >> /var/log/talktrack-cron.log 2>&1
+# 08:00 — check every connected number's token, and warn before one lapses.
+0  8 * * * /home/talktrackcrm/app/deploy/cron.sh token-health   >> /var/log/talktrack-cron.log 2>&1
 ```
 
 Check it works immediately, rather than waiting for tomorrow:
 
 ```bash
-curl -fsS -H "x-cron-secret: $CRON_SECRET"   https://talktrackcrm.brillbrainsconsultants.com/api/cron/token-health
+cd /home/talktrackcrm/app && ./deploy/cron.sh token-health
 ```
 
 A healthy response looks like `{"checked":2,"healthy":2,"expiring":0,"invalid":0,...}`.
@@ -302,7 +301,9 @@ looks identical to a 403 from nginx or Cloudflare — which sends you hunting in
 the wrong place. Use `-sS -i` so you can see which one answered:
 
 ```bash
-SECRET=$(grep '^CRON_SECRET' .env.production | cut -d= -f2- | tr -d '"'"'"'')
+# Read the secret from the container rather than retyping it — a dropped
+# leading character is the single most common cause of this 403.
+SECRET=$(docker exec talktrack-crm printenv CRON_SECRET)
 curl -sS -i -H "x-cron-secret: $SECRET"   https://talktrackcrm.brillbrainsconsultants.com/api/cron/token-health
 ```
 
@@ -323,7 +324,8 @@ curl -sS -i -H "x-cron-secret: $SECRET" http://127.0.0.1:3002/api/cron/token-hea
 If that works and the public URL does not, the proxy is the problem.
 
 Check what the container actually received — `cat -A` reveals quotes, trailing
-`` from a Windows-edited file, and whitespace that are otherwise invisible:
+`
+` from a Windows-edited file, and whitespace that are otherwise invisible:
 
 ```bash
 docker exec talktrack-crm printenv CRON_SECRET | cat -A
