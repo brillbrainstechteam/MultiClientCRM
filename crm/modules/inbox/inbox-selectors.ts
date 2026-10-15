@@ -15,29 +15,40 @@ export function applyQuickView(
   view: QuickViewKey,
   userId: string,
 ): InboxConversation[] {
+  // Backfilled WhatsApp history is context, not work. It must stay out of every
+  // working queue: an imported thread has no assignee and ends on a customer
+  // message, so without this it would land in BOTH Unassigned and Needs Reply —
+  // six months of old chats arriving as hundreds of apparently urgent tasks on
+  // the customer's first morning, which is the exact outcome the import is
+  // designed to avoid. A live reply promotes the thread and it rejoins normally.
+  const live = (c: InboxConversation) => !c.isSpam && c.status !== 'imported';
+
   switch (view) {
     case 'all':
-      return conversations.filter((c) => !c.isSpam);
+      return conversations.filter(live);
     case 'mine':
-      return conversations.filter((c) => !c.isSpam && c.assigneeId === userId);
+      return conversations.filter((c) => live(c) && c.assigneeId === userId);
     case 'unassigned':
-      return conversations.filter((c) => !c.isSpam && c.assigneeId === null && !c.botOwned);
+      return conversations.filter((c) => live(c) && c.assigneeId === null && !c.botOwned);
     case 'needs-reply':
-      return conversations.filter((c) => !c.isSpam && c.replyStatus === 'awaiting-agent');
+      return conversations.filter((c) => live(c) && c.replyStatus === 'awaiting-agent');
     case 'pending':
-      return conversations.filter((c) => !c.isSpam && c.status === 'pending');
+      return conversations.filter((c) => live(c) && c.status === 'pending');
     case 'overdue':
       return conversations.filter(
-        (c) => !c.isSpam && (c.sla.status === 'breached' || c.responseWindow.status === 'expired'),
+        (c) => live(c) && (c.sla.status === 'breached' || c.responseWindow.status === 'expired'),
       );
     case 'sla-breached':
-      return conversations.filter((c) => !c.isSpam && c.sla.status === 'breached');
+      return conversations.filter((c) => live(c) && c.sla.status === 'breached');
     case 'resolved':
-      return conversations.filter((c) => !c.isSpam && c.status === 'resolved');
+      return conversations.filter((c) => live(c) && c.status === 'resolved');
     case 'spam':
       return conversations.filter((c) => c.isSpam);
+    case 'imported':
+      // Deliberately reachable: the context is the point of importing it.
+      return conversations.filter((c) => !c.isSpam && c.status === 'imported');
     default:
-      return conversations.filter((c) => !c.isSpam);
+      return conversations.filter(live);
   }
 }
 
@@ -185,6 +196,7 @@ export function quickViewCounts(
     { key: 'overdue', label: 'Overdue', group: 'more' },
     { key: 'sla-breached', label: 'SLA Breached', group: 'more' },
     { key: 'resolved', label: 'Resolved', group: 'more' },
+    { key: 'imported', label: 'Imported', group: 'more' },
     ...(role !== 'agent' ? [{ key: 'spam' as QuickViewKey, label: 'Spam', group: 'more' as const }] : []),
   ];
 

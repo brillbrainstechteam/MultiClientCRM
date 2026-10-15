@@ -8,6 +8,8 @@
 
 export type QuickViewKey =
   | 'all'
+  /** Backfilled WhatsApp history — context, kept out of the working queues. */
+  | 'imported'
   | 'mine'
   | 'unassigned'
   | 'needs-reply'
@@ -62,7 +64,11 @@ export interface InboxConversation {
   teamId: string | null;
   /** true when a bot currently owns the conversation; awaiting human handoff. */
   botOwned: boolean;
-  status: 'open' | 'pending' | 'resolved';
+  /**
+   * `imported` is a backfilled thread: present for context, not work. It stays
+   * out of the Open queue until a live message promotes it.
+   */
+  status: 'open' | 'pending' | 'resolved' | 'imported';
   unreadCount: number;
   /** Conversation label IDs applied (temporary workflow tags). */
   labelIds: string[];
@@ -256,7 +262,8 @@ export interface InboxFilterState {
   assigneeIds: string[];
   teamIds: string[];
   labelIds: string[];
-  statuses: Array<'open' | 'pending' | 'resolved'>;
+  /** `imported` is filterable too, so backfilled context can be found on purpose. */
+  statuses: Array<'open' | 'pending' | 'resolved' | 'imported'>;
   whatsappNumberIds: string[];
   branchIds: string[];
   replyStatuses: string[];

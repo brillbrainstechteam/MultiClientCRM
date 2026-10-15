@@ -330,7 +330,16 @@ export const inboxAnalytics: InboxAnalytics = {
 // the UI never calculates them. Config data (labels, quick replies, templates,
 // AI tasks, analytics) stays fixture-backed until those modules are built.
 
-interface InboxApiMessage { id: string; waMessageId?: string | null; direction: string; text: string; status: string | null; at: string; }
+interface InboxApiMessage {
+  id: string; waMessageId?: string | null; direction: string; text: string;
+  status: string | null; at: string;
+  // Provenance from the API — without these the "Sent from phone" badge, the
+  // unavailable-media placeholder and the history divider never render.
+  type?: string;
+  source?: InboxMessage['source'];
+  isHistorical?: boolean;
+  mediaUnavailable?: boolean;
+}
 interface InboxApiNote { id: string; text: string; authorUserId: string | null; createdAt: string; }
 interface InboxApiConversation {
   id: string;
@@ -339,6 +348,8 @@ interface InboxApiConversation {
   rawMobile: string | null;
   contactName: string | null;
   status?: string;
+  isHistorical?: boolean;
+  historyFrom?: string | null;
   assigneeUserId?: string | null;
   labels?: string[];
   isSpam?: boolean;
@@ -384,6 +395,9 @@ function mapMessage(m: InboxApiMessage, conversationId: string): InboxMessage {
     isNote: false,
     mentionedUserIds: [],
     replyToMessageId: null,
+    source: m.source,
+    isHistorical: m.isHistorical,
+    mediaUnavailable: m.mediaUnavailable,
     at: m.at,
   };
 }
@@ -396,8 +410,17 @@ function mapConversation(c: InboxApiConversation): InboxConversation {
     isNote: false,
     at: last?.at ?? c.lastMessageAt,
   };
-  const awaitingAgent = last?.direction === 'inbound';
-  const status = (['open', 'pending', 'resolved'].includes(c.status ?? '') ? c.status : 'open') as InboxConversation['status'];
+  const imported = c.status === 'imported' || c.isHistorical === true;
+  // An imported thread usually ends on a customer message, but nobody is
+  // waiting on us: it was answered on the owner's phone months ago. Marking it
+  // 'awaiting-agent' would put it in Needs Reply and in the unanswered counts.
+  const awaitingAgent = !imported && last?.direction === 'inbound';
+  // 'imported' must survive: dropping it to 'open' would put every backfilled
+  // thread straight into the Open queue, which is the one thing the history
+  // import is designed not to do.
+  const status = (['open', 'pending', 'resolved', 'imported'].includes(c.status ?? '')
+    ? c.status
+    : 'open') as InboxConversation['status'];
   return {
     id: c.id,
     contactId: c.contactId,
@@ -414,6 +437,8 @@ function mapConversation(c: InboxApiConversation): InboxConversation {
     sla: { status: 'ok', deadline: null, minutesRemaining: null },
     preview,
     isSpam: c.isSpam ?? false,
+    isHistorical: c.isHistorical,
+    historyFrom: c.historyFrom ?? null,
     aiTaskCount: 0,
     firstMessageAt: c.firstMessageAt,
     lastMessageAt: c.lastMessageAt,
