@@ -291,6 +291,12 @@ export async function checkCallGate(args: {
     expiresAt,
   });
 
+  // Meta reporting no_permission while a request of ours is still outstanding
+  // is the normal state of a pending ask, not a refusal — so the cached
+  // `pending` stands rather than being flattened to `none`, which is what the
+  // inbox reads to show "asked, waiting for an answer".
+  
+
   // A limit with no room left tells us when it frees up.
   const blockingLimit = p.callLimits.find((l) => l.current_usage >= l.max_allowed);
   const retryAfter = blockingLimit?.limit_expiration_time
@@ -349,6 +355,13 @@ async function cachePermission(args: {
   expiresAt: Date | null;
 }): Promise<void> {
   const { tenantId, phoneNumberId, contactPhone, status, permissionType, expiresAt } = args;
+  const existing = await prisma.whatsAppCallPermission.findUnique({
+    where: { phoneNumberId_contactPhone: { phoneNumberId, contactPhone } },
+    select: { status: true },
+  });
+  // Do not overwrite a request we are still waiting on an answer to.
+  if (status !== 'granted' && existing?.status === 'pending') return;
+
   await prisma.whatsAppCallPermission.upsert({
     where: { phoneNumberId_contactPhone: { phoneNumberId, contactPhone } },
     update: {
