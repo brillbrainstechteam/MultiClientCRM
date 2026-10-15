@@ -3,7 +3,7 @@ import { checkLimit } from '@/lib/billing/limits';
 import { startCoexistenceSync } from '@/lib/whatsapp/coexistence';
 import { encrypt } from '@/lib/crypto';
 import {
-  getPhoneNumbers, getPhoneNumberHealth, registerPhoneNumber, subscribeAppToWaba,
+  getPhoneNumbers, getPhoneNumberHealth, registerPhoneNumber, subscribeAppToWaba, inspectToken,
 } from '@/lib/meta/graph';
 
 export interface FinalizeInput {
@@ -111,6 +111,13 @@ export async function finalizeConnection(input: FinalizeInput): Promise<Finalize
       ? 'coexistence'
       : input.strategy === 'existing' ? 'migrated_from_bsp' : 'new_cloud_api');
 
+  // Ask Meta when this token dies. The Login configuration fixes the lifetime
+  // at creation (60 days or never) and it cannot be changed afterwards, so a
+  // 60-day token means this connection stops working in two months unless
+  // something warns first. Best-effort: never block a working connection.
+  const tokenInfo = await inspectToken(token).catch(() => null);
+  const tokenExpiresAt = tokenInfo?.expiresAt ? new Date(tokenInfo.expiresAt * 1000) : null;
+
   const existing = phoneNumberId
     ? await prisma.whatsAppAccount.findFirst({ where: { tenantId, phoneNumberId } })
     : null;
@@ -127,12 +134,18 @@ export async function finalizeConnection(input: FinalizeInput): Promise<Finalize
     await prisma.whatsAppAccount.update({
       where: { id: existing.id },
       // onboardedAt is day 0 for Meta's 24-hour sync window — set once.
-      data: { ...data, connectionMode, onboardedAt: existing.onboardedAt ?? new Date() },
+      data: {
+        ...data, connectionMode, onboardedAt: existing.onboardedAt ?? new Date(),
+        tokenExpiresAt, tokenCheckedAt: new Date(),
+      },
     });
     accountId = existing.id;
   } else {
     const created = await prisma.whatsAppAccount.create({
-      data: { tenantId, ...data, connectionMode, onboardedAt: new Date() },
+      data: {
+        tenantId, ...data, connectionMode, onboardedAt: new Date(),
+        tokenExpiresAt, tokenCheckedAt: new Date(),
+      },
     });
     accountId = created.id;
   }

@@ -80,6 +80,15 @@ model WhatsAppAccount {
   verifiedName      String?
   // Long-lived / system-user access token (encrypt at rest before production).
   accessToken       String?
+  /// When Meta says this token dies. Null means it never expires.
+  ///
+  /// The Login configuration fixes the expiry at creation and it cannot be
+  /// changed afterwards, so a 60-day choice means every connection quietly
+  /// stops working two months after onboarding unless somebody is watching.
+  /// Recorded at connect time from debug_token and checked daily.
+  tokenExpiresAt    DateTime?
+  /// Last time we asked Meta whether the token is still good.
+  tokenCheckedAt    DateTime?
   status            String   @default("pending") // pending | connected | reconnect_required | disconnected | error
   // Why the connection stopped working (e.g. the client revoked our Business
   // Integration on Facebook) — shown on the onboarding screen.

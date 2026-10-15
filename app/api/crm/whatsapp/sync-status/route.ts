@@ -65,6 +65,13 @@ export async function GET() {
       verifiedName: a.verifiedName,
       status: a.status,
       connectionMode: a.connectionMode,
+      // Meta fixes the token lifetime when the Login configuration is created
+      // and it cannot be renewed automatically — so the expiry is shown, not
+      // just alerted on, and reconnecting can be scheduled.
+      tokenExpiresAt: a.tokenExpiresAt?.toISOString() ?? null,
+      tokenDaysLeft: a.tokenExpiresAt
+        ? Math.ceil((a.tokenExpiresAt.getTime() - Date.now()) / 86_400_000)
+        : null,
       onboardedAt: a.onboardedAt?.toISOString() ?? null,
       /** Meta only accepts the sync requests inside this window. */
       syncWindowHoursLeft: hoursLeft === null ? null : Math.round(hoursLeft * 10) / 10,
