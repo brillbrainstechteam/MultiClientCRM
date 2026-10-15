@@ -294,8 +294,51 @@ curl -fsS -H "x-cron-secret: $CRON_SECRET"   https://talktrackcrm.brillbrainscon
 ```
 
 A healthy response looks like `{"checked":2,"healthy":2,"expiring":0,"invalid":0,...}`.
-`{"error":"CRON_SECRET is not configured."}` means the restart did not pick up
-the env file; `Forbidden.` means the header value does not match.
+
+### When it returns 403
+
+**Drop `-f` first.** `curl -fsS` hides the response body, and a 403 from the app
+looks identical to a 403 from nginx or Cloudflare — which sends you hunting in
+the wrong place. Use `-sS -i` so you can see which one answered:
+
+```bash
+SECRET=$(grep '^CRON_SECRET' .env.production | cut -d= -f2- | tr -d '"'"'"'')
+curl -sS -i -H "x-cron-secret: $SECRET"   https://talktrackcrm.brillbrainsconsultants.com/api/cron/token-health
+```
+
+- `{"error":"Forbidden.","hint":"Secret did not match."}` — the app answered and
+  the values differ. Compare them (below).
+- `{"error":"Forbidden.","hint":"No x-cron-secret header was received."}` — the
+  header was stripped in transit, most likely by the proxy.
+- HTML, or a `Server: nginx` / `cf-ray` header — the proxy answered, not the
+  app, and the secret is not the problem at all.
+
+Bypass the proxy entirely to confirm which side is at fault (`APP_PORT` is 3002
+on this box):
+
+```bash
+curl -sS -i -H "x-cron-secret: $SECRET" http://127.0.0.1:3002/api/cron/token-health
+```
+
+If that works and the public URL does not, the proxy is the problem.
+
+Check what the container actually received — `cat -A` reveals quotes, trailing
+`` from a Windows-edited file, and whitespace that are otherwise invisible:
+
+```bash
+docker exec talktrack-crm printenv CRON_SECRET | cat -A
+```
+
+A clean value ends in `$` and nothing else. `"ZXg...="$` means the quotes are
+part of the value; `ZXg...=^M$` means the file has Windows line endings.
+
+**`docker compose up -d` reporting `Container talktrack-crm Running` means it
+did not recreate the container, so a changed `.env.production` was never picked
+up.** Force it:
+
+```bash
+docker compose --env-file .env.production -f deploy/docker-compose.vps.yml up -d --force-recreate
+```
 
 ### Access tokens: the 60-day trap
 

@@ -30,11 +30,39 @@ export const dynamic = 'force-dynamic';
 const WARN_DAYS = [14, 7, 3, 1];
 const DAY = 86_400_000;
 
+/**
+ * Read the shared secret, tolerating how it was written.
+ *
+ * `.env.production` is hand-edited on the server and passed through Compose's
+ * `env_file`, which does not strip quotes in every version — so CRON_SECRET
+ * can arrive as `"abc"` with the quotes part of the value. A trailing newline
+ * or a stray space does the same thing. None of that should look like a
+ * failed authentication, because the resulting 403 is indistinguishable from a
+ * genuinely wrong secret and sends you hunting in the wrong place.
+ */
+function cronSecret(): string {
+  return (process.env.CRON_SECRET ?? '').trim().replace(/^["']|["']$/g, '');
+}
+
+/** The value the caller presented, by header or query string. */
+function presentedSecret(req: Request): string {
+  const header = req.headers.get('x-cron-secret');
+  const query = new URL(req.url).searchParams.get('secret');
+  return (header ?? query ?? '').trim();
+}
+
 async function run(req: Request): Promise<Response> {
-  const secret = process.env.CRON_SECRET;
+  const secret = cronSecret();
   if (!secret) return NextResponse.json({ error: 'CRON_SECRET is not configured.' }, { status: 500 });
-  const sent = req.headers.get('x-cron-secret') ?? new URL(req.url).searchParams.get('secret');
-  if (sent !== secret) return NextResponse.json({ error: 'Forbidden.' }, { status: 403 });
+  const sent = presentedSecret(req);
+  if (sent !== secret) {
+    // Say enough to tell a wrong secret from a mangled one, without echoing
+    // either value back to whoever is probing.
+    return NextResponse.json(
+      { error: 'Forbidden.', hint: sent ? 'Secret did not match.' : 'No x-cron-secret header was received.' },
+      { status: 403 },
+    );
+  }
 
   const now = new Date();
   const accounts = await prisma.whatsAppAccount.findMany({
