@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCheck, Check, AlertCircle, Bot, Lock, Reply, Forward, Smartphone, ImageOff, Megaphone, Sparkles, History } from 'lucide-react';
+import { CheckCheck, Check, AlertCircle, Bot, Lock, Reply, Forward, Smartphone, ImageOff, Megaphone, Sparkles, History, FileText, Download, MapPin, Play } from 'lucide-react';
 import { Avatar } from '@crm/design-system';
 import { findUser } from '@crm/mock-data';
 import type { InboxMessage } from '../inbox-types';
@@ -47,6 +47,52 @@ function formatMentions(text: string, mentionedUserIds: string[]): React.ReactNo
   });
   parts.push(result.slice(lastIndex));
   return parts;
+}
+
+/**
+ * The attachment itself.
+ *
+ * Images render inline because that is how they are used — a customer sends a
+ * photo of a design and the agent needs to see it without a round trip.
+ * Everything else gets a labelled row that opens or downloads, since a video or
+ * a PDF inline would push the conversation off the screen.
+ */
+function Attachment({ m }: { m: InboxMessage }) {
+  if (!m.attachmentUrl) return null;
+
+  if (m.kind === 'image') {
+    return (
+      <a className="crm-msg-media" href={m.attachmentUrl} target="_blank" rel="noreferrer">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={m.attachmentUrl} alt={m.attachmentName ?? 'Shared photo'} loading="lazy" />
+      </a>
+    );
+  }
+
+  const Icon = m.kind === 'video' ? Play : m.kind === 'audio' ? Play : FileText;
+  const label = m.kind === 'video' ? 'Video'
+    : m.kind === 'audio' ? 'Voice message'
+    : m.attachmentName || 'Document';
+
+  return (
+    <a className="crm-msg-file" href={m.attachmentUrl} target="_blank" rel="noreferrer">
+      <Icon size={15} aria-hidden="true" />
+      <span className="crm-msg-file__name">{label}</span>
+      <Download size={13} aria-hidden="true" className="crm-msg-file__dl" />
+    </a>
+  );
+}
+
+/** A shared location, opened in a map rather than printed as coordinates. */
+function LocationLink({ m }: { m: InboxMessage }) {
+  if (m.latitude == null || m.longitude == null) return null;
+  const href = `https://www.google.com/maps/search/?api=1&query=${m.latitude},${m.longitude}`;
+  return (
+    <a className="crm-msg-file" href={href} target="_blank" rel="noreferrer">
+      <MapPin size={15} aria-hidden="true" />
+      <span className="crm-msg-file__name">Open in Maps</span>
+    </a>
+  );
 }
 
 /**
@@ -247,6 +293,8 @@ export function MessageBubble({ message: m, inboundName, onShowStatus, onShowFai
 
       <div className="crm-msg-bubble__content">
         <div className="crm-msg-bubble__bubble" style={{ whiteSpace: 'pre-wrap' }}>
+          <Attachment m={m} />
+          <LocationLink m={m} />
           {m.text}
         </div>
         <div className="crm-msg-bubble__meta">

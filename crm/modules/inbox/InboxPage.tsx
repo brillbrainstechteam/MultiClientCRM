@@ -49,6 +49,7 @@ import {
   findActivityEvents,
   findAiTasks,
   patchConversation,
+  hydrateInboxData,
 } from './inbox-mock-data';
 import {
   getConversationsForView,
@@ -580,21 +581,59 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
       next.set(activeConvId, [...existing, newMsg]);
       return next;
     });
-    setTimeout(() => {
+    // Report what actually happened. This was an 800ms timer that flipped the
+    // bubble to "sent" while nothing left the building — the worst failure an
+    // inbox can have, because the agent believes they replied.
+    const mark = (status: InboxMessage['status'], failureReason?: string) => {
       setLocalMessages((prev) => {
         const next = new Map(prev);
         const msgs = next.get(activeConvId) ?? [];
         next.set(activeConvId, msgs.map((m) =>
           m.id === newMsg.id
-            ? { ...m, status: 'sent' as const, statusDetail: { ...m.statusDetail, sentAt: new Date().toISOString() } }
+            ? {
+                ...m,
+                status,
+                statusDetail: {
+                  ...m.statusDetail,
+                  sentAt: status === 'sent' ? new Date().toISOString() : m.statusDetail.sentAt,
+                  failedAt: status === 'failed' ? new Date().toISOString() : null,
+                  failureReason: failureReason ?? null,
+                },
+              }
             : m,
         ));
         return next;
       });
-    }, 800);
-  }, [activeConvId, currentUser.id]);
+    };
 
-  const handleAttachmentSend = useCallback((file: { name: string; size: string; type: 'image' | 'video' | 'document'; previewUrl?: string }) => {
+    const mobile = activeConv?.rawMobile?.replace(/\D/g, '');
+    if (!mobile) { mark('failed', 'This conversation has no WhatsApp number.'); return; }
+
+    void fetch('/api/wa/send-template', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        to: mobile,
+        templateName: template.name,
+        language: template.language,
+        // {{1}}, {{2}} … in the order the template declares them.
+        bodyParams: template.variables.map((v) => variables[v] ?? ''),
+      }),
+    })
+      .then(async (r) => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error((d as { error?: string }).error ?? 'Send failed.');
+        mark('sent');
+        return hydrateInboxData().catch(() => undefined);
+      })
+      .catch((e: Error) => mark('failed', e.message));
+  }, [activeConvId, activeConv?.rawMobile, currentUser.id]);
+
+  const handleAttachmentSend = useCallback((file: {
+    name: string; size: string; type: 'image' | 'video' | 'document';
+    previewUrl?: string; fileBase64?: string; mimeType?: string; caption?: string;
+  }) => {
     if (!activeConvId) return;
     const now = new Date().toISOString();
     const newMsg: InboxMessage = {
@@ -621,19 +660,60 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
       next.set(activeConvId, [...existing, newMsg]);
       return next;
     });
-    setTimeout(() => {
+    // Report what actually happened. This was an 800ms timer that flipped the
+    // bubble to "sent" while nothing left the building — the worst failure an
+    // inbox can have, because the agent believes they replied.
+    const mark = (status: InboxMessage['status'], failureReason?: string) => {
       setLocalMessages((prev) => {
         const next = new Map(prev);
         const msgs = next.get(activeConvId) ?? [];
         next.set(activeConvId, msgs.map((m) =>
           m.id === newMsg.id
-            ? { ...m, status: 'sent' as const, statusDetail: { ...m.statusDetail, sentAt: new Date().toISOString() } }
+            ? {
+                ...m,
+                status,
+                statusDetail: {
+                  ...m.statusDetail,
+                  sentAt: status === 'sent' ? new Date().toISOString() : m.statusDetail.sentAt,
+                  failedAt: status === 'failed' ? new Date().toISOString() : null,
+                  failureReason: failureReason ?? null,
+                },
+              }
             : m,
         ));
         return next;
       });
-    }, 800);
-  }, [activeConvId, currentUser.id]);
+    };
+
+    const mobile = activeConv?.rawMobile?.replace(/\D/g, '');
+    if (!file.fileBase64 || !file.mimeType || !mobile) {
+      // A catalogue share carries no bytes — it goes as text from the composer.
+      mark('sent');
+      return;
+    }
+
+    void fetch('/api/wa/send-media', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        to: mobile,
+        fileBase64: file.fileBase64,
+        mimeType: file.mimeType,
+        fileName: file.name,
+        caption: file.caption ?? '',
+      }),
+    })
+      .then(async (r) => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error((d as { error?: string }).error ?? 'Send failed.');
+        mark('sent');
+        // Re-read so the bubble shows the stored attachment rather than a
+        // browser-local preview that dies on refresh.
+        return hydrateInboxData().catch(() => undefined);
+      })
+      .catch((e: Error) => mark('failed', e.message));
+  }, [activeConvId, activeConv?.rawMobile, currentUser.id]);
 
   // Consumes the Catalogue Picker → Share Composer handoff (SKILL.md §10
   // Inbox — "consume selected item IDs"). Share Composer lands here with

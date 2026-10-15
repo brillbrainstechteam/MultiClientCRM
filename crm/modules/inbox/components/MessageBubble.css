@@ -337,3 +337,57 @@
   color: var(--crm-text-muted);
   font-style: italic;
 }
+
+/* ---- Attachments --------------------------------------------------------- */
+
+/* Photos render inline: a customer sends a design and the agent must see it
+   without leaving the thread. */
+.crm-msg-media {
+  display: block;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  overflow: hidden;
+  max-width: 260px;
+}
+
+.crm-msg-media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 320px;
+  object-fit: cover;
+  background: var(--crm-surface-band);
+}
+
+/* Everything else is a row that opens or downloads — a video or PDF inline
+   would push the conversation off the screen. */
+.crm-msg-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+  padding: 7px 10px;
+  border-radius: var(--crm-radius-md);
+  border: 1px solid var(--crm-border-strong);
+  background: var(--crm-surface-raised);
+  color: var(--crm-text-primary);
+  font-size: var(--crm-font-size-sm);
+  text-decoration: none;
+  max-width: 260px;
+}
+
+.crm-msg-file:hover {
+  background: var(--crm-surface-hover);
+}
+
+.crm-msg-file__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-msg-file__dl {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--crm-text-muted);
+}

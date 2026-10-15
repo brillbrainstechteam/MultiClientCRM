@@ -12,6 +12,9 @@ import {
   type HistoryChunk, type StateSyncEntry,
 } from '@/lib/whatsapp/coexistence';
 import { readReferral, applyReferralToContact, describeReferral } from '@/lib/whatsapp/referral';
+import { describeInbound } from '@/lib/whatsapp/inbound';
+import { storeInboundMedia, isMediaType } from '@/lib/whatsapp/media';
+import { decrypt as decryptToken } from '@/lib/crypto';
 
 /**
  * Routing for a WhatsApp webhook payload.
@@ -193,7 +196,11 @@ async function handleMessages(value: any, account: ResolvedAccount, result: Inge
     result.inboundSeen += 1;
     try {
       const from: string = m.from;
-      const text: string = m.text?.body ?? `[${m.type ?? 'message'}]`;
+      // Every message type gets readable text — a location, a shared contact or
+      // a reaction used to land in the thread as "[location]", which tells the
+      // agent nothing about what the customer actually sent.
+      const inbound = describeInbound(m);
+      const text = inbound.text;
       const at = m.timestamp ? new Date(Number(m.timestamp) * 1000) : new Date();
       // Present only on the first message after someone taps a Click-to-
       // WhatsApp ad. It arrives on this ordinary messages webhook — no extra
@@ -245,7 +252,7 @@ async function handleMessages(value: any, account: ResolvedAccount, result: Inge
 
       const existing = m.id ? await prisma.message.findUnique({ where: { waMessageId: m.id } }) : null;
       if (!existing) {
-        await prisma.message.create({
+        const created = await prisma.message.create({
           data: {
             conversationId: convo.id,
             waMessageId: m.id ?? null,
@@ -255,10 +262,36 @@ async function handleMessages(value: any, account: ResolvedAccount, result: Inge
             source: 'customer',
             // Click-to-WhatsApp attribution, kept verbatim — see referral.ts.
             referral: (referral ?? undefined) as object | undefined,
+            mediaId: inbound.mediaId,
+            latitude: inbound.latitude,
+            longitude: inbound.longitude,
+            // A reply keeps its target, so a threaded answer still reads as one.
+            replyToWaId: m.context?.id ?? null,
             at,
           },
         });
         result.messagesStored += 1;
+
+        // Fetch the attachment now, not when somebody opens the thread: Meta
+        // keeps media for about 14 days, after which the id is dead and the
+        // file is gone for good. Failure costs the attachment, never the
+        // message — which is already saved above.
+        if (inbound.mediaId && isMediaType(m.type) && account.accessToken) {
+          const stored = await storeInboundMedia({
+            tenantId,
+            mediaId: inbound.mediaId,
+            token: decryptToken(account.accessToken),
+            suggestedName: inbound.fileName,
+          }).catch(() => null);
+          await prisma.message.update({
+            where: { id: created.id },
+            data: stored
+              ? { mediaFileId: stored.fileId }
+              // No file and no retry left: say so in the thread rather than
+              // showing an attachment that will never load.
+              : { mediaUnavailable: true },
+          }).catch(() => {});
+        }
       }
 
       // Stamp the ad that won this customer. First touch only, and never fatal:
@@ -372,12 +405,32 @@ async function applyConsentFromInbound(input: {
 async function handleStatuses(value: any, result: IngestResult): Promise<void> {
   for (const s of value?.statuses ?? []) {
     result.statusesSeen += 1;
-    if (s?.id && s?.status) {
-      try {
-        await prisma.message.updateMany({ where: { waMessageId: s.id }, data: { status: s.status } });
-      } catch (e) {
-        result.errors.push(`Status ${s.id}: ${e instanceof Error ? e.message : String(e)}`);
-      }
+    if (!s?.id || !s?.status) continue;
+    try {
+      const at = s.timestamp ? new Date(Number(s.timestamp) * 1000) : new Date();
+      const status = String(s.status);
+      const err = s.errors?.[0];
+
+      // Keep the milestone, not just the latest word. "Delivered at 14:02, read
+      // at 16:40" answers questions a bare status cannot, and a failure without
+      // its reason leaves an agent with nothing to act on.
+      await prisma.message.updateMany({
+        where: { waMessageId: s.id },
+        data: {
+          status,
+          ...(status === 'delivered' ? { deliveredAt: at } : {}),
+          ...(status === 'read' ? { readAt: at } : {}),
+          ...(status === 'failed'
+            ? {
+                failedAt: at,
+                failureCode: err?.code != null ? String(err.code) : null,
+                failureReason: err?.title ?? err?.message ?? err?.error_data?.details ?? null,
+              }
+            : {}),
+        },
+      });
+    } catch (e) {
+      result.errors.push(`Status ${s.id}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 }

@@ -11,6 +11,10 @@ interface AttachmentFile {
   size: string;
   type: 'image' | 'video' | 'document';
   previewUrl?: string;
+  /** Raw bytes to upload. Absent for a catalogue share, which sends text. */
+  fileBase64?: string;
+  mimeType?: string;
+  caption?: string;
 }
 
 interface AttachmentPickerProps {
@@ -46,16 +50,38 @@ function UploadZone({
   const [preview, setPreview] = useState<AttachmentFile | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const [reading, setReading] = useState(false);
+  const [tooBig, setTooBig] = useState(false);
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const mockFile: AttachmentFile = {
-      name: file.name,
-      size: `${(file.size / 1024).toFixed(0)} KB`,
-      type: fileType,
-      previewUrl: fileType === 'image' ? URL.createObjectURL(file) : undefined,
+    setTooBig(false);
+
+    // Matches MAX_MEDIA_BYTES on the server. Catching it here saves uploading
+    // 30MB only to be refused.
+    if (file.size > 25 * 1024 * 1024) { setTooBig(true); return; }
+
+    // Read the bytes now. Only a preview URL was captured before, so the file
+    // itself never left the browser and nothing was ever sent.
+    setReading(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      // data:<mime>;base64,<payload> — the server wants the payload alone.
+      const base64 = result.slice(result.indexOf(',') + 1);
+      setPreview({
+        name: file.name,
+        size: `${(file.size / 1024).toFixed(0)} KB`,
+        type: fileType,
+        previewUrl: fileType === 'image' ? URL.createObjectURL(file) : undefined,
+        fileBase64: base64,
+        mimeType: file.type || 'application/octet-stream',
+      });
+      setReading(false);
     };
-    setPreview(mockFile);
+    reader.onerror = () => setReading(false);
+    reader.readAsDataURL(file);
   }
 
   return (
@@ -74,7 +100,9 @@ function UploadZone({
           <div style={{ fontSize: 13, color: 'var(--crm-text-secondary)', marginBottom: 4 }}>
             Click to browse or drag & drop
           </div>
-          <div style={{ fontSize: 11, color: 'var(--crm-text-muted)' }}>{hint}</div>
+          <div style={{ fontSize: 11, color: 'var(--crm-text-muted)' }}>
+            {reading ? 'Reading file…' : tooBig ? 'That file is over 25MB — WhatsApp will not accept it.' : hint}
+          </div>
           <input ref={inputRef} type="file" accept={accept} style={{ display: 'none' }} onChange={handleChange} />
         </div>
       ) : (

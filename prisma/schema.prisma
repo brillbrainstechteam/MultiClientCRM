@@ -409,6 +409,25 @@ model Message {
   /// because the field set grows (ctwa_clid was added later) and discarding
   /// anything would lose attribution we cannot reconstruct afterwards.
   referral         Json?
+  /// Our stored copy of the attachment (CrmFile id), served from
+  /// /api/crm/files/<id>. Null while a download is pending or has failed.
+  mediaFileId      String?
+  /// Meta's media id. Kept so a failed download can be retried — Meta holds
+  /// media for about 14 days, after which the id is useless and the message
+  /// stands as a record of what was sent.
+  mediaId          String?
+  /// Where a shared location was, when the customer sent one.
+  latitude         Float?
+  longitude        Float?
+  /// Which message this one replies to (Meta's context.id), so a threaded
+  /// answer still reads as an answer.
+  replyToWaId      String?
+  /// Delivery milestones from the statuses webhook. Null until each arrives.
+  deliveredAt      DateTime?
+  readAt           DateTime?
+  failedAt         DateTime?
+  failureCode      String?
+  failureReason    String?
   at             DateTime @default(now())
 
   @@index([conversationId])

@@ -138,6 +138,9 @@ export interface InboxMessage {
   source?: MessageSource;
   /** Backfilled from WhatsApp history: context, never live work. */
   isHistorical?: boolean;
+  /** Shared location, when the customer sent one. */
+  latitude?: number | null;
+  longitude?: number | null;
   /**
    * Media Meta can no longer hand over. History reaches 180 days but media only
    * ~14, so older attachments arrive as a record with no retrievable file.

@@ -83,6 +83,17 @@ export async function GET() {
         source: m.source,
         isHistorical: m.isHistorical,
         mediaUnavailable: m.mediaUnavailable,
+        // Our stored copy, served from /api/crm/files/<id>. Null means the
+        // attachment could not be fetched before Meta expired it.
+        mediaFileId: m.mediaFileId,
+        latitude: m.latitude,
+        longitude: m.longitude,
+        replyToWaId: m.replyToWaId,
+        deliveredAt: m.deliveredAt?.toISOString() ?? null,
+        readAt: m.readAt?.toISOString() ?? null,
+        failedAt: m.failedAt?.toISOString() ?? null,
+        failureCode: m.failureCode,
+        failureReason: m.failureReason,
         at: m.at.toISOString(),
       })),
       notes: c.notes.map((n) => ({ id: n.id, text: n.text, authorUserId: n.authorUserId, createdAt: n.createdAt.toISOString() })),

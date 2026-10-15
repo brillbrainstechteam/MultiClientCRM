@@ -339,6 +339,15 @@ interface InboxApiMessage {
   source?: InboxMessage['source'];
   isHistorical?: boolean;
   mediaUnavailable?: boolean;
+  mediaFileId?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  replyToWaId?: string | null;
+  deliveredAt?: string | null;
+  readAt?: string | null;
+  failedAt?: string | null;
+  failureCode?: string | null;
+  failureReason?: string | null;
 }
 interface InboxApiNote { id: string; text: string; authorUserId: string | null; createdAt: string; }
 interface InboxApiConversation {
@@ -380,16 +389,39 @@ function mapStatus(direction: string, status: string | null): MessageStatus {
   }
 }
 
+/** Cloud API message type -> the bubble shape the thread renders. */
+function mapKind(type: string | undefined): InboxMessage['kind'] {
+  switch (type) {
+    case 'image': case 'sticker': return 'image';
+    case 'video': return 'video';
+    case 'document': return 'document';
+    case 'audio': case 'voice': return 'audio';
+    default: return 'text';
+  }
+}
+
 function mapMessage(m: InboxApiMessage, conversationId: string): InboxMessage {
   return {
     id: m.id,
     metaMessageId: m.waMessageId ?? null,
     conversationId,
-    kind: 'text',
+    kind: mapKind(m.type),
     direction: m.direction === 'inbound' ? 'inbound' : 'outbound',
     text: m.text,
     status: mapStatus(m.direction, m.status),
-    statusDetail: { sentAt: m.at, deliveredAt: null, readAt: null, failedAt: null, failureReason: null, failureCode: null },
+    // Real milestones rather than nulls: "delivered 14:02, read 16:40" answers
+    // questions a bare status cannot, and a failure now carries its reason.
+    statusDetail: {
+      sentAt: m.at,
+      deliveredAt: m.deliveredAt ?? null,
+      readAt: m.readAt ?? null,
+      failedAt: m.failedAt ?? null,
+      failureReason: m.failureReason ?? null,
+      failureCode: m.failureCode ?? null,
+    },
+    attachmentUrl: m.mediaFileId ? `/api/crm/files/${m.mediaFileId}` : undefined,
+    latitude: m.latitude ?? null,
+    longitude: m.longitude ?? null,
     sentById: null,
     isAutomated: false,
     isNote: false,
