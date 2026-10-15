@@ -249,6 +249,72 @@ DNS moves.
 5. Templates screen lists the WABA's templates.
 6. Customer 360 → **Showroom photos** → upload one, reload, confirm it renders.
 
+## 8b. Scheduled jobs (crontab)
+
+Two endpoints are meant to run on a schedule. Both refuse to run unless
+`CRON_SECRET` is set **and** the caller presents it, so neither can be triggered
+by anyone who finds the URL.
+
+**They have never run**, because `CRON_SECRET` was never set. Fix that first:
+
+```bash
+# On the VPS. Generates a secret, appends it to the env file, and shows it.
+cd /home/talktrackcrm/app
+printf 'CRON_SECRET="%s"
+' "$(openssl rand -base64 32)" >> .env.production
+grep '^CRON_SECRET' .env.production
+```
+
+Restart so the app picks it up:
+
+```bash
+cd /home/talktrackcrm/app
+docker compose --env-file .env.production -f deploy/docker-compose.vps.yml up -d
+```
+
+Then add both jobs to root's crontab (`crontab -e`), substituting the secret:
+
+```cron
+# TalkTrack scheduled jobs. Times are server-local.
+CRON_SECRET=paste-the-value-here
+BASE=https://talktrackcrm.brillbrainsconsultants.com
+
+# 07:30 daily — reminders for planning-calendar activities that fall due.
+30 7 * * * curl -fsS -m 120 -H "x-cron-secret: $CRON_SECRET" "$BASE/api/cron/plan-reminders" >> /var/log/talktrack-cron.log 2>&1
+
+# 08:00 daily — check every connected number's access token is still alive,
+# and warn before one lapses. See "Access tokens" below for why this matters.
+0 8 * * * curl -fsS -m 300 -H "x-cron-secret: $CRON_SECRET" "$BASE/api/cron/token-health" >> /var/log/talktrack-cron.log 2>&1
+```
+
+Check it works immediately, rather than waiting for tomorrow:
+
+```bash
+curl -fsS -H "x-cron-secret: $CRON_SECRET"   https://talktrackcrm.brillbrainsconsultants.com/api/cron/token-health
+```
+
+A healthy response looks like `{"checked":2,"healthy":2,"expiring":0,"invalid":0,...}`.
+`{"error":"CRON_SECRET is not configured."}` means the restart did not pick up
+the env file; `Forbidden.` means the header value does not match.
+
+### Access tokens: the 60-day trap
+
+The Facebook Login for Business configuration fixes the access-token lifetime
+when it is created — **60 days or never** — and that choice **cannot be changed
+afterwards**. Meta offers no server-to-server refresh for a business token: the
+only way to get a new one is the customer completing Embedded Signup again.
+
+So on a 60-day configuration, every customer's connection stops working two
+months after they onboard, and without the `token-health` job the first sign is
+a failed send. The job warns at 14, 7, 3 and 1 days so reconnecting is a
+scheduled task rather than an outage.
+
+If you want to stop issuing expiring tokens altogether, create a **second**
+Login configuration with expiration set to **Never** and point
+`NEXT_PUBLIC_META_CONFIG_ID` at it. Tokens already issued are unaffected —
+they are held against the customer's business portfolio, not the configuration
+— so existing connections keep working and only new signups change.
+
 ## 9. After the move
 
 - **Updates:** `cd /home/talktrackcrm/app && ./deploy/deploy.sh` (pull, rebuild, migrate, restart).
