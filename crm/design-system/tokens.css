@@ -1,91 +1,127 @@
 /*
- * TalkTrack design tokens — colour system per the finalized brand spec.
+ * TalkTrack design tokens.
  *
  * Role rules baked into the semantic tokens:
  *   Green  = the product   → primary actions, active nav pill, avatars, links, positive status
  *   Navy   = structure/brand → sidebar background, page titles, table-header text, endorsement
- *   Gold   = rationed highlight → logo tile, tier badges, "Save as segment", one key figure
- *   Cream/white = the ground → cream canvas, white cards
+ *   Indigo = rationed highlight → logo tile, tier badges, starred items
+ *   Cream/white = the ground → cool canvas, white cards
  *
  * Components read only the semantic tokens; the raw palette below feeds them.
+ *
+ * Colour discipline — the thing that makes a dense CRM readable:
+ *   - Status colour lives in TEXT and a hairline BORDER, over a near-white tint.
+ *     Saturated fills are reserved for solid buttons and the unread count.
+ *   - Red means "someone must act or something failed" and nothing else. A
+ *     closed reply window is a fact about WhatsApp, not a failure, so it reads
+ *     neutral; an SLA breach is ours to answer for, so it reads red. When every
+ *     row carries two red chips, red has stopped saying anything.
+ *   - The -600 steps are solid-fill colours (white text on them). The -700
+ *     steps are text-on-tint colours, which need the extra depth to clear
+ *     contrast against their own 50 tint.
  */
 
 :root {
-  /* ---- Raw palette — TalkTrack UI System v1.0 (see docs/DESIGN_SYSTEM.md) --
-   * 80% calm cool-neutral, 15% soft tint, 5% strong accent. Emerald is the one
-   * interaction colour; slate for text/structure; amber accent; blue for info. */
-  --crm-navy: #0f172a;   /* now slate-900 — page titles / table-header text */
-  --crm-navy-2: #1e293b;
-  --crm-navy-line: #1e293b;
+  /* ---- Neutrals — the 80% ------------------------------------------------
+   * A cool slate ramp. Every surface, border, divider and muted label in the
+   * product comes from here, which is what keeps dense screens calm. */
+  --crm-neutral-25: #fcfcfd;
+  --crm-neutral-50: #f8fafc;
+  --crm-neutral-100: #f1f5f9;
+  --crm-neutral-200: #e8edf2;
+  --crm-neutral-300: #d6dde6;
+  --crm-neutral-400: #9aa7b6;
+  --crm-neutral-500: #6b7a8d;
+  --crm-neutral-600: #4e5c6e;
+  --crm-neutral-700: #3a4654;
+  --crm-neutral-800: #252f3b;
+  --crm-neutral-900: #131b25;
 
-  --crm-green: #10b981;         /* Primary */
-  --crm-green-dark: #059669;
-  --crm-green-tint: #ecfdf5;    /* Primary Light / mint */
-  --crm-green-border: #a7f3d0;
+  --crm-navy: #131b25;   /* page titles / table-header text */
+  --crm-navy-2: #252f3b;
+  --crm-navy-line: #2e3a47;
 
-  --crm-gold: #6366f1;          /* Accent — indigo (was amber) */
-  --crm-gold-dark: #4f46e5;
-  --crm-gold-tint: #eef2ff;
-  --crm-gold-border: #c7d2fe;
+  /* ---- Green — the one interaction colour -------------------------------
+   * Deepened from emerald-500. #10b981 is a signage green: it glows on white,
+   * fails contrast on its own tint, and cheapens everything beside it. */
+  --crm-green: #0e9f6e;         /* solid fill */
+  --crm-green-dark: #07845a;    /* hover / text-on-tint */
+  --crm-green-tint: #effaf4;    /* near-white, so a flooded row stays readable */
+  --crm-green-border: #bfe8d4;
 
-  --crm-canvas: #f8fafc;        /* Neutral 50 — cool page ground */
-  --crm-cream: #f1f5f9;         /* soft cool grey supporting surface */
-  --crm-card: #ffffff;          /* white work surfaces */
-  --crm-table-header-band: #f8fafc;
-  --crm-rule: #e2e8f0;          /* Neutral 200 */
-  --crm-rule-soft: #eef2f6;
+  /* ---- Indigo — the rationed accent ------------------------------------- */
+  --crm-gold: #5b60e0;
+  --crm-gold-dark: #4348c7;
+  --crm-gold-tint: #f0f1fe;
+  --crm-gold-border: #cdd0f7;
 
-  --crm-ink: #0f172a;           /* Neutral 900 */
-  --crm-ink-2: #475569;
-  --crm-muted: #64748b;         /* Neutral 500 — cool, readable */
+  /* ---- Ground ------------------------------------------------------------ */
+  --crm-canvas: #f6f8fa;
+  --crm-cream: var(--crm-neutral-100);
+  --crm-card: #ffffff;
+  --crm-table-header-band: var(--crm-neutral-50);
+  --crm-rule: var(--crm-neutral-200);
+  --crm-rule-soft: #eff3f7;
+
+  --crm-ink: var(--crm-neutral-900);
+  --crm-ink-2: var(--crm-neutral-600);
+  --crm-muted: var(--crm-neutral-500);
   --crm-on-dark: #ffffff;
-  --crm-on-dark-muted: #cbd5e1;
+  --crm-on-dark-muted: #c3ccd7;
 
-  --crm-danger: #ef4444;
-  --crm-danger-tint: #fef2f2;
-  --crm-danger-border: #fecaca;
-  --crm-warn: #d97706;
-  --crm-warn-tint: #fef3c7;
-  --crm-warn-border: #fcd9a5;
+  /* ---- Status ------------------------------------------------------------
+   * Pulled off the pure hues: #ef4444 and #d97706 vibrate against each other
+   * and against the green, which is what made the inbox feel noisy. */
+  --crm-danger: #c8372b;
+  --crm-danger-tint: #fdf4f3;
+  --crm-danger-border: #f3cdc8;
+  --crm-warn: #a8620d;
+  --crm-warn-tint: #fdf8ec;
+  --crm-warn-border: #f0ddb4;
 
   /* ---- Brand scale (mapped to GREEN — the product accent) -------------- */
   --crm-brand-50: var(--crm-green-tint);
-  --crm-brand-100: #d1fae5;
+  --crm-brand-100: #dcf3e8;
   --crm-brand-200: var(--crm-green-border);
-  --crm-brand-400: #34d399;
+  --crm-brand-400: #46bd92;
   --crm-brand-600: var(--crm-green);
   --crm-brand-700: var(--crm-green-dark);
   --crm-brand-900: #065f46;
 
-  /* ---- Status families ------------------------------------------------- */
+  /* ---- Status families --------------------------------------------------- */
   --crm-success-50: var(--crm-green-tint);
   --crm-success-200: var(--crm-green-border);
-  --crm-success-600: var(--crm-green-dark);
+  --crm-success-600: var(--crm-green);
+  --crm-success-700: var(--crm-green-dark);
 
   --crm-warning-50: var(--crm-warn-tint);
   --crm-warning-200: var(--crm-warn-border);
-  --crm-warning-600: var(--crm-warn);
+  --crm-warning-600: #c47710;
+  --crm-warning-700: var(--crm-warn);
 
   --crm-danger-50: var(--crm-danger-tint);
   --crm-danger-200: var(--crm-danger-border);
   --crm-danger-600: var(--crm-danger);
+  --crm-danger-700: #a82c22;
 
-  /* Info — blue #3B82F6 (Pending / information). */
-  --crm-info-50: #eff6ff;
-  --crm-info-200: #bfdbfe;
-  --crm-info-600: #2563eb;
+  --crm-info-50: #f0f6fd;
+  --crm-info-200: #c6ddf5;
+  --crm-info-600: #2767c4;
+  --crm-info-700: #1f549f;
 
   --crm-gold-50: var(--crm-gold-tint);
   --crm-gold-200: var(--crm-gold-border);
   --crm-gold-600: var(--crm-gold-dark);
+  --crm-gold-700: #383ca8;
 
-  /* ---- Semantic surfaces ---------------------------------------------- */
+  /* ---- Semantic surfaces ------------------------------------------------- */
   --crm-surface-page: var(--crm-canvas);
   --crm-surface-raised: var(--crm-card);
   --crm-surface-sunken: var(--crm-cream);
-  --crm-surface-band: var(--crm-table-header-band);
+  --crm-surface-band: var(--crm-neutral-50);
   --crm-surface-inverse: var(--crm-navy);
-  --crm-surface-hover: var(--crm-table-header-band);
+  --crm-surface-hover: var(--crm-neutral-50);
+  --crm-surface-selected: var(--crm-neutral-100);
 
   --crm-border-subtle: var(--crm-rule-soft);
   --crm-border-strong: var(--crm-rule);
@@ -98,7 +134,7 @@
   --crm-text-brand: var(--crm-green-dark);
   --crm-text-title: var(--crm-navy);
 
-  /* ---- Typography ------------------------------------------------------ */
+  /* ---- Typography -------------------------------------------------------- */
   --crm-font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial,
     sans-serif;
   /* Brand marks only: the product wordmark and the BrillBrains endorsement. */
@@ -124,7 +160,13 @@
   --crm-weight-semibold: 600;
   --crm-weight-bold: 700;
 
-  /* ---- Spacing (4px base) ---------------------------------------------- */
+  /* Section headers and table headers share one treatment across the product,
+   * so "this is a heading" never has to be relearned screen to screen. */
+  --crm-eyebrow-size: var(--crm-font-size-xs);
+  --crm-eyebrow-weight: var(--crm-weight-semibold);
+  --crm-eyebrow-tracking: 0.06em;
+
+  /* ---- Spacing (4px base) ------------------------------------------------ */
   --crm-space-1: 4px;
   --crm-space-2: 8px;
   --crm-space-3: 12px;
@@ -136,19 +178,21 @@
   --crm-space-12: 48px;
   --crm-space-16: 64px;
 
-  /* ---- Radius ---------------------------------------------------------- */
+  /* ---- Radius ------------------------------------------------------------ */
   --crm-radius-sm: 4px;
-  --crm-radius-md: 6px;
+  --crm-radius-md: 7px;
   --crm-radius-lg: 10px;
   --crm-radius-xl: 14px;
   --crm-radius-pill: 999px;
 
-  /* ---- Elevation ------------------------------------------------------- */
-  --crm-shadow-sm: 0 1px 2px rgba(14, 36, 56, 0.06);
-  --crm-shadow-md: 0 2px 10px rgba(14, 36, 56, 0.08);
-  --crm-shadow-lg: 0 16px 40px rgba(14, 36, 56, 0.18);
+  /* ---- Elevation ---------------------------------------------------------
+   * Two-layer shadows: a tight contact shadow plus a wide soft one. A single
+   * wide blur is what makes a popover look like it is floating in fog. */
+  --crm-shadow-sm: 0 1px 2px rgba(19, 27, 37, 0.05);
+  --crm-shadow-md: 0 4px 8px -2px rgba(19, 27, 37, 0.07), 0 2px 4px -2px rgba(19, 27, 37, 0.04);
+  --crm-shadow-lg: 0 12px 20px -6px rgba(19, 27, 37, 0.12), 0 4px 8px -4px rgba(19, 27, 37, 0.06);
 
-  /* ---- Layout ---------------------------------------------------------- */
+  /* ---- Layout ------------------------------------------------------------ */
   --crm-sidebar-width: 240px;
   --crm-sidebar-width-collapsed: 64px;
   --crm-topbar-height: 56px;
@@ -156,14 +200,14 @@
   --crm-page-max-width: 1440px;
   --crm-content-gutter: var(--crm-space-6);
 
-  /* ---- Motion ---------------------------------------------------------- */
+  /* ---- Motion ------------------------------------------------------------ */
   --crm-motion-fast: 120ms ease;
   --crm-motion-base: 180ms ease;
 
-  /* ---- Focus ring ------------------------------------------------------ */
-  --crm-focus-ring: 0 0 0 3px rgba(27, 122, 107, 0.22);
+  /* ---- Focus ring --------------------------------------------------------- */
+  --crm-focus-ring: 0 0 0 3px rgba(14, 159, 110, 0.20);
 
-  /* ---- Z-index scale --------------------------------------------------- */
+  /* ---- Z-index scale ------------------------------------------------------ */
   --crm-z-sticky: 100;
   --crm-z-popover: 200;
   --crm-z-drawer: 300;

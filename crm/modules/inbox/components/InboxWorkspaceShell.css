@@ -308,15 +308,80 @@
 
 .crm-inbox-more__menu {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 6px);
   right: 0;
   z-index: calc(var(--crm-z-popover, 200) + 1);
-  min-width: 190px;
-  padding: var(--crm-space-1);
+  display: flex;
+  flex-direction: column;
+  min-width: 232px;
+  /* Bounded, so the menu can never grow past the bottom of the window however
+     many queues and saved views exist. */
+  max-height: min(60vh, 420px);
   border: 1px solid var(--crm-border-strong);
-  border-radius: var(--crm-radius-md);
+  border-radius: var(--crm-radius-lg);
   background: var(--crm-card);
   box-shadow: var(--crm-shadow-lg);
+  overflow: hidden;
+}
+
+.crm-inbox-more__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--crm-space-1);
+}
+
+/* Pinned below the scrolling queues, so it is reachable at any list length. */
+.crm-inbox-more__foot {
+  flex-shrink: 0;
+  padding: var(--crm-space-2);
+  border-top: 1px solid var(--crm-border-subtle);
+  background: var(--crm-surface-band);
+}
+
+.crm-inbox-more__save {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--crm-space-2);
+  width: 100%;
+  height: 32px;
+  padding: 0 var(--crm-space-3);
+  border: 1px solid var(--crm-brand-200);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-brand-50);
+  color: var(--crm-brand-700);
+  font-family: inherit;
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-semibold);
+  cursor: pointer;
+  transition: background var(--crm-motion-fast), border-color var(--crm-motion-fast);
+}
+
+.crm-inbox-more__save:hover:not(:disabled) {
+  background: var(--crm-brand-100);
+}
+
+.crm-inbox-more__save:disabled {
+  border-color: var(--crm-border-strong);
+  background: var(--crm-card);
+  color: var(--crm-text-muted);
+  cursor: not-allowed;
+}
+
+.crm-inbox-more__hint {
+  margin: var(--crm-space-2) 0 0;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+  text-align: center;
+}
+
+/* Filters are set here, so the view is saved from here too. */
+.crm-inbox-saveview-btn {
+  border-color: var(--crm-brand-200) !important;
+  background: var(--crm-brand-50) !important;
+  color: var(--crm-brand-700) !important;
 }
 
 .crm-inbox-more__item {

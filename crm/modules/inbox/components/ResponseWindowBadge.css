@@ -11,20 +11,29 @@
   white-space: nowrap;
 }
 
+.crm-rwb {
+  border: 1px solid transparent;
+}
+
 .crm-rwb--active {
-  background: var(--crm-green-tint);
-  color: var(--crm-green-dark);
+  background: var(--crm-success-50);
+  border-color: var(--crm-success-200);
+  color: var(--crm-success-700);
 }
 
 .crm-rwb--expiring {
-  background: var(--crm-warn-tint);
-  color: var(--crm-warn);
+  background: var(--crm-warning-50);
+  border-color: var(--crm-warning-200);
+  color: var(--crm-warning-700);
   animation: crm-rwb-pulse 2s ease-in-out infinite;
 }
 
+/* Neutral, matching the row chip: the window closing is WhatsApp policy, and
+   the composer already offers the template path, so nothing is broken. */
 .crm-rwb--expired {
-  background: var(--crm-danger-tint);
-  color: var(--crm-danger);
+  background: var(--crm-neutral-100);
+  border-color: var(--crm-neutral-200);
+  color: var(--crm-neutral-600);
 }
 
 @keyframes crm-rwb-pulse {
@@ -43,14 +52,19 @@
 }
 
 .crm-rwb-banner--expiring {
-  background: var(--crm-warn-tint);
-  border: 1px solid var(--crm-warn-border);
+  background: var(--crm-warning-50);
+  border: 1px solid var(--crm-warning-200);
+  border-left: 3px solid var(--crm-warning-600);
   color: var(--crm-ink);
 }
 
+/* Was a block of red filling the composer on every older thread. It is an
+   instruction — "use a template" — and the composer below already offers that
+   button, so it reads as guidance rather than an alarm. */
 .crm-rwb-banner--expired {
-  background: var(--crm-danger-tint);
-  border: 1px solid var(--crm-danger-border);
+  background: var(--crm-neutral-50);
+  border: 1px solid var(--crm-neutral-200);
+  border-left: 3px solid var(--crm-neutral-400);
   color: var(--crm-ink);
 }
 
@@ -60,11 +74,11 @@
 }
 
 .crm-rwb-banner__icon--expiring {
-  color: var(--crm-warn);
+  color: var(--crm-warning-600);
 }
 
 .crm-rwb-banner__icon--expired {
-  color: var(--crm-danger);
+  color: var(--crm-neutral-500);
 }
 
 .crm-rwb-banner__body {

@@ -29,6 +29,7 @@ import {
   Maximize2,
   Star,
   Trash2,
+  Bookmark,
 } from 'lucide-react';
 import {
   IconButton,
@@ -987,6 +988,13 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
                 <>
                   <button className="crm-inbox-more__backdrop" aria-label="Close" onClick={() => setMoreMenuOpen(false)} />
                   <div className="crm-inbox-more__menu" role="menu">
+                    {/* The queue list scrolls; the save action below does not.
+                        It used to be the last item in an unbounded menu, so
+                        once there were a dozen queues plus saved views it sat
+                        below the bottom of the window and could not be
+                        clicked at all — the entry point to the whole feature
+                        was the one thing out of reach. */}
+                    <div className="crm-inbox-more__scroll">
                     {moreViews.map(({ key, label, count }) => (
                       <button
                         key={key}
@@ -1025,17 +1033,22 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
                       </>
                     )}
 
-                    <div className="crm-inbox-more__sep">
-                      {filtersActive ? 'This list' : 'Filter first, then save'}
                     </div>
-                    <button
-                      role="menuitem"
-                      className="crm-inbox-more__item"
-                      disabled={!filtersActive}
-                      onClick={() => { setMoreMenuOpen(false); openOverlay('modal', 'save-view'); }}
-                    >
-                      <span>Save this view…</span>
-                    </button>
+
+                    <div className="crm-inbox-more__foot">
+                      <button
+                        role="menuitem"
+                        className="crm-inbox-more__save"
+                        disabled={!filtersActive}
+                        onClick={() => { setMoreMenuOpen(false); openOverlay('modal', 'save-view'); }}
+                      >
+                        <Bookmark size={13} aria-hidden="true" />
+                        <span>Save this view…</span>
+                      </button>
+                      {!filtersActive && (
+                        <p className="crm-inbox-more__hint">Set a filter first, then save it.</p>
+                      )}
+                    </div>
                   </div>
                 </>
               )}
@@ -1150,6 +1163,14 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
                     icon={<SlidersHorizontal size={16} />}
                     onClick={() => openOverlay('drawer', 'filters')}
                   />
+                  {filtersActive && (
+                    <IconButton
+                      label="Save this view"
+                      className="crm-inbox-saveview-btn"
+                      icon={<Bookmark size={16} />}
+                      onClick={() => openOverlay('modal', 'save-view')}
+                    />
+                  )}
                   {policy.canBulkAction && conversations.length > 0 && (
                     <button className="crm-inbox-select-btn" onClick={enterBulkMode}>
                       <CheckSquare size={14} /> Select

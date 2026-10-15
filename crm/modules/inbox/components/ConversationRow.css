@@ -16,12 +16,19 @@
   background: var(--crm-surface-hover);
 }
 
-.crm-conv-row--active {
-  background: var(--crm-green-tint);
+.crm-conv-row--active,
+.crm-conv-row--active:hover {
+  background: var(--crm-surface-selected);
 }
 
-.crm-conv-row--active:hover {
-  background: var(--crm-green-tint);
+/* The rail says "this one" without tinting the row's whole background, so the
+   chips inside keep their own meaning. */
+.crm-conv-row--active::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--crm-brand-600);
 }
 
 .crm-conv-row--unread .crm-conv-row__name {
@@ -97,20 +104,18 @@
 }
 
 /* SLA indicator inside row */
-.crm-conv-row__sla {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: var(--crm-font-size-xs);
-  font-weight: var(--crm-weight-medium);
-}
-
 .crm-conv-row__sla--warning {
-  color: var(--crm-warn);
+  background: var(--crm-warning-50);
+  border-color: var(--crm-warning-200);
+  color: var(--crm-warning-700);
 }
 
+/* The one red in the row. An SLA breach is ours to answer for; everything else
+   here is a fact about the conversation, not a failure. */
 .crm-conv-row__sla--breached {
-  color: var(--crm-danger);
+  background: var(--crm-danger-50);
+  border-color: var(--crm-danger-200);
+  color: var(--crm-danger-700);
 }
 
 /* Unread count badge — pinned to the right edge, vertically centred */
@@ -168,21 +173,32 @@
 }
 
 /* Status chip inside row */
-.crm-conv-row__status {
-  font-size: var(--crm-font-size-xs);
-  padding: 1px 6px;
-  border-radius: var(--crm-radius-pill);
+.crm-conv-row__status,
+.crm-conv-row__window,
+.crm-conv-row__sla {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 17px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--crm-radius-sm);
+  font-size: 10.5px;
   font-weight: var(--crm-weight-medium);
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .crm-conv-row__status--pending {
-  background: var(--crm-warn-tint);
-  color: var(--crm-warn);
+  background: var(--crm-warning-50);
+  border-color: var(--crm-warning-200);
+  color: var(--crm-warning-700);
 }
 
 .crm-conv-row__status--resolved {
-  background: var(--crm-green-tint);
-  color: var(--crm-green-dark);
+  background: var(--crm-success-50);
+  border-color: var(--crm-success-200);
+  color: var(--crm-success-700);
 }
 
 /* Assignee initials */
@@ -193,21 +209,19 @@
 }
 
 /* Window expiring badge */
-.crm-conv-row__window {
-  font-size: var(--crm-font-size-xs);
-  font-weight: var(--crm-weight-medium);
-  padding: 1px 5px;
-  border-radius: var(--crm-radius-pill);
-}
-
 .crm-conv-row__window--expiring {
-  background: var(--crm-warn-tint);
-  color: var(--crm-warn);
+  background: var(--crm-warning-50);
+  border-color: var(--crm-warning-200);
+  color: var(--crm-warning-700);
 }
 
+/* A closed window is WhatsApp's rule, not an error on our side, and on a busy
+   list nearly every older thread has one. In red it drowned out the breaches
+   that do need someone; neutral, it stays a fact you can read past. */
 .crm-conv-row__window--expired {
-  background: var(--crm-danger-tint);
-  color: var(--crm-danger);
+  background: var(--crm-neutral-100);
+  border-color: var(--crm-neutral-200);
+  color: var(--crm-neutral-600);
 }
 
 /* Bulk selection checkbox */
@@ -228,9 +242,9 @@
 
 /* Backfilled WhatsApp history: present for context, never styled as new work. */
 .crm-conv-row__status--imported {
-  background: var(--crm-surface-band);
+  background: transparent;
+  border-color: var(--crm-neutral-200);
   color: var(--crm-text-muted);
-  font-style: italic;
 }
 
 /* Starring is personal, so the control is quiet until used or hovered. */
