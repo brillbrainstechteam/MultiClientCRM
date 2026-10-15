@@ -1,4 +1,4 @@
-import { Bot, Clock, AlertTriangle } from 'lucide-react';
+import { Bot, Clock, AlertTriangle, Star } from 'lucide-react';
 import { Avatar, Checkbox } from '@crm/design-system';
 import { contacts, findUser } from '@crm/mock-data';
 import type { InboxConversation } from '../inbox-types';
@@ -15,6 +15,8 @@ interface ConversationRowProps {
   isSelected: boolean;
   onSelect: (id: string) => void;
   onToggleBulk: (id: string, checked: boolean) => void;
+  /** Star or unstar for the signed-in user. Omitted = the control is hidden. */
+  onToggleFavourite?: (id: string, next: boolean) => void;
 }
 
 function formatRelativeTime(iso: string): string {
@@ -38,6 +40,7 @@ export function ConversationRow({
   isSelected,
   onSelect,
   onToggleBulk,
+  onToggleFavourite,
 }: ConversationRowProps) {
   const contact = c.contactId ? contacts.find((ct) => ct.id === c.contactId) : null;
   const assignee = c.assigneeId ? findUser(c.assigneeId) : null;
@@ -91,6 +94,18 @@ export function ConversationRow({
       <div className="crm-conv-row__body">
         <div className="crm-conv-row__top">
           <span className="crm-conv-row__name">{displayName}</span>
+          {/* A personal shortlist: starring here does not pin the thread to
+              everyone else's list. */}
+          {onToggleFavourite && (
+            <button
+              className={`crm-conv-row__fav${c.isFavourite ? ' crm-conv-row__fav--on' : ''}`}
+              aria-label={c.isFavourite ? 'Remove from favourites' : 'Add to favourites'}
+              aria-pressed={!!c.isFavourite}
+              onClick={(e) => { e.stopPropagation(); onToggleFavourite(c.id, !c.isFavourite); }}
+            >
+              <Star size={13} />
+            </button>
+          )}
           <span className="crm-conv-row__time">{formatRelativeTime(c.lastMessageAt)}</span>
         </div>
 

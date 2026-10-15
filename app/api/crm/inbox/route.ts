@@ -22,7 +22,7 @@ export async function GET() {
   // Strict per-role visibility: agents/managers see only conversations assigned
   // within their scope; owner/admin see all.
   const vScope = await conversationScopeWhere(user);
-  const [accounts, conversations, crmContacts] = await Promise.all([
+  const [accounts, conversations, crmContacts, favourites, missedCalls] = await Promise.all([
     prisma.whatsAppAccount.findMany({ where: { tenantId }, orderBy: { connectedAt: 'desc' } }),
     prisma.conversation.findMany({
       where: { tenantId, ...vScope },
@@ -30,19 +30,52 @@ export async function GET() {
       include: { messages: { orderBy: { at: 'asc' } }, notes: { orderBy: { createdAt: 'asc' } } },
       take: 200,
     }),
-    prisma.crmContact.findMany({ where: { tenantId }, select: { id: true, mobile: true } }),
+    // Lead state and ad attribution live on the contact, and the inbox needs
+    // both to answer "show me new leads" and "show me leads from ads".
+    prisma.crmContact.findMany({
+      where: { tenantId },
+      select: {
+        id: true, mobile: true, leadStatus: true, lifecycleStage: true,
+        salesTier: true, adSourceId: true,
+      },
+    }),
+    // Starring is per person.
+    prisma.conversationFavourite.findMany({
+      where: { tenantId, userId: user.id },
+      select: { conversationId: true },
+    }),
+    // A missed call is a real event from the Calling module, not a guess.
+    prisma.crmCallLog.findMany({
+      where: { tenantId, status: { in: ['no_answer', 'busy', 'failed'] } },
+      select: { mobile: true },
+    }),
   ]);
+
+  const favouriteIds = new Set(favourites.map((f) => f.conversationId));
+  const missedByDigits = new Set(missedCalls.map((c) => matchKey(c.mobile)).filter(Boolean));
 
   // phoneNumberId -> workspace number id (WhatsAppAccount.id, as bootstrap uses).
   const numberByPhoneId = new Map(accounts.filter((a) => a.phoneNumberId).map((a) => [a.phoneNumberId!, a.id]));
   const connected = accounts.find((a) => a.status === 'connected');
   const fallbackNumberId = connected?.id ?? accounts[0]?.id ?? '';
 
-  // normalised mobile (last 10 digits) -> CrmContact id.
-  const crmByDigits = new Map(crmContacts.filter((c) => matchKey(c.mobile)).map((c) => [matchKey(c.mobile), c.id]));
+  // normalised mobile (last 10 digits) -> the contact, so the inbox can answer
+  // questions about the customer and not just the thread.
+  const crmByDigits = new Map(
+    crmContacts.filter((c) => matchKey(c.mobile)).map((c) => [matchKey(c.mobile), c]),
+  );
 
   const mapped = conversations.map((c) => {
     const d = digits(c.contactPhone);
+    const contact = crmByDigits.get(matchKey(d)) ?? null;
+    // A campaign reply is a thread we messaged from a campaign that the
+    // customer then answered — not merely one a campaign touched.
+    const campaignAt = c.messages.find((m) => m.source === 'campaign')?.at ?? null;
+    const isCampaignReply = !!campaignAt
+      && c.messages.some((m) => m.direction === 'inbound' && !m.isHistorical && m.at > campaignAt);
+    // An ad lead is attributed on the contact (first touch) or visible on the
+    // message that opened the thread.
+    const isAdLead = !!contact?.adSourceId || c.messages.some((m) => m.referral !== null);
     // The 24-hour service window is anchored on LIVE customer messages only.
     // Backfilled history must never open it: Meta is explicit that Business-app
     // and historical messages do not create or extend the Cloud API window, and
@@ -58,11 +91,23 @@ export async function GET() {
     return {
       id: c.id,
       whatsappNumberId: numberByPhoneId.get(c.phoneNumberId) ?? fallbackNumberId,
-      contactId: crmByDigits.get(matchKey(d)) ?? null,
+      contactId: contact?.id ?? null,
       rawMobile: c.contactPhone ? `+${c.contactPhone}` : null,
       contactName: c.contactName ?? null,
       status: c.status,
       isHistorical: c.isHistorical,
+      isBlocked: c.isBlocked,
+      isFavourite: favouriteIds.has(c.id),
+      // Real SLA input: when the oldest unanswered message arrived. This was
+      // hardcoded to "ok" in the UI, so Overdue and SLA Breached matched nothing.
+      awaitingSince: c.awaitingSince?.toISOString() ?? null,
+      lastAgentReplyAt: c.lastAgentReplyAt?.toISOString() ?? null,
+      leadStatus: contact?.leadStatus ?? null,
+      lifecycleStage: contact?.lifecycleStage ?? null,
+      salesTier: contact?.salesTier ?? null,
+      isCampaignReply,
+      isAdLead,
+      hasMissedCall: missedByDigits.has(matchKey(d)),
       historyFrom: c.historyFrom ? c.historyFrom.toISOString() : null,
       assigneeUserId: c.assigneeUserId ?? null,
       labels: c.labels ?? [],

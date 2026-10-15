@@ -210,7 +210,20 @@ async function handleMessages(value: any, account: ResolvedAccount, result: Inge
       const convo = await prisma.conversation.upsert({
         where: { tenantId_phoneNumberId_contactPhone: { tenantId, phoneNumberId, contactPhone: from } },
         update: { lastMessageAt: at, contactName: nameByWaId[from] || undefined },
-        create: { tenantId, phoneNumberId, contactPhone: from, contactName: nameByWaId[from] || null, lastMessageAt: at },
+        create: {
+          tenantId, phoneNumberId, contactPhone: from,
+          contactName: nameByWaId[from] || null, lastMessageAt: at,
+          // A brand-new thread is waiting on us from this moment.
+          awaitingSince: at,
+        },
+      });
+
+      // The SLA clock measures how long the OLDEST unanswered message has been
+      // waiting, so a customer sending three messages in a row does not keep
+      // resetting it in their own favour. Only set it when nothing is pending.
+      await prisma.conversation.updateMany({
+        where: { id: convo.id, awaitingSince: null },
+        data: { awaitingSince: at },
       });
       result.conversationsTouched += 1;
 
@@ -536,10 +549,16 @@ async function handleMessageEchoes(value: any, account: ResolvedAccount, result:
       const at = m?.timestamp ? new Date(Number(m.timestamp) * 1000) : new Date();
       const text: string = m?.text?.body ?? `[${m?.type ?? 'message'}]`;
 
+      // A reply typed on the owner's phone answers the customer just as much as
+      // one typed here, so it stops the SLA clock too. Without this, every
+      // thread the owner handles from their phone would read as unanswered.
       const convo = await prisma.conversation.upsert({
         where: { tenantId_phoneNumberId_contactPhone: { tenantId, phoneNumberId, contactPhone } },
-        update: { lastMessageAt: at },
-        create: { tenantId, phoneNumberId, contactPhone, lastMessageAt: at },
+        update: { lastMessageAt: at, awaitingSince: null, lastAgentReplyAt: at },
+        create: {
+          tenantId, phoneNumberId, contactPhone, lastMessageAt: at,
+          awaitingSince: null, lastAgentReplyAt: at,
+        },
       });
 
       if (m?.id) {

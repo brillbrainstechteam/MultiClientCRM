@@ -55,7 +55,9 @@ export async function POST(req: Request) {
   const waMessageId: string | null = json?.messages?.[0]?.id ?? null;
   const convo = await prisma.conversation.upsert({
     where: { tenantId_phoneNumberId_contactPhone: { tenantId: user.tenantId, phoneNumberId: account.phoneNumberId, contactPhone: to } },
-    update: { lastMessageAt: new Date() },
+    // Replying clears the waiting state — the SLA view is only as honest as
+    // the moment this is recorded.
+    update: { lastMessageAt: new Date(), awaitingSince: null, lastAgentReplyAt: new Date() },
     create: { tenantId: user.tenantId, phoneNumberId: account.phoneNumberId, contactPhone: to, lastMessageAt: new Date() },
   });
   await prisma.message.create({

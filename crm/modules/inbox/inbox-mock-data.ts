@@ -8,6 +8,7 @@ import type {
   InboxConversation,
   InboxMessage,
   ResponseWindow,
+  SlaState,
   MessagePreview,
   MessageStatus,
   InboxTemplate,
@@ -363,6 +364,16 @@ interface InboxApiConversation {
   labels?: string[];
   isSpam?: boolean;
   unread?: number;
+  isBlocked?: boolean;
+  isFavourite?: boolean;
+  awaitingSince?: string | null;
+  lastAgentReplyAt?: string | null;
+  leadStatus?: string | null;
+  lifecycleStage?: string | null;
+  salesTier?: string | null;
+  isCampaignReply?: boolean;
+  isAdLead?: boolean;
+  hasMissedCall?: boolean;
   firstMessageAt: string;
   lastMessageAt: string;
   lastInboundAt: string | null;
@@ -373,6 +384,39 @@ interface InboxApiConversation {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** WhatsApp 24h service window, computed from the last inbound message. */
+/**
+ * How long this customer has been waiting on us, and whether that is a problem.
+ *
+ * This was hardcoded to `{ status: 'ok' }`, which meant the Overdue and SLA
+ * Breached views could never match anything and the "SLA urgent" sort ordered
+ * by nothing at all — three controls that looked like they worked.
+ *
+ * The clock starts at the OLDEST unanswered customer message, not the newest,
+ * so a customer sending three messages in a row cannot keep resetting it in
+ * their own favour. Backfilled history never counts: that conversation was
+ * answered on the owner's phone months ago.
+ */
+const SLA_TARGET_MINUTES = 60;
+const SLA_URGENT_MINUTES = 45;
+
+function computeSla(awaitingSince: string | null, imported: boolean): SlaState {
+  if (!awaitingSince || imported) {
+    return { status: 'ok', deadline: null, minutesRemaining: null };
+  }
+  const started = new Date(awaitingSince).getTime();
+  const deadline = new Date(started + SLA_TARGET_MINUTES * 60_000);
+  const minutesRemaining = Math.round((deadline.getTime() - Date.now()) / 60_000);
+  const waited = Math.round((Date.now() - started) / 60_000);
+
+  if (waited >= SLA_TARGET_MINUTES) {
+    return { status: 'breached', deadline: deadline.toISOString(), minutesRemaining };
+  }
+  if (waited >= SLA_URGENT_MINUTES) {
+    return { status: 'warning', deadline: deadline.toISOString(), minutesRemaining };
+  }
+  return { status: 'ok', deadline: deadline.toISOString(), minutesRemaining };
+}
+
 function computeResponseWindow(lastInboundAt: string | null): ResponseWindow {
   if (!lastInboundAt) return { status: 'expired', expiresAt: null, remainingMinutes: null, canSendFreeform: false };
   const expires = new Date(new Date(lastInboundAt).getTime() + DAY_MS);
@@ -478,9 +522,18 @@ function mapConversation(c: InboxApiConversation): InboxConversation {
     labelIds: c.labels ?? [],
     replyStatus: awaitingAgent ? 'awaiting-agent' : (last ? 'awaiting-customer' : 'none'),
     responseWindow: computeResponseWindow(c.lastInboundAt),
-    sla: { status: 'ok', deadline: null, minutesRemaining: null },
+    sla: computeSla(c.awaitingSince ?? null, imported),
     preview,
     isSpam: c.isSpam ?? false,
+    isBlocked: c.isBlocked ?? false,
+    isFavourite: c.isFavourite ?? false,
+    awaitingSince: c.awaitingSince ?? null,
+    leadStatus: c.leadStatus ?? null,
+    lifecycleStage: c.lifecycleStage ?? null,
+    salesTier: c.salesTier ?? null,
+    isCampaignReply: c.isCampaignReply ?? false,
+    isAdLead: c.isAdLead ?? false,
+    hasMissedCall: c.hasMissedCall ?? false,
     isHistorical: c.isHistorical,
     historyFrom: c.historyFrom ?? null,
     aiTaskCount: 0,

@@ -121,7 +121,8 @@ export async function POST(req: Request) {
         tenantId: user.tenantId, phoneNumberId: account.phoneNumberId, contactPhone: to,
       },
     },
-    update: { lastMessageAt: new Date() },
+    // Replying clears the waiting state that the SLA views read.
+    update: { lastMessageAt: new Date(), awaitingSince: null, lastAgentReplyAt: new Date() },
     create: {
       tenantId: user.tenantId, phoneNumberId: account.phoneNumberId,
       contactPhone: to, lastMessageAt: new Date(),

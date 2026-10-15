@@ -17,7 +17,16 @@ export type QuickViewKey =
   | 'overdue'
   | 'sla-breached'
   | 'resolved'
-  | 'spam';
+  | 'spam'
+  | 'unread'
+  | 'new-leads'
+  | 'campaign-replies'
+  | 'ad-leads'
+  | 'missed-calls'
+  | 'favourites'
+  | 'blocked'
+  /** The free-form window has closed — only a template will deliver. */
+  | 'window-closed';
 
 // ---- Response window -------------------------------------------------------
 
@@ -77,6 +86,22 @@ export interface InboxConversation {
   sla: SlaState;
   preview: MessagePreview;
   isSpam: boolean;
+  /** Refusing to deal with this person — distinct from judging the content spam. */
+  isBlocked?: boolean;
+  /** Starred by the signed-in user. Personal, not shared. */
+  isFavourite?: boolean;
+  /** When the oldest unanswered customer message arrived. Null when answered. */
+  awaitingSince?: string | null;
+  /** Lead state from the linked contact, for the "new leads" view. */
+  leadStatus?: string | null;
+  lifecycleStage?: string | null;
+  salesTier?: string | null;
+  /** The customer replied to something a campaign sent them. */
+  isCampaignReply?: boolean;
+  /** Came from a Click-to-WhatsApp ad. */
+  isAdLead?: boolean;
+  /** A call to this number went unanswered. */
+  hasMissedCall?: boolean;
   aiTaskCount: number;
   firstMessageAt: string;
   lastMessageAt: string;
@@ -275,6 +300,22 @@ export interface InboxFilterState {
   labelIds: string[];
   /** `imported` is filterable too, so backfilled context can be found on purpose. */
   statuses: Array<'open' | 'pending' | 'resolved' | 'imported'>;
+  /** Only threads nobody has read. */
+  unreadOnly?: boolean;
+  /** Only threads the signed-in user starred. */
+  favouritesOnly?: boolean;
+  /** Only conversations whose contact is still an unworked lead. */
+  newLeadsOnly?: boolean;
+  /** Only replies to a campaign we sent. */
+  campaignRepliesOnly?: boolean;
+  /** Only leads that arrived through a Click-to-WhatsApp ad. */
+  adLeadsOnly?: boolean;
+  /** Only threads where a call went unanswered. */
+  missedCallsOnly?: boolean;
+  /** Only threads where the free-form window has closed. */
+  windowClosedOnly?: boolean;
+  /** Waiting on us for at least this long, in minutes. Powers "waiting >1 day". */
+  waitingLongerThanMinutes?: number | null;
   whatsappNumberIds: string[];
   branchIds: string[];
   replyStatuses: string[];
@@ -289,6 +330,14 @@ export function emptyFilterState(): InboxFilterState {
     teamIds: [],
     labelIds: [],
     statuses: [],
+    unreadOnly: false,
+    favouritesOnly: false,
+    newLeadsOnly: false,
+    campaignRepliesOnly: false,
+    adLeadsOnly: false,
+    missedCallsOnly: false,
+    windowClosedOnly: false,
+    waitingLongerThanMinutes: null,
     whatsappNumberIds: [],
     branchIds: [],
     replyStatuses: [],
@@ -309,7 +358,18 @@ export function isFilterActive(f: InboxFilterState): boolean {
     f.replyStatuses.length > 0 ||
     f.responseWindowStatuses.length > 0 ||
     f.dateFrom !== null ||
-    f.dateTo !== null
+    f.dateTo !== null ||
+    // The flag filters count too: a saved view that narrows only by "waiting
+    // over a day" is still a narrowed list, and without this the chips and the
+    // reset control would not appear for it.
+    !!f.unreadOnly ||
+    !!f.favouritesOnly ||
+    !!f.newLeadsOnly ||
+    !!f.campaignRepliesOnly ||
+    !!f.adLeadsOnly ||
+    !!f.missedCallsOnly ||
+    !!f.windowClosedOnly ||
+    f.waitingLongerThanMinutes != null
   );
 }
 

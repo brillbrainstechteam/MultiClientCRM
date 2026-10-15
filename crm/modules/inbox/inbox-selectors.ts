@@ -21,7 +21,8 @@ export function applyQuickView(
   // six months of old chats arriving as hundreds of apparently urgent tasks on
   // the customer's first morning, which is the exact outcome the import is
   // designed to avoid. A live reply promotes the thread and it rejoins normally.
-  const live = (c: InboxConversation) => !c.isSpam && c.status !== 'imported';
+  const live = (c: InboxConversation) =>
+    !c.isSpam && !c.isBlocked && c.status !== 'imported';
 
   switch (view) {
     case 'all':
@@ -47,6 +48,35 @@ export function applyQuickView(
     case 'imported':
       // Deliberately reachable: the context is the point of importing it.
       return conversations.filter((c) => !c.isSpam && c.status === 'imported');
+
+    // ---- Views that answer a question about the customer, not the thread ----
+    case 'unread':
+      return conversations.filter((c) => live(c) && c.unreadCount > 0);
+    case 'new-leads':
+      // A lead nobody has worked yet: still 'new' or merely assigned, and not
+      // yet converted. An engaged lead is not a new one.
+      return conversations.filter(
+        (c) => live(c)
+          && c.lifecycleStage !== 'customer'
+          && ['new', 'assigned'].includes(c.leadStatus ?? ''),
+      );
+    case 'campaign-replies':
+      return conversations.filter((c) => live(c) && c.isCampaignReply);
+    case 'ad-leads':
+      return conversations.filter((c) => live(c) && c.isAdLead);
+    case 'missed-calls':
+      return conversations.filter((c) => live(c) && c.hasMissedCall);
+    case 'favourites':
+      // Starred threads stay reachable even when blocked or resolved — that is
+      // what starring them was for.
+      return conversations.filter((c) => c.isFavourite);
+    case 'blocked':
+      return conversations.filter((c) => c.isBlocked);
+    case 'window-closed':
+      // Meta's 24-hour rule: only an approved template will deliver here.
+      return conversations.filter(
+        (c) => live(c) && c.responseWindow.status === 'expired',
+      );
     default:
       return conversations.filter(live);
   }
@@ -111,6 +141,29 @@ export function applyFilters(
     }
     if (filters.statuses.length > 0 && !filters.statuses.includes(c.status)) {
       return false;
+    }
+
+    // ---- Flag filters. Each is opt-in, so an unset filter never narrows. ----
+    if (filters.unreadOnly && c.unreadCount === 0) return false;
+    if (filters.favouritesOnly && !c.isFavourite) return false;
+    if (filters.campaignRepliesOnly && !c.isCampaignReply) return false;
+    if (filters.adLeadsOnly && !c.isAdLead) return false;
+    if (filters.missedCallsOnly && !c.hasMissedCall) return false;
+    if (filters.windowClosedOnly && c.responseWindow.status !== 'expired') return false;
+    if (
+      filters.newLeadsOnly
+      && (c.lifecycleStage === 'customer' || !['new', 'assigned'].includes(c.leadStatus ?? ''))
+    ) {
+      return false;
+    }
+
+    // "Waiting longer than X" is what makes a saved view like "hot leads
+    // waiting over a day" possible. An answered thread is waiting for nobody,
+    // so it never qualifies however old it is.
+    if (filters.waitingLongerThanMinutes != null) {
+      if (!c.awaitingSince) return false;
+      const waited = (Date.now() - new Date(c.awaitingSince).getTime()) / 60_000;
+      if (waited < filters.waitingLongerThanMinutes) return false;
     }
     if (
       filters.whatsappNumberIds.length > 0 &&
@@ -192,11 +245,19 @@ export function quickViewCounts(
     { key: 'mine', label: 'Mine', group: 'primary' },
     { key: 'unassigned', label: 'Unassigned', group: 'primary' },
     { key: 'needs-reply', label: 'Needs Reply', group: 'primary' },
+    { key: 'unread', label: 'Unread', group: 'primary' },
+    { key: 'new-leads', label: 'New Leads', group: 'more' },
+    { key: 'ad-leads', label: 'Ad Leads', group: 'more' },
+    { key: 'campaign-replies', label: 'Campaign Replies', group: 'more' },
+    { key: 'missed-calls', label: 'Missed Calls', group: 'more' },
+    { key: 'favourites', label: 'Favourites', group: 'more' },
+    { key: 'window-closed', label: 'Window Closed', group: 'more' },
     { key: 'pending', label: 'Pending', group: 'primary' },
     { key: 'overdue', label: 'Overdue', group: 'more' },
     { key: 'sla-breached', label: 'SLA Breached', group: 'more' },
     { key: 'resolved', label: 'Resolved', group: 'more' },
     { key: 'imported', label: 'Imported', group: 'more' },
+    { key: 'blocked', label: 'Blocked', group: 'more' },
     ...(role !== 'agent' ? [{ key: 'spam' as QuickViewKey, label: 'Spam', group: 'more' as const }] : []),
   ];
 

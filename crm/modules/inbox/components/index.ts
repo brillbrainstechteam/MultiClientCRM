@@ -23,3 +23,4 @@ export { BulkToolbar } from './BulkToolbar';
 export { SpamModal } from './SpamModal';
 export { HandoffModal } from './HandoffModal';
 export { AiTasksDrawer } from './AiTasksDrawer';
+export { SaveViewModal } from './SaveViewModal';

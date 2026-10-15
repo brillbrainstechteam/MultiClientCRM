@@ -629,3 +629,88 @@
   color: var(--crm-text-muted);
   max-width: 260px;
 }
+
+/* ---- Saved views in the queue strip -------------------------------------- */
+
+/* A saved view is just another queue to the person using it, so it sits with
+   them rather than hiding in a separate menu. */
+.crm-inbox-queue--saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--crm-text-secondary);
+}
+
+.crm-inbox-queue--saved svg {
+  color: var(--crm-gold-dark);
+  fill: currentColor;
+}
+
+.crm-inbox-more__sep {
+  padding: 6px var(--crm-space-3) 3px;
+  font-size: 10px;
+  font-weight: var(--crm-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--crm-text-muted);
+  border-top: 1px solid var(--crm-border-subtle);
+  margin-top: 4px;
+}
+
+/* Deleting a saved view is deliberately quiet — it only appears on hover, so
+   it cannot be hit while reaching for the view itself. */
+.crm-inbox-more__del {
+  margin-left: auto;
+  display: inline-flex;
+  color: var(--crm-text-muted);
+  opacity: 0;
+  cursor: pointer;
+}
+
+.crm-inbox-more__item:hover .crm-inbox-more__del {
+  opacity: 1;
+}
+
+.crm-inbox-more__del:hover {
+  color: var(--crm-danger-600);
+}
+
+/* ---- Save view modal ------------------------------------------------------ */
+.crm-saveview { display: flex; flex-direction: column; gap: var(--crm-space-3); }
+
+.crm-saveview__summary {
+  padding: var(--crm-space-3);
+  border-radius: var(--crm-radius-md);
+  border: 1px solid var(--crm-border-subtle);
+  background: var(--crm-surface-band);
+}
+
+.crm-saveview__summary-label {
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--crm-text-muted);
+}
+
+.crm-saveview__list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: var(--crm-font-size-sm);
+  line-height: 1.6;
+  color: var(--crm-text-primary);
+}
+
+.crm-saveview__pin {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.crm-saveview__error {
+  margin: 0;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-danger-600);
+}

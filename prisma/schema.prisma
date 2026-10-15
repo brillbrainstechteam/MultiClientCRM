@@ -210,14 +210,25 @@ model Conversation {
   /// True while the thread holds only backfilled history. Keeps 500 imported
   /// conversations out of the Open queue on a customer's first morning.
   isHistorical   Boolean  @default(false)
+  /// Blocked is not spam: spam is a judgement about the content, blocked is a
+  /// decision about the person. Kept apart so "show me spam" and "show me who
+  /// we refuse to deal with" stay different questions.
+  isBlocked      Boolean  @default(false)
+  /// When the oldest unanswered customer message arrived. Null once an agent
+  /// has replied. This is what makes SLA real: it was hardcoded to "ok", so
+  /// Overdue and SLA Breached could never match anything.
+  awaitingSince  DateTime?
+  /// Last time anyone on our side replied, from any source.
+  lastAgentReplyAt DateTime?
   /// Oldest backfilled message, so the UI can say how far back context goes.
   historyFrom    DateTime?
   lastReadAt     DateTime?                 // when an agent last read this thread (unread = inbound after this)
   lastMessageAt DateTime @default(now())
   createdAt     DateTime @default(now())
 
-  messages Message[]
-  notes    ConversationNote[]
+  messages    Message[]
+  notes       ConversationNote[]
+  favourites  ConversationFavourite[]
 
   @@unique([tenantId, phoneNumberId, contactPhone])
   @@index([tenantId])
@@ -788,6 +799,46 @@ model CrmTemplateDraft {
   updatedAt       DateTime @updatedAt
 
   @@index([tenantId, updatedAt])
+}
+
+/// A starred conversation, per person.
+///
+/// Deliberately per-user rather than a flag on the conversation: in a shared
+/// inbox "my favourites" is a personal shortlist, and one agent starring a
+/// thread should not put it on everyone else's.
+model ConversationFavourite {
+  id             String   @id @default(cuid())
+  tenantId       String
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  createdAt      DateTime @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([tenantId, userId])
+}
+
+/// A saved combination of inbox filters, e.g. "hot leads waiting over a day".
+///
+/// The filter set is stored as JSON rather than columns because it mirrors the
+/// filter shape the UI already has, and that shape grows; a view that silently
+/// dropped a filter the UI learned later would be worse than no view at all.
+model CrmSavedView {
+  id          String   @id @default(cuid())
+  tenantId    String
+  /// Null means the whole workspace sees it; otherwise it is this user's own.
+  ownerId     String?
+  name        String
+  /// Matches the InboxFilters shape, plus the quick-view key it starts from.
+  filters     Json
+  /// Pinned views appear in the queue strip beside the built-in ones.
+  isPinned    Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdByUserId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId, ownerId])
 }
 
 // ---- Quick replies ---------------------------------------------------------

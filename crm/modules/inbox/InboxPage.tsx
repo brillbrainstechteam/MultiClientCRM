@@ -27,6 +27,8 @@ import {
   Settings,
   CheckSquare,
   Maximize2,
+  Star,
+  Trash2,
 } from 'lucide-react';
 import {
   IconButton,
@@ -42,6 +44,7 @@ import { useScopedHref } from '@crm/app/use-scoped-href';
 import { contacts } from '@crm/mock-data';
 import type { QuickViewKey, ConversationSortKey, SearchMode, InboxFilterState, InboxConversation, InboxMessage, MessageStatus, InboxTemplate, AiSuggestedTask } from './inbox-types';
 import { emptyFilterState, isFilterActive } from './inbox-types';
+import { useSavedViews, type SavedView } from './use-saved-views';
 import {
   allConversations,
   conversationMessages,
@@ -84,6 +87,7 @@ import {
   BulkToolbar,
   SpamModal,
   HandoffModal,
+  SaveViewModal,
   AiTasksDrawer,
 } from './components';
 import type { ComposerMode } from './components';
@@ -113,6 +117,18 @@ function filtersFromParams(params: URLSearchParams): InboxFilterState {
     responseWindowStatuses: csv('f_window') as Array<'active' | 'expiring' | 'expired'>,
     dateFrom: params.get('f_from'),
     dateTo: params.get('f_to'),
+    // Flag filters ride the URL too, so a saved view is a shareable link and
+    // a reload keeps the list the operator was looking at.
+    unreadOnly: params.get('f_unread') === '1',
+    favouritesOnly: params.get('f_fav') === '1',
+    newLeadsOnly: params.get('f_newleads') === '1',
+    campaignRepliesOnly: params.get('f_campaign') === '1',
+    adLeadsOnly: params.get('f_ads') === '1',
+    missedCallsOnly: params.get('f_missedcalls') === '1',
+    windowClosedOnly: params.get('f_windowclosed') === '1',
+    waitingLongerThanMinutes: params.get('f_waiting')
+      ? Number(params.get('f_waiting')) || null
+      : null,
   };
 }
 
@@ -132,6 +148,24 @@ function filtersToParams(f: InboxFilterState, prev: URLSearchParams): URLSearchP
   setOrDelete('f_window', f.responseWindowStatuses);
   if (f.dateFrom) next.set('f_from', f.dateFrom); else next.delete('f_from');
   if (f.dateTo) next.set('f_to', f.dateTo); else next.delete('f_to');
+
+  // A flag is only written when it is on, so a default filter state leaves no
+  // trace in the URL and the address bar stays readable.
+  const flag = (key: string, on: boolean | undefined) => {
+    if (on) next.set(key, '1'); else next.delete(key);
+  };
+  flag('f_unread', f.unreadOnly);
+  flag('f_fav', f.favouritesOnly);
+  flag('f_newleads', f.newLeadsOnly);
+  flag('f_campaign', f.campaignRepliesOnly);
+  flag('f_ads', f.adLeadsOnly);
+  flag('f_missedcalls', f.missedCallsOnly);
+  flag('f_windowclosed', f.windowClosedOnly);
+  if (f.waitingLongerThanMinutes != null) {
+    next.set('f_waiting', String(f.waitingLongerThanMinutes));
+  } else {
+    next.delete('f_waiting');
+  }
   return next;
 }
 
@@ -263,6 +297,45 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
     branchId === ALL_SCOPE ? 'all' : branchId,
   );
   const viewCounts = quickViewCounts(scopedForCounts, currentUser.id, role);
+  const { views: savedViews, save: saveView, remove: removeView } = useSavedViews();
+
+  /**
+   * Reopen a saved view exactly as it was saved.
+   *
+   * Queue, filters and sort are restored together: filters alone would reopen
+   * "hot leads waiting over a day" against All Chats when it was built on
+   * Needs Reply, and return a different list under the same name.
+   */
+  /**
+   * Star or unstar a conversation for the signed-in user.
+   *
+   * Re-reads afterwards rather than patching local state: the star is stored
+   * per user, and the list has to agree with the server or the Favourites view
+   * and the star would drift apart.
+   */
+  const toggleFavourite = useCallback((id: string, next: boolean) => {
+    void fetch(`/api/crm/conversations/${id}/flags`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ favourite: next }),
+    })
+      .then(() => hydrateInboxData())
+      .catch(() => { /* a failed star must not break the list */ });
+  }, []);
+
+  const applySavedView = useCallback((v: SavedView) => {
+    setSearchParams((prev) => {
+      const p = new URLSearchParams(prev);
+      if (v.filters?.view) p.set('view', v.filters.view);
+      if (v.filters?.sort) p.set('sort', v.filters.sort);
+      const restored = filtersToParams(
+        { ...emptyFilterState(), ...(v.filters?.filters as object ?? {}) } as InboxFilterState,
+        p,
+      );
+      return restored;
+    });
+  }, [setSearchParams]);
   const primaryViews = viewCounts.filter((v) => v.group === 'primary');
   const moreViews = viewCounts.filter((v) => v.group === 'more');
   const activeViewIsMore = moreViews.some((v) => v.key === view);
@@ -887,6 +960,20 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
               {count > 0 && <span className="crm-inbox-queue__count">{count}</span>}
             </button>
           ))}
+          {/* Saved views sit beside the built-in queues, because to the person
+              using them "hot leads waiting over a day" is just another queue. */}
+          {savedViews.filter((v) => v.isPinned).map((v) => (
+            <button
+              key={v.id}
+              className="crm-inbox-queue crm-inbox-queue--saved"
+              onClick={() => applySavedView(v)}
+              title={v.scope === 'workspace' ? 'Shared with the team' : 'Only you see this'}
+            >
+              <Star size={11} aria-hidden="true" />
+              <span className="crm-inbox-queue__label">{v.name}</span>
+            </button>
+          ))}
+
           {moreViews.length > 0 && (
             <div className="crm-inbox-more">
               <button
@@ -911,6 +998,44 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
                         {count > 0 && <span className="crm-inbox-more__count">{count}</span>}
                       </button>
                     ))}
+
+                    {savedViews.length > 0 && (
+                      <>
+                        <div className="crm-inbox-more__sep">Saved views</div>
+                        {savedViews.map((v) => (
+                          <button
+                            key={v.id}
+                            role="menuitem"
+                            className="crm-inbox-more__item"
+                            onClick={() => { applySavedView(v); setMoreMenuOpen(false); }}
+                          >
+                            <span>{v.name}</span>
+                            <span
+                              className="crm-inbox-more__del"
+                              role="button"
+                              tabIndex={0}
+                              aria-label={`Delete ${v.name}`}
+                              onClick={(e) => { e.stopPropagation(); void removeView(v.id); }}
+                              onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); void removeView(v.id); } }}
+                            >
+                              <Trash2 size={12} />
+                            </span>
+                          </button>
+                        ))}
+                      </>
+                    )}
+
+                    <div className="crm-inbox-more__sep">
+                      {filtersActive ? 'This list' : 'Filter first, then save'}
+                    </div>
+                    <button
+                      role="menuitem"
+                      className="crm-inbox-more__item"
+                      disabled={!filtersActive}
+                      onClick={() => { setMoreMenuOpen(false); openOverlay('modal', 'save-view'); }}
+                    >
+                      <span>Save this view…</span>
+                    </button>
                   </div>
                 </>
               )}
@@ -1149,6 +1274,7 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
                   isSelected={selectedIds.includes(conv.id)}
                   onSelect={setConversation}
                   onToggleBulk={toggleBulkSelect}
+                  onToggleFavourite={toggleFavourite}
                 />
               ))
             )}
@@ -1327,6 +1453,23 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
           />
         )}
       </Drawer>
+
+      {/* Save the current list as a named view */}
+      <SaveViewModal
+        open={activeModal === 'save-view'}
+        onClose={() => closeOverlay('modal')}
+        view={view}
+        filters={filters}
+        canShare={policy.canBulkAction}
+        onSave={(input: { name: string; scope: 'personal' | 'workspace'; isPinned: boolean }) => saveView({
+          name: input.name,
+          scope: input.scope,
+          isPinned: input.isPinned,
+          // Queue, filters and sort together: the three things that decide
+          // what the operator is actually looking at.
+          payload: { view, filters, sort: sortKey },
+        })}
+      />
 
       {/* Quick replies popover — INB-S12 */}
       <QuickRepliesPopover
