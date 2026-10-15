@@ -292,6 +292,39 @@ export async function runWhatsAppDiagnostics(tenantId: string, origin: string): 
   });
 
   // 7. Config sanity.
+
+  // Which Embedded Signup configuration this build is actually launching.
+  // After swapping NEXT_PUBLIC_META_CONFIG_ID, this is how you confirm the new
+  // id is live rather than assuming the deploy picked it up.
+  const cfg = metaConfig.configId;
+  checks.push({
+    id: 'es_config',
+    label: 'Embedded Signup configuration',
+    status: cfg ? 'ok' : 'fail',
+    detail: cfg
+      ? `Launching config ${cfg} at Embedded Signup ${metaConfig.embeddedSignupVersion}, Graph ${metaConfig.graphVersion}.`
+      : 'NEXT_PUBLIC_META_CONFIG_ID is empty — Embedded Signup cannot start.',
+    fix: cfg ? undefined : 'Set NEXT_PUBLIC_META_CONFIG_ID and rebuild (it is compiled into the browser bundle).',
+  });
+
+  // Token lifetime is fixed by the Login configuration and cannot be renewed
+  // server-to-server, so a number whose token expires is a scheduled outage.
+  const expiry = account.tokenExpiresAt;
+  const daysLeft = expiry ? Math.ceil((expiry.getTime() - Date.now()) / 86_400_000) : null;
+  checks.push({
+    id: 'token_lifetime',
+    label: 'Access token lifetime',
+    status: !expiry ? 'ok' : daysLeft !== null && daysLeft <= 14 ? 'fail' : 'warn',
+    detail: !expiry
+      ? 'This token does not expire.'
+      : `Expires ${expiry.toISOString().slice(0, 10)} (${daysLeft} day(s) left).`,
+    fix: !expiry
+      ? undefined
+      : 'Meta cannot refresh a business token — the customer must reconnect. To stop issuing '
+        + 'expiring tokens, create a Login configuration with expiration set to Never and point '
+        + 'NEXT_PUBLIC_META_CONFIG_ID at it; tokens already issued are unaffected.',
+  });
+
   checks.push({
     id: 'verify_token',
     label: 'Webhook verify token configured',
