@@ -9,6 +9,8 @@ interface MessageHistoryProps {
   inboundName?: string;
   isLoading?: boolean;
   focusMessageId?: string;
+  /** Scroll to a message a reply quotes. */
+  onJumpToMessage?: (messageId: string) => void;
   onShowStatus: (messageId: string) => void;
   onShowFailure: (messageId: string) => void;
   onRetry: (messageId: string) => void;
@@ -31,6 +33,7 @@ export function MessageHistory({
   inboundName,
   isLoading,
   focusMessageId,
+  onJumpToMessage,
   onShowStatus,
   onShowFailure,
   onRetry,
@@ -136,6 +139,7 @@ export function MessageHistory({
               onRetry={onRetry}
               onReply={onReply}
               onForward={onForward}
+              onJumpToMessage={onJumpToMessage}
             />
           </div>
         );

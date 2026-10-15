@@ -1189,6 +1189,15 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
                   : undefined) ?? activeConv.rawMobile ?? undefined
               }
               focusMessageId={focusMessageId ?? undefined}
+              // Jumping reuses the existing ?focusMessage mechanism, so the
+              // scroll-and-highlight behaviour is the same as search results.
+              onJumpToMessage={(messageId) =>
+                setSearchParams((prev) => {
+                  const p = new URLSearchParams(prev);
+                  p.set('focusMessage', messageId);
+                  return p;
+                }, { replace: true })
+              }
               isLoading={forceState === 'loading'}
               onShowStatus={(id) =>
                 setSearchParams((prev) => {

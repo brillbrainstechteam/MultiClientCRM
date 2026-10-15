@@ -17,6 +17,8 @@ interface MessageBubbleProps {
   onRetry?: (messageId: string) => void;
   onReply?: (message: InboxMessage) => void;
   onForward?: (message: InboxMessage) => void;
+  /** Scroll to the message this one quotes. */
+  onJumpToMessage?: (messageId: string) => void;
 }
 
 function formatTime(iso: string): string {
@@ -83,6 +85,37 @@ function Attachment({ m }: { m: InboxMessage }) {
   );
 }
 
+/**
+ * The message being answered, shown above the reply.
+ *
+ * WhatsApp shows the customer a quote, so without this the agent sees a reply
+ * with no idea what it answers — which in a thread about three different
+ * designs is the difference between a clear answer and a guess. Clicking it
+ * scrolls to the original.
+ */
+function QuotedMessage({
+  replyTo, onJump, inboundName,
+}: {
+  replyTo: NonNullable<InboxMessage['replyTo']>;
+  onJump?: (messageId: string) => void;
+  inboundName?: string;
+}) {
+  const who = replyTo.direction === 'inbound' ? (inboundName ?? 'Customer') : 'You';
+  return (
+    <button
+      type="button"
+      className="crm-msg-quote"
+      onClick={onJump ? () => onJump(replyTo.id) : undefined}
+      // Without a jump handler it is a label, not a control.
+      disabled={!onJump}
+      title={onJump ? 'Go to the quoted message' : undefined}
+    >
+      <span className="crm-msg-quote__who">{who}</span>
+      <span className="crm-msg-quote__text">{replyTo.text || 'Attachment'}</span>
+    </button>
+  );
+}
+
 /** A shared location, opened in a map rather than printed as coordinates. */
 function LocationLink({ m }: { m: InboxMessage }) {
   if (m.latitude == null || m.longitude == null) return null;
@@ -140,7 +173,7 @@ function MessageStatus({ status, onClick }: { status: InboxMessage['status']; on
   return null;
 }
 
-export function MessageBubble({ message: m, inboundName, onShowStatus, onShowFailure, onRetry, onReply, onForward }: MessageBubbleProps) {
+export function MessageBubble({ message: m, inboundName, onShowStatus, onShowFailure, onRetry, onReply, onForward, onJumpToMessage }: MessageBubbleProps) {
   const [hovered, setHovered] = useState(false);
   // System / event messages
   if (m.kind === 'system') {
@@ -293,6 +326,9 @@ export function MessageBubble({ message: m, inboundName, onShowStatus, onShowFai
 
       <div className="crm-msg-bubble__content">
         <div className="crm-msg-bubble__bubble" style={{ whiteSpace: 'pre-wrap' }}>
+          {m.replyTo ? (
+            <QuotedMessage replyTo={m.replyTo} onJump={onJumpToMessage} inboundName={inboundName} />
+          ) : null}
           <Attachment m={m} />
           <LocationLink m={m} />
           {m.text}

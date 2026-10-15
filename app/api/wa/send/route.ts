@@ -59,7 +59,13 @@ export async function POST(req: Request) {
     create: { tenantId: user.tenantId, phoneNumberId: account.phoneNumberId, contactPhone: to, lastMessageAt: new Date() },
   });
   await prisma.message.create({
-    data: { conversationId: convo.id, waMessageId, direction: 'outbound', type: 'text', text, status: 'sent' },
+    data: {
+      conversationId: convo.id, waMessageId, direction: 'outbound', type: 'text', text,
+      status: 'sent', source: 'crm_agent',
+      // Keep which message this answers. We were sending `context` to Meta but
+      // not recording it, so our own replies lost the link the customer sees.
+      replyToWaId: contextMessageId,
+    },
   });
   await prisma.contact.upsert({
     where: { tenantId_phone: { tenantId: user.tenantId, phone: to } },

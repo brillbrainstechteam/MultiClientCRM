@@ -400,7 +400,18 @@ function mapKind(type: string | undefined): InboxMessage['kind'] {
   }
 }
 
-function mapMessage(m: InboxApiMessage, conversationId: string): InboxMessage {
+/** wamid -> the local message it became, for resolving quoted replies. */
+type ReplyIndex = Map<string, { id: string; text: string; direction: 'inbound' | 'outbound' }>;
+
+function mapMessage(
+  m: InboxApiMessage,
+  conversationId: string,
+  replyIndex?: ReplyIndex,
+): InboxMessage {
+  // WhatsApp quotes by wamid, so the message being answered has to be looked
+  // up. A quote of something outside the loaded window simply resolves to
+  // nothing rather than rendering an empty box.
+  const quoted = m.replyToWaId ? replyIndex?.get(m.replyToWaId) ?? null : null;
   return {
     id: m.id,
     metaMessageId: m.waMessageId ?? null,
@@ -426,7 +437,8 @@ function mapMessage(m: InboxApiMessage, conversationId: string): InboxMessage {
     isAutomated: false,
     isNote: false,
     mentionedUserIds: [],
-    replyToMessageId: null,
+    replyToMessageId: quoted?.id ?? null,
+    replyTo: quoted,
     source: m.source,
     isHistorical: m.isHistorical,
     mediaUnavailable: m.mediaUnavailable,
@@ -509,8 +521,20 @@ export async function hydrateInboxData(): Promise<void> {
   const convs = rows.map(mapConversation);
   const msgs: Record<string, InboxMessage[]> = {};
   for (const c of rows) {
+    // Index first: a reply can quote any earlier message in the thread, so the
+    // lookup has to exist before any mapping happens.
+    const replyIndex: ReplyIndex = new Map();
+    for (const m of c.messages) {
+      if (m.waMessageId) {
+        replyIndex.set(m.waMessageId, {
+          id: m.id,
+          text: m.text,
+          direction: m.direction === 'inbound' ? 'inbound' : 'outbound',
+        });
+      }
+    }
     const merged = [
-      ...c.messages.map((m) => mapMessage(m, c.id)),
+      ...c.messages.map((m) => mapMessage(m, c.id, replyIndex)),
       ...(c.notes ?? []).map((n) => mapNote(n, c.id)),
     ].sort((a, b) => a.at.localeCompare(b.at));
     msgs[c.id] = merged;

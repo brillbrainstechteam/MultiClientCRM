@@ -129,6 +129,14 @@ export interface InboxMessage {
   isNote: boolean;
   mentionedUserIds: string[];
   replyToMessageId: string | null;
+  /**
+   * The message this one answers, resolved and denormalised.
+   *
+   * WhatsApp sends only the quoted message's wamid, so the thread has to look
+   * it up; carrying the snippet here means the bubble can render the quote
+   * without every bubble searching the conversation for itself.
+   */
+  replyTo?: { id: string; text: string; direction: 'inbound' | 'outbound' } | null;
   templateId?: string;
   /**
    * Where the message entered the CRM. An agent needs to know why a reply they
