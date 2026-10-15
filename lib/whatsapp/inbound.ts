@@ -110,6 +110,20 @@ export function describeInbound(m: any): InboundDescription {
     }
     case 'interactive': {
       const i = m?.interactive ?? {};
+      // An answer to "may we call you?" reads as what the customer decided,
+      // not as "Made a selection", which tells the agent nothing.
+      if (i?.type === 'call_permission_reply') {
+        const r = i.call_permission_reply ?? {};
+        if (String(r?.response).toLowerCase() === 'accept') {
+          return {
+            text: r?.is_permanent === true
+              ? 'Allowed WhatsApp calls'
+              : 'Allowed WhatsApp calls for the next 7 days',
+            ...empty,
+          };
+        }
+        return { text: 'Declined WhatsApp calls', ...empty };
+      }
       const label = str(i?.button_reply?.title) ?? str(i?.list_reply?.title)
         ?? str(i?.nfm_reply?.name);
       return { text: label ? `Chose: ${label}` : 'Made a selection', ...empty };

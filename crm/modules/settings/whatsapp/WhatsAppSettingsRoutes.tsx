@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom';
 import GuidedSetup from '@crm/modules/onboarding/screens/GuidedSetup';
 import NumberDetailReal from './NumberDetailReal';
 import NumbersRealScreen from './NumbersRealScreen';
+import CallingSettingsScreen from './CallingSettingsScreen';
 
 /**
  * Registers `/settings/whatsapp/*` (CODE_FIRST_ADAPTER.md "Ongoing Number
@@ -15,6 +16,7 @@ export function WhatsAppSettingsRoutes() {
       <Route index element={<NumbersRealScreen />} />
       <Route path="add-number" element={<GuidedSetup mode="add-number" />} />
       <Route path="numbers/:numberId" element={<NumberDetailReal />} />
+      <Route path="calling" element={<CallingSettingsScreen />} />
     </Routes>
   );
 }

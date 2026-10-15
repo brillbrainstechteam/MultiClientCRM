@@ -14,18 +14,18 @@ datasource db {
 }
 
 model Tenant {
-  id          String   @id @default(cuid())
-  businessName String
+  id            String   @id @default(cuid())
+  businessName  String
   // Business WhatsApp number captured at signup (E.164), before it is connected.
   businessPhone String?
-  gstNumber   String?
-  cin         String?
-  entityType  String   @default("proprietorship") // proprietorship | company | ...
+  gstNumber     String?
+  cin           String?
+  entityType    String   @default("proprietorship") // proprietorship | company | ...
   // Selling model — drives contact fields and business-unit structure.
-  businessModel String @default("b2b")            // b2b | b2c | both
-  plan        String   @default("trial")           // trial | starter | growth | advanced
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  businessModel String   @default("b2b") // b2b | b2c | both
+  plan          String   @default("trial") // trial | starter | growth | advanced
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   users             User[]
   whatsappAccounts  WhatsAppAccount[]
@@ -36,21 +36,21 @@ model Tenant {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  name         String
-  email        String   @unique
+  id              String   @id @default(cuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name            String
+  email           String   @unique
   /// Optional second login identifier. Stored in E.164 without the '+' so the
   /// unique index cannot be defeated by formatting ("+91 98…" vs "9198…").
-  phone        String?  @unique
-  passwordHash String
-  role         String   @default("owner") // owner | admin | manager | agent
-  teamFunction String?  // sales | marketing | support | other (department, orthogonal to role)
-  status       String   @default("active") // active | disabled
-  createdByUserId String?                  // the admin who created this member
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  phone           String?  @unique
+  passwordHash    String
+  role            String   @default("owner") // owner | admin | manager | agent
+  teamFunction    String? // sales | marketing | support | other (department, orthogonal to role)
+  status          String   @default("active") // active | disabled
+  createdByUserId String? // the admin who created this member
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   sessions Session[]
 
@@ -70,46 +70,46 @@ model Session {
 }
 
 model WhatsAppAccount {
-  id                String   @id @default(cuid())
-  tenantId          String
-  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id             String    @id @default(cuid())
+  tenantId       String
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   // Meta identifiers, filled in when Embedded Signup completes.
-  wabaId            String?  // WhatsApp Business Account id
-  phoneNumberId     String?  // Cloud API phone number id
-  displayPhone      String?  // human-readable number
-  verifiedName      String?
+  wabaId         String? // WhatsApp Business Account id
+  phoneNumberId  String? // Cloud API phone number id
+  displayPhone   String? // human-readable number
+  verifiedName   String?
   // Long-lived / system-user access token (encrypt at rest before production).
-  accessToken       String?
+  accessToken    String?
   /// When Meta says this token dies. Null means it never expires.
   ///
   /// The Login configuration fixes the expiry at creation and it cannot be
   /// changed afterwards, so a 60-day choice means every connection quietly
   /// stops working two months after onboarding unless somebody is watching.
   /// Recorded at connect time from debug_token and checked daily.
-  tokenExpiresAt    DateTime?
+  tokenExpiresAt DateTime?
   /// Last time we asked Meta whether the token is still good.
-  tokenCheckedAt    DateTime?
-  status            String   @default("pending") // pending | connected | reconnect_required | disconnected | error
+  tokenCheckedAt DateTime?
+  status         String    @default("pending") // pending | connected | reconnect_required | disconnected | error
   // Why the connection stopped working (e.g. the client revoked our Business
   // Integration on Facebook) — shown on the onboarding screen.
-  statusReason      String?
-  connectedAt       DateTime?
+  statusReason   String?
+  connectedAt    DateTime?
 
   // --- Number registry / mapping (per-number) ---
-  label             String?  // human label e.g. "Aurelia Jewellers — Sales"
-  brand             String?  // brand/business the number represents
-  department        String?  // Sales | Support | ...
-  branchId          String?  // business unit / branch mapping (default until Branches module)
+  label      String? // human label e.g. "Aurelia Jewellers — Sales"
+  brand      String? // brand/business the number represents
+  department String? // Sales | Support | ...
+  branchId   String? // business unit / branch mapping (default until Branches module)
 
   // --- Health synced from Meta (GET /{phone-number-id}) ---
-  qualityRating         String?  // GREEN | YELLOW | RED | UNKNOWN
-  messagingTier         String?  // TIER_250 | TIER_1K | TIER_10K | TIER_100K | UNLIMITED
+  qualityRating          String? // GREEN | YELLOW | RED | UNKNOWN
+  messagingTier          String? // TIER_250 | TIER_1K | TIER_10K | TIER_100K | UNLIMITED
   codeVerificationStatus String? // VERIFIED | NOT_VERIFIED | EXPIRED
-  qualitySyncedAt       DateTime?
+  qualitySyncedAt        DateTime?
 
   // Two-step verification PIN we set when registering a NEW number (encrypted).
   // Null for coexistence numbers and for existing numbers whose PIN the client owns.
-  twoStepPin        String?
+  twoStepPin String?
 
   // --- How this number came to us -----------------------------------------
   // new_cloud_api            brand-new number registered through us
@@ -119,34 +119,34 @@ model WhatsAppAccount {
   //
   // This is not cosmetic: it decides whether we may ask Meta for history at all,
   // and what we are allowed to promise the customer about their old chats.
-  connectionMode    String   @default("new_cloud_api")
+  connectionMode String @default("new_cloud_api")
 
   // --- Coexistence: contacts + 180-day history sync ------------------------
   // Meta gives a ONE-TIME, 24-hour window after onboarding to request each sync.
   // Miss it, or ask twice, and the customer must offboard and redo Embedded
   // Signup — so these fields exist to make the window visible and auditable
   // rather than something support discovers weeks later.
-  onboardedAt         DateTime?   // day 0: the clock Meta's 24h window runs from
-  historyPermission   String   @default("unknown")      // approved | declined | unknown
-  historySyncStatus   String   @default("not_started")  // not_started | requested | syncing | completed | partial | failed | expired
-  historyRequestId    String?                           // Meta's request_id, for support
-  historyStartedAt    DateTime?
-  historyCompletedAt  DateTime?
-  historyPhase        Int?                              // 0 (day 0-1) | 1 (1-90) | 2 (90-180)
-  historyProgress     Int      @default(0)              // 0-100, as Meta reports it
-  historyMessages     Int      @default(0)
-  historyThreads      Int      @default(0)
-  historyMediaPlaceholders Int @default(0)              // older than 14 days: record kept, media gone
-  historyError        String?
+  onboardedAt              DateTime? // day 0: the clock Meta's 24h window runs from
+  historyPermission        String    @default("unknown") // approved | declined | unknown
+  historySyncStatus        String    @default("not_started") // not_started | requested | syncing | completed | partial | failed | expired
+  historyRequestId         String? // Meta's request_id, for support
+  historyStartedAt         DateTime?
+  historyCompletedAt       DateTime?
+  historyPhase             Int? // 0 (day 0-1) | 1 (1-90) | 2 (90-180)
+  historyProgress          Int       @default(0) // 0-100, as Meta reports it
+  historyMessages          Int       @default(0)
+  historyThreads           Int       @default(0)
+  historyMediaPlaceholders Int       @default(0) // older than 14 days: record kept, media gone
+  historyError             String?
 
-  contactsSyncStatus  String   @default("not_started")  // not_started | requested | syncing | completed | failed | expired
-  contactsRequestId   String?
-  contactsImported    Int      @default(0)
-  contactsSyncedAt    DateTime?
-  contactsError       String?
+  contactsSyncStatus String    @default("not_started") // not_started | requested | syncing | completed | failed | expired
+  contactsRequestId  String?
+  contactsImported   Int       @default(0)
+  contactsSyncedAt   DateTime?
+  contactsError      String?
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([tenantId])
 }
@@ -159,8 +159,8 @@ model OnboardingSession {
   tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   // started | strategy_selected | meta_launched | meta_returned | registering | ready | cancelled | error
   status        String   @default("started")
-  strategy      String?  // coexistence | migrate | new | existing
-  lastStep      String?  // ES current_step (from CANCEL) or our own step id
+  strategy      String? // coexistence | migrate | new | existing
+  lastStep      String? // ES current_step (from CANCEL) or our own step id
   wabaId        String?
   phoneNumberId String?
   errorMessage  String?
@@ -188,47 +188,47 @@ model WebhookEvent {
 // ---- Conversations & messages (Phase E) ----------------------------------
 
 model Conversation {
-  id            String   @id @default(cuid())
-  tenantId      String
-  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id               String    @id @default(cuid())
+  tenantId         String
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   // Our WhatsApp number (Cloud API phone_number_id) this thread runs through.
-  phoneNumberId String
+  phoneNumberId    String
   // The customer's WhatsApp id (E.164 without '+').
-  contactPhone  String
-  contactName   String?
+  contactPhone     String
+  contactName      String?
   // Team & Access: which agent this conversation is assigned to (persisted).
-  assigneeUserId String?
+  assigneeUserId   String?
   // Zone routing: the zone this thread resolved to (from the contact's city/state).
   // If assigneeUserId is null and the zone has >1 members, the admin picks one.
-  zoneId         String?
+  zoneId           String?
   // open | pending | resolved | imported
   // `imported` is the backfill state: the thread exists for context but is not
   // work. A live inbound message is what promotes it to `open`.
-  status         String  @default("open")
-  labels         String[] @default([])    // applied label ids/names
-  isSpam         Boolean  @default(false)
+  status           String    @default("open")
+  labels           String[]  @default([]) // applied label ids/names
+  isSpam           Boolean   @default(false)
   /// True while the thread holds only backfilled history. Keeps 500 imported
   /// conversations out of the Open queue on a customer's first morning.
-  isHistorical   Boolean  @default(false)
+  isHistorical     Boolean   @default(false)
   /// Blocked is not spam: spam is a judgement about the content, blocked is a
   /// decision about the person. Kept apart so "show me spam" and "show me who
   /// we refuse to deal with" stay different questions.
-  isBlocked      Boolean  @default(false)
+  isBlocked        Boolean   @default(false)
   /// When the oldest unanswered customer message arrived. Null once an agent
   /// has replied. This is what makes SLA real: it was hardcoded to "ok", so
   /// Overdue and SLA Breached could never match anything.
-  awaitingSince  DateTime?
+  awaitingSince    DateTime?
   /// Last time anyone on our side replied, from any source.
   lastAgentReplyAt DateTime?
   /// Oldest backfilled message, so the UI can say how far back context goes.
-  historyFrom    DateTime?
-  lastReadAt     DateTime?                 // when an agent last read this thread (unread = inbound after this)
-  lastMessageAt DateTime @default(now())
-  createdAt     DateTime @default(now())
+  historyFrom      DateTime?
+  lastReadAt       DateTime? // when an agent last read this thread (unread = inbound after this)
+  lastMessageAt    DateTime  @default(now())
+  createdAt        DateTime  @default(now())
 
-  messages    Message[]
-  notes       ConversationNote[]
-  favourites  ConversationFavourite[]
+  messages   Message[]
+  notes      ConversationNote[]
+  favourites ConversationFavourite[]
 
   @@unique([tenantId, phoneNumberId, contactPhone])
   @@index([tenantId])
@@ -238,13 +238,13 @@ model Conversation {
 
 // Internal (agent-only) notes on a conversation — never sent to the customer.
 model ConversationNote {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   tenantId       String
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   authorUserId   String?
   text           String
-  createdAt      DateTime @default(now())
+  createdAt      DateTime     @default(now())
 
   @@index([conversationId])
   @@index([tenantId])
@@ -257,10 +257,10 @@ model CrmZone {
   id            String   @id @default(cuid())
   tenantId      String
   name          String
-  code          String?                       // north | west | south | east | custom
+  code          String? // north | west | south | east | custom
   states        String[] @default([])
   cities        String[] @default([])
-  memberUserIds String[] @default([])         // members who cover this zone
+  memberUserIds String[] @default([]) // members who cover this zone
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -270,49 +270,49 @@ model CrmZone {
 // ---- Contacts (customer records; the Customer-360 source) ----------------
 
 model Contact {
-  id            String    @id @default(cuid())
-  tenantId      String
-  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  tenantId String
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   // Customer's WhatsApp id / E.164 without '+', unique within a tenant.
-  phone         String
-  name          String?
-  email         String?
-  company       String?
-  city          String?
-  notes         String?
-  tags          String[]  @default([])
+  phone    String
+  name     String?
+  email    String?
+  company  String?
+  city     String?
+  notes    String?
+  tags     String[] @default([])
 
   // --- Type & identity ---
-  type          String    @default("b2c")      // b2b | b2c
-  businessName  String?                          // B2B business
-  contactPerson String?                          // B2B primary person
+  type          String  @default("b2c") // b2b | b2c
+  businessName  String? // B2B business
+  contactPerson String? // B2B primary person
   legalName     String?
   gstin         String?
 
   // --- Lifecycle & pipeline (three separate concepts) ---
-  leadStatus       String  @default("new")       // new|assigned|attempted|connected|engaged|enquiry_generated|not_interested|dormant
-  lifecycleStage   String  @default("prospect")  // prospect | customer
-  relationshipState String?                       // active | dormant | reactivated (existing customers)
-  stageEnteredAt   DateTime @default(now())
+  leadStatus        String   @default("new") // new|assigned|attempted|connected|engaged|enquiry_generated|not_interested|dormant
+  lifecycleStage    String   @default("prospect") // prospect | customer
+  relationshipState String? // active | dormant | reactivated (existing customers)
+  stageEnteredAt    DateTime @default(now())
 
   // --- Attribution & ownership ---
-  source          String?                         // exhibition | referral | ads | website | walk-in | whatsapp | ...
-  importSource    String?                         // manual | excel | google | vcf | card | register | tally | whatsapp
+  source           String? // exhibition | referral | ads | website | walk-in | whatsapp | ...
+  importSource     String? // manual | excel | google | vcf | card | register | tally | whatsapp
   marketingOwnerId String?
   salesOwnerId     String?
 
   // --- Segmentation & value ---
-  customerType    String?                         // wholesale | retail | vip | ...
-  businessValue   String?                         // high | medium | low
+  customerType     String? // wholesale | retail | vip | ...
+  businessValue    String? // high | medium | low
   productInterests String[] @default([])
 
   // --- Location ---
-  country   String?
-  state     String?
-  zone      String?
-  area      String?
-  pincode   String?
-  branch    String?                               // business unit / branch name
+  country String?
+  state   String?
+  zone    String?
+  area    String?
+  pincode String?
+  branch  String? // business unit / branch name
 
   // --- Addresses & KYC ---
   billingAddress  String?
@@ -320,14 +320,14 @@ model Contact {
   customFields    Json?
 
   // --- Consent ---
-  consentOptIn  Boolean  @default(false)
+  consentOptIn  Boolean   @default(false)
   consentSource String?
   consentAt     DateTime?
-  optedOut      Boolean  @default(false)
-  blocked       Boolean  @default(false)
+  optedOut      Boolean   @default(false)
+  blocked       Boolean   @default(false)
 
   // --- Timestamps ---
-  activatedAt        DateTime?                     // became a customer
+  activatedAt        DateTime? // became a customer
   firstInteractionAt DateTime?
   lastActivityAt     DateTime?
   createdAt          DateTime  @default(now())
@@ -350,7 +350,7 @@ model ContactActivity {
   contactId String
   contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
   tenantId  String
-  kind      String   // note | message | call | enquiry | order | campaign | stage | ownership | field-visit | system
+  kind      String // note | message | call | enquiry | order | campaign | stage | ownership | field-visit | system
   title     String
   detail    String?
   meta      Json?
@@ -367,7 +367,7 @@ model StageTransition {
   contactId String
   contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
   tenantId  String
-  field     String   // lead | lifecycle
+  field     String // lead | lifecycle
   fromStage String?
   toStage   String
   reason    String?
@@ -395,27 +395,27 @@ model Segment {
 }
 
 model Message {
-  id             String   @id @default(cuid())
-  conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  id               String       @id @default(cuid())
+  conversationId   String
+  conversation     Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   // WhatsApp message id (dedupes webhook retries / links status updates).
-  waMessageId    String?  @unique
-  direction      String   // inbound | outbound
-  type           String   @default("text")
-  text           String?
-  status         String?  // outbound: sent | delivered | read | failed
+  waMessageId      String?      @unique
+  direction        String // inbound | outbound
+  type             String       @default("text")
+  text             String?
+  status           String? // outbound: sent | delivered | read | failed
   /// Where the message entered the CRM. An agent needs to know why a reply they
   /// did not write is in the thread, and automations need to know what is real
   /// traffic versus backfill.
   ///   customer | crm_agent | whatsapp_business_app | automation | ai_agent
   ///   | campaign | history_import | external_crm_import
-  source         String   @default("customer")
+  source           String       @default("customer")
   /// True for anything backfilled. Never opens the 24-hour service window,
   /// never triggers automations, assignment, SLA or notifications.
-  isHistorical   Boolean  @default(false)
+  isHistorical     Boolean      @default(false)
   /// Media older than 14 days arrives as a record with no retrievable asset —
   /// the UI shows "older WhatsApp image" rather than a broken thumbnail.
-  mediaUnavailable Boolean @default(false)
+  mediaUnavailable Boolean      @default(false)
   /// Click-to-WhatsApp attribution, exactly as Meta sent it. Stored verbatim
   /// because the field set grows (ctwa_clid was added later) and discarding
   /// anything would lose attribution we cannot reconstruct afterwards.
@@ -439,7 +439,7 @@ model Message {
   failedAt         DateTime?
   failureCode      String?
   failureReason    String?
-  at             DateTime @default(now())
+  at               DateTime     @default(now())
 
   @@index([conversationId])
   @@index([conversationId, at])
@@ -449,16 +449,16 @@ model Message {
 // One connection per tenant; whichever user connects it. Tokens are plaintext
 // for now — encrypt at rest before production (same caveat as WhatsAppAccount).
 model GoogleConnection {
-  id           String    @id @default(cuid())
-  tenantId     String    @unique
-  email        String                          // the connected Google account
+  id           String   @id @default(cuid())
+  tenantId     String   @unique
+  email        String // the connected Google account
   accessToken  String
-  refreshToken String?                         // absent if Google withheld it (already-granted re-consent)
-  expiresAt    DateTime                        // access-token expiry
+  refreshToken String? // absent if Google withheld it (already-granted re-consent)
+  expiresAt    DateTime // access-token expiry
   scope        String
-  sheetId      String?                         // the synced Google Sheet (created on first sync)
-  connectedAt  DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  sheetId      String? // the synced Google Sheet (created on first sync)
+  connectedAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 // ===========================================================================
@@ -481,17 +481,17 @@ model CrmBranch {
 }
 
 model CrmNumber {
-  id                       String   @id
-  tenantId                 String
-  displayNumber            String
-  displayName              String
-  brand                    String
-  branchId                 String
-  department               String
-  connectionStatus         String   // connected | degraded | disconnected
-  qualityRating            String   // high | medium | low | unrated
-  messagingLimit           String
-  permittedRoles           String[] // owner | manager | agent
+  id               String   @id
+  tenantId         String
+  displayNumber    String
+  displayName      String
+  brand            String
+  branchId         String
+  department       String
+  connectionStatus String // connected | degraded | disconnected
+  qualityRating    String // high | medium | low | unrated
+  messagingLimit   String
+  permittedRoles   String[] // owner | manager | agent
 
   @@index([tenantId])
 }
@@ -506,72 +506,72 @@ model CrmTeam {
 }
 
 model CrmUser {
-  id                          String   @id
-  tenantId                    String
-  name                        String
-  initials                    String
-  email                       String
-  role                        String   // owner | manager | agent
-  roleLabel                   String
-  teamId                      String
-  branchId                    String
-  permittedWhatsAppNumberIds  String[]
-  availability                String   // available | busy | away | offline
+  id                         String   @id
+  tenantId                   String
+  name                       String
+  initials                   String
+  email                      String
+  role                       String // owner | manager | agent
+  roleLabel                  String
+  teamId                     String
+  branchId                   String
+  permittedWhatsAppNumberIds String[]
+  availability               String // available | busy | away | offline
 
   @@index([tenantId])
 }
 
 model CrmContact {
-  id                       String   @id
-  tenantId                 String
-  name                     String
-  company                  String?
-  mobile                   String
-  email                    String?
-  city                     String
+  id                      String   @id
+  tenantId                String
+  name                    String
+  company                 String?
+  mobile                  String
+  email                   String?
+  city                    String
   /// Sales owner — the primary assignment. Drives row-level visibility and is
   /// what "the contact owner" means everywhere in the UI.
-  ownerId                  String
+  ownerId                 String
   /// Marketing owner — the second named slot, so one contact can sit with a
   /// sales person and a marketing person at once. Also grants visibility.
   /// Deliberately two fixed slots rather than a join table: scoping stays a
   /// single indexed OR instead of a subquery on every contact read.
-  marketingOwnerId         String?
-  stage                    String   // legacy generic stage (kept for existing UI badges)
-  tags                     String[]
-  source                   String
-  consent                  String   // opted-in | opted-out | pending
-  salesTier                String   // platinum | gold | silver | standard
-  branchId                 String
-  primaryWhatsAppNumberId  String
-  createdAt                DateTime @default(now())
-  lastActivityAt           DateTime @default(now())
+  marketingOwnerId        String?
+  stage                   String // legacy generic stage (kept for existing UI badges)
+  tags                    String[]
+  source                  String
+  consent                 String // opted-in | opted-out | pending
+  salesTier               String // platinum | gold | silver | standard
+  branchId                String
+  primaryWhatsAppNumberId String
+  createdAt               DateTime @default(now())
+  lastActivityAt          DateTime @default(now())
 
   // --- Req 7,8,12: B2B/B2C type + progressive capture ---
-  customerType             String   @default("b2b") // b2b | b2c
-  contactPerson            String?  // B2B primary contact person
+  customerType  String  @default("b2b") // b2b | b2c
+  contactPerson String? // B2B primary contact person
 
   // --- Req 34,37,38: Lead Status (prospecting) kept SEPARATE from Lifecycle ---
-  leadStatus               String   @default("new") // new|assigned|attempted|connected|engaged|enquiry_generated|not_interested|dormant
+  leadStatus     String    @default("new") // new|assigned|attempted|connected|engaged|enquiry_generated|not_interested|dormant
   // --- Req 33,37,39,41: Customer Lifecycle (the relationship), separate again ---
-  lifecycleStage           String   @default("prospect") // prospect | customer
-  lifecycleState           String?  // active | dormant | reactivated (existing customers)
-  activatedAt              DateTime? // Req 33: activation date (prospect -> customer)
+  lifecycleStage String    @default("prospect") // prospect | customer
+  lifecycleState String? // active | dormant | reactivated (existing customers)
+  activatedAt    DateTime? // Req 33: activation date (prospect -> customer)
 
   // --- Req 13,15: progressive enrichment on conversion ---
-  gstin                    String?
-  legalName                String?
-  billingAddress           String?
-  shippingAddress          String?
+  gstin           String?
+  legalName       String?
+  billingAddress  String?
+  shippingAddress String?
 
   // --- Req 18: geography (optional until City/Pincode known) ---
-  state                    String?
-  zone                     String?
-  pincode                  String?
+  state   String?
+  zone    String?
+  pincode String?
 
   // --- Req 14,21: structured interests + business value ---
-  productInterests         String[]
-  businessValue            String?  // high | medium | low
+  productInterests String[]
+  businessValue    String? // high | medium | low
 
   // --- Req 29: consent detail ---
   // `consent` above is the decision (opted-in | opted-out | pending). These
@@ -579,71 +579,71 @@ model CrmContact {
   // the exact wording the customer agreed to. `consentRequestedAt` makes the
   // "asked, waiting for a reply" state distinguishable from "never asked",
   // which is what the consent funnel is built on.
-  consentOptInSource       String?
-  consentOptInAt           DateTime?
-  consentOptOutAt          DateTime?
-  consentOptOutReason      String?
-  consentRequestedAt       DateTime?
-  consentRequestWaId       String?   // message id of the request, to tie the reply back
-  consentWording           String?   // copy/template the customer actually saw
+  consentOptInSource  String?
+  consentOptInAt      DateTime?
+  consentOptOutAt     DateTime?
+  consentOptOutReason String?
+  consentRequestedAt  DateTime?
+  consentRequestWaId  String? // message id of the request, to tie the reply back
+  consentWording      String? // copy/template the customer actually saw
 
-  createdSource            String?  // Req 16: original source / import source (audit)
+  createdSource String? // Req 16: original source / import source (audit)
 
   // --- Click-to-WhatsApp acquisition (first touch) ---
   // Which ad produced this lead. Columns rather than JSON because the whole
   // point is to segment and report on them — "every lead from the Diwali
   // campaign" is a filter, not a curiosity. First touch wins: a later ad click
   // is recorded on the message, but the contact keeps the ad that won them.
-  adSourceId               String?   // Meta ad or post id
-  adSourceType             String?   // ad | post
-  adSourceUrl              String?
-  adHeadline               String?
+  adSourceId   String? // Meta ad or post id
+  adSourceType String? // ad | post
+  adSourceUrl  String?
+  adHeadline   String?
   /// Click id — the key for reporting conversions back through Conversions API.
-  ctwaClid                 String?
-  adReferralAt             DateTime?
+  ctwaClid     String?
+  adReferralAt DateTime?
 
   // Kundli: AI-generated pre-call dossier (company research + call scripts),
   // cached so it is ready before calling. Regenerable.
   /// Columns from the client's own sheet that map to no CRM field. Kept so an
   /// import never silently discards data the business cares about.
-  customFields             Json?
-  kundli                   Json?
-  kundliGeneratedAt        DateTime?
+  customFields      Json?
+  kundli            Json?
+  kundliGeneratedAt DateTime?
 
-  enquiries                CrmEnquiry[]
+  enquiries CrmEnquiry[]
 
   // --- Jewellery B2B enrichment (formalised from the marketing/sales Excels) ---
   // Segment drives talking-points, templates and tiering ("Contact Type" in the
   // sheets): chain_stores | corporate | boutique | exports | standalone | small_store
-  businessSegment          String?
-  grade                    String?   // A | B | C | D  (their ABCD categorisation)
-  preferredLanguage        String?   // regional language for templates/agents
-  website                  String?
+  businessSegment    String?
+  grade              String? // A | B | C | D  (their ABCD categorisation)
+  preferredLanguage  String? // regional language for templates/agents
+  website            String?
   // Important days — the #1 jewellery relationship trigger (wishes + offers).
-  dateOfBirth              DateTime? // contact person's birthday
-  companyAnniversary       DateTime? // firm's anniversary
+  dateOfBirth        DateTime? // contact person's birthday
+  companyAnniversary DateTime? // firm's anniversary
   // Telecalling / follow-up queue (Telecalling "Customerwise Tracking").
-  nextFollowUpAt           DateTime?
-  interestedIn             String?
-  lastFeedback             String?
-  lastConnectAt            DateTime? // last call/visit (distinct from lastActivityAt)
+  nextFollowUpAt     DateTime?
+  interestedIn       String?
+  lastFeedback       String?
+  lastConnectAt      DateTime? // last call/visit (distinct from lastActivityAt)
   // Onboarding / KYC (customer-facing bits only).
-  clientCode               String?
-  pan                      String?
-  kamUserId                String?   // Key Account Manager (ownership role)
+  clientCode         String?
+  pan                String?
+  kamUserId          String? // Key Account Manager (ownership role)
   // Prospect funnel checkpoints (Prospects Tracker): data verified -> intro call
   // -> office visit -> enquiry received; leadStatus stays the headline status.
-  dataVerified             Boolean  @default(false)
-  introCallDone            Boolean  @default(false)
-  officeVisitDone          Boolean  @default(false)
+  dataVerified       Boolean   @default(false)
+  introCallDone      Boolean   @default(false)
+  officeVisitDone    Boolean   @default(false)
   // Reach / audience membership (drives segmented broadcasts & groups).
-  inBroadcastList          Boolean  @default(false)
-  inCommunity              Boolean  @default(false)
+  inBroadcastList    Boolean   @default(false)
+  inCommunity        Boolean   @default(false)
   // Flexible extras kept out of columns: showroomCount, teamStrength, sqFeet,
   // creditLimitWt, kycStatus, dataManagerId, spouse/family important dates,
   // logistics prefs. (The sales/marketing owners are real columns — ownerId
   // and marketingOwnerId — because visibility queries filter on them.)
-  jewelleryProfile         Json?
+  jewelleryProfile   Json?
 
   @@unique([tenantId, mobile])
   @@index([tenantId])
@@ -660,32 +660,32 @@ model CrmContact {
 // chat to pipeline and order. Formalises the sheets' "Enquiry Tracker": the rep
 // logs it once in chat and marketing + KAM see the same record.
 model CrmEnquiry {
-  id              String    @id @default(cuid())
+  id              String      @id @default(cuid())
   tenantId        String
-  contactId       String?                          // linked contact (customer 360)
+  contactId       String? // linked contact (customer 360)
   /// A contact may have any number of enquiries — this is the many side, and
   /// the relation is what stops an enquiry being filed against an id that does
   /// not exist. Cascade matches the hard delete in /contacts/bulk: removing a
   /// customer removes their enquiries rather than orphaning rows that would
   /// keep inflating the funnel counts.
   contact         CrmContact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  conversationId  String?                          // originating Inbox conversation
-  enquiryNo       String                           // human-facing enquiry number
-  source          String?                          // whatsapp | exhibition | referral | telecalling | ...
-  isNew           Boolean   @default(true)         // new vs existing customer
+  conversationId  String? // originating Inbox conversation
+  enquiryNo       String // human-facing enquiry number
+  source          String? // whatsapp | exhibition | referral | telecalling | ...
+  isNew           Boolean     @default(true) // new vs existing customer
   product         String?
   design          String?
   weightRange     String?
   sizeLength      String?
   pcs             Int?
   tentativeWeight String?
-  description     String?                          // order description / requirements
-  imagesSentAt    DateTime?                        // "Images sent to client" checkpoint
-  status          String    @default("pending")    // pending | images_sent | converted | lost | cancelled
+  description     String? // order description / requirements
+  imagesSentAt    DateTime? // "Images sent to client" checkpoint
+  status          String      @default("pending") // pending | images_sent | converted | lost | cancelled
   remarks         String?
-  ownerId         String?                          // handling rep / KAM
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  ownerId         String? // handling rep / KAM
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   @@unique([tenantId, enquiryNo])
   @@index([tenantId, status])
@@ -698,7 +698,7 @@ model CrmEnquiry {
 model CrmImportJob {
   id              String   @id @default(cuid())
   tenantId        String
-  source          String   @default("Import")   // CSV upload | OCR scan | vCard | Google Contacts | Wizard
+  source          String   @default("Import") // CSV upload | OCR scan | vCard | Google Contacts | Wizard
   fileName        String?
   total           Int      @default(0)
   created         Int      @default(0)
@@ -714,20 +714,20 @@ model CrmImportJob {
 // Planned marketing activities shown on the Campaigns planning calendar
 // (field marketing, telecalling, campaign, exhibition). Festivals are static.
 model CrmPlanEvent {
-  id            String   @id @default(cuid())
-  tenantId      String
-  title         String
-  type          String   @default("campaign") // field | telecalling | campaign | exhibition
-  date          DateTime
-  endDate       DateTime?
-  note          String?
-  createdByUserId String?
+  id               String    @id @default(cuid())
+  tenantId         String
+  title            String
+  type             String    @default("campaign") // field | telecalling | campaign | exhibition
+  date             DateTime
+  endDate          DateTime?
+  note             String?
+  createdByUserId  String?
   // Reminders: notify the assignees `remindDaysBefore` days ahead of `date`.
-  remindDaysBefore Int?                              // null = no reminder; 0 = on the day
-  assigneeUserIds  String[] @default([])             // User ids who should be reminded
-  notifyWhatsapp   Boolean  @default(false)          // also attempt a WhatsApp reminder
-  reminderSentAt   DateTime?                         // set once the reminder has fired (idempotency)
-  createdAt     DateTime @default(now())
+  remindDaysBefore Int? // null = no reminder; 0 = on the day
+  assigneeUserIds  String[]  @default([]) // User ids who should be reminded
+  notifyWhatsapp   Boolean   @default(false) // also attempt a WhatsApp reminder
+  reminderSentAt   DateTime? // set once the reminder has fired (idempotency)
+  createdAt        DateTime  @default(now())
 
   @@index([tenantId, date])
   @@index([reminderSentAt])
@@ -735,15 +735,15 @@ model CrmPlanEvent {
 
 // Req 43: immutable log of lead-status / lifecycle transitions per contact.
 model CrmStageTransition {
-  id         String   @id @default(cuid())
-  tenantId   String
-  contactId  String
-  kind       String   // lead | lifecycle
-  fromValue  String?
-  toValue    String
-  byUserId   String?
-  note       String?
-  at         DateTime @default(now())
+  id        String   @id @default(cuid())
+  tenantId  String
+  contactId String
+  kind      String // lead | lifecycle
+  fromValue String?
+  toValue   String
+  byUserId  String?
+  note      String?
+  at        DateTime @default(now())
 
   @@index([tenantId, contactId])
 }
@@ -761,7 +761,7 @@ model CrmStageTransition {
 /// quality changes back the instant Meta sends them instead of waiting for the
 /// next poll.
 model CrmTemplate {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   tenantId       String
   wabaId         String
   metaTemplateId String?
@@ -779,9 +779,9 @@ model CrmTemplate {
   /// Set when Meta stops listing it. Soft so a campaign that referenced the
   /// template can still say what it sent.
   deletedAt      DateTime?
-  lastSyncedAt   DateTime @default(now())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  lastSyncedAt   DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@unique([tenantId, name, language])
   @@index([tenantId, status])
@@ -793,8 +793,8 @@ model CrmTemplateDraft {
   id              String   @id @default(cuid())
   tenantId        String
   createdByUserId String?
-  name            String                            // the draft's template name (may be blank early)
-  payload         Json                              // the full ComposerDraft
+  name            String // the draft's template name (may be blank early)
+  payload         Json // the full ComposerDraft
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -807,12 +807,12 @@ model CrmTemplateDraft {
 /// inbox "my favourites" is a personal shortlist, and one agent starring a
 /// thread should not put it on everyone else's.
 model ConversationFavourite {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   tenantId       String
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   userId         String
-  createdAt      DateTime @default(now())
+  createdAt      DateTime     @default(now())
 
   @@unique([conversationId, userId])
   @@index([tenantId, userId])
@@ -824,19 +824,19 @@ model ConversationFavourite {
 /// filter shape the UI already has, and that shape grows; a view that silently
 /// dropped a filter the UI learned later would be worse than no view at all.
 model CrmSavedView {
-  id          String   @id @default(cuid())
-  tenantId    String
+  id              String   @id @default(cuid())
+  tenantId        String
   /// Null means the whole workspace sees it; otherwise it is this user's own.
-  ownerId     String?
-  name        String
+  ownerId         String?
+  name            String
   /// Matches the InboxFilters shape, plus the quick-view key it starts from.
-  filters     Json
+  filters         Json
   /// Pinned views appear in the queue strip beside the built-in ones.
-  isPinned    Boolean  @default(false)
-  sortOrder   Int      @default(0)
+  isPinned        Boolean  @default(false)
+  sortOrder       Int      @default(0)
   createdByUserId String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([tenantId, ownerId])
 }
@@ -854,23 +854,23 @@ model CrmSavedView {
 /// 24-hour customer service window. Outside it an approved template is the only
 /// option — a different object entirely (CrmTemplateDraft / Meta's template API).
 model CrmQuickReply {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   tenantId        String
   /// Typed as "/<shortcut>" in the composer. Lowercase, unique per tenant.
   shortcut        String
   title           String
   /// Supports {{1}}-style positional and {{name}}-style named placeholders.
   body            String
-  category        String   @default("General")
-  language        String   @default("en")
+  category        String    @default("General")
+  language        String    @default("en")
   /// workspace = everyone; personal = only its owner.
-  scope           String   @default("workspace")
+  scope           String    @default("workspace")
   ownerId         String?
   createdByUserId String?
-  usageCount      Int      @default(0)
+  usageCount      Int       @default(0)
   lastUsedAt      DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@unique([tenantId, shortcut])
   @@index([tenantId, category])
@@ -888,13 +888,13 @@ model CrmConsentEvent {
   tenantId    String
   contactId   String
   mobile      String
-  event       String   // requested | opted_in | opted_out | reset
+  event       String // requested | opted_in | opted_out | reset
   // whatsapp_button | whatsapp_keyword | whatsapp_reply | web_form | call
   // | in_store | import | manual
   channel     String
-  source      String?  // campaign name, agent note, form URL
-  wording     String?  // exact copy shown, or template name + body
-  actorId     String?  // null when the customer drove it
+  source      String? // campaign name, agent note, form URL
+  wording     String? // exact copy shown, or template name + body
+  actorId     String? // null when the customer drove it
   waMessageId String?
   at          DateTime @default(now())
 
@@ -905,64 +905,64 @@ model CrmConsentEvent {
 // ---- Campaigns (V1 broadcast) ---------------------------------------------
 
 model CrmCampaign {
-  id                String   @id @default(cuid())
-  tenantId          String
-  name              String
-  type              String   @default("broadcast") // broadcast | drip (V2)
+  id               String    @id @default(cuid())
+  tenantId         String
+  name             String
+  type             String    @default("broadcast") // broadcast | drip (V2)
   // draft | scheduled | processing | sending | completed | partially_sent
   // | paused_low_balance | paused_meta_limit | failed | cancelled  (§14)
-  status            String   @default("draft")
+  status           String    @default("draft")
   // Billing snapshot for the campaign (§7, §14). estimatedCost is labelled
   // "estimated" in UI; actualCost accrues from real billable sends.
-  estimatedCost     Decimal? @db.Decimal(14, 4)
-  actualCost        Decimal  @default(0) @db.Decimal(14, 4)
-  costBreakdown     Json?                            // per-market estimate snapshot [{market,recipients,rate,subtotal}]
-  pausedReason      String?                          // low_balance | meta_limit
-  templateCategory  String?                          // latest Meta-recognised category (§31)
-  templateId        String?                          // Meta template id
-  templateName      String?
-  templateLocale    String?
-  headerMediaUrl    String?                          // public URL for an image/video/document header template
-  headerMediaType   String?                          // image | video | document
-  whatsappNumberId  String?                          // WhatsAppAccount id used to send
-  segmentId         String?                          // optional CRM segment
-  audienceFilter    Json?                            // structured audience filter snapshot
+  estimatedCost    Decimal?  @db.Decimal(14, 4)
+  actualCost       Decimal   @default(0) @db.Decimal(14, 4)
+  costBreakdown    Json? // per-market estimate snapshot [{market,recipients,rate,subtotal}]
+  pausedReason     String? // low_balance | meta_limit
+  templateCategory String? // latest Meta-recognised category (§31)
+  templateId       String? // Meta template id
+  templateName     String?
+  templateLocale   String?
+  headerMediaUrl   String? // public URL for an image/video/document header template
+  headerMediaType  String? // image | video | document
+  whatsappNumberId String? // WhatsAppAccount id used to send
+  segmentId        String? // optional CRM segment
+  audienceFilter   Json? // structured audience filter snapshot
   // Event-based (type = 'trigger'): fire the template to a single contact when
   // the event occurs. triggerKeyword applies when triggerEvent = 'keyword'.
-  triggerEvent      String?                          // first_message | keyword | inbound_message
-  triggerKeyword    String?
-  scheduledAt       DateTime?
-  createdByUserId   String?
-  totalRecipients   Int      @default(0)
-  sentCount         Int      @default(0)
-  deliveredCount    Int      @default(0)
-  readCount         Int      @default(0)
-  failedCount       Int      @default(0)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  triggerEvent     String? // first_message | keyword | inbound_message
+  triggerKeyword   String?
+  scheduledAt      DateTime?
+  createdByUserId  String?
+  totalRecipients  Int       @default(0)
+  sentCount        Int       @default(0)
+  deliveredCount   Int       @default(0)
+  readCount        Int       @default(0)
+  failedCount      Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  recipients        CrmCampaignRecipient[]
+  recipients CrmCampaignRecipient[]
 
   @@index([tenantId])
   @@index([tenantId, status])
 }
 
 model CrmCampaignRecipient {
-  id           String   @id @default(cuid())
-  campaignId   String
-  campaign     CrmCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  tenantId     String
-  contactId    String?
-  mobile       String
+  id          String      @id @default(cuid())
+  campaignId  String
+  campaign    CrmCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  tenantId    String
+  contactId   String?
+  mobile      String
   // queued | submitted | sent | delivered | read | failed | skipped | pending (§11/§14)
-  status       String   @default("queued")
-  waMessageId  String?
-  error        String?
-  errorCode    String?                         // Meta error code (§11)
-  market       String?                          // recipient market used for pricing (§30)
-  cost         Decimal? @db.Decimal(12, 4)      // actual billed cost for this recipient
-  billed       Boolean  @default(false)
-  at           DateTime @default(now())
+  status      String      @default("queued")
+  waMessageId String?
+  error       String?
+  errorCode   String? // Meta error code (§11)
+  market      String? // recipient market used for pricing (§30)
+  cost        Decimal?    @db.Decimal(12, 4) // actual billed cost for this recipient
+  billed      Boolean     @default(false)
+  at          DateTime    @default(now())
 
   @@index([campaignId])
   @@index([campaignId, status])
@@ -972,18 +972,18 @@ model CrmCampaignRecipient {
 // ---- Automation (Trigger -> Conditions -> Actions) ------------------------
 
 model CrmAutomationRule {
-  id               String   @id @default(cuid())
-  tenantId         String
-  name             String
-  enabled          Boolean  @default(false)
-  trigger          String                            // e.g. first_message | keyword | stage_changed | dormant_reached ...
-  conditions       Json?                             // [{field, op, value}]
-  actions          Json                              // [{type, ...params}]
-  createdByUserId  String?
-  lastRunAt        DateTime?
-  runCount         Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              String    @id @default(cuid())
+  tenantId        String
+  name            String
+  enabled         Boolean   @default(false)
+  trigger         String // e.g. first_message | keyword | stage_changed | dormant_reached ...
+  conditions      Json? // [{field, op, value}]
+  actions         Json // [{type, ...params}]
+  createdByUserId String?
+  lastRunAt       DateTime?
+  runCount        Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([tenantId])
   @@index([tenantId, trigger])
@@ -994,26 +994,26 @@ model CrmAutomationRule {
 // Per-tenant telephony connection. Config (provider creds) is encrypted at rest
 // and supplied once the client is onboarded to their telephony platform.
 model CrmTelephonyConnection {
-  id               String   @id @default(cuid())
-  tenantId         String   @unique
-  provider         String                            // exotel | knowlarity | ...
-  config           Json?                             // encrypted provider config
-  status           String   @default("pending")      // pending | connected | error
+  id                String   @id @default(cuid())
+  tenantId          String   @unique
+  provider          String // exotel | knowlarity | ...
+  config            Json? // encrypted provider config
+  status            String   @default("pending") // pending | connected | error
   connectedByUserId String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model CrmCallLog {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   tenantId       String
   contactId      String?
   mobile         String
-  direction      String   @default("outbound")       // outbound | inbound
+  direction      String    @default("outbound") // outbound | inbound
   provider       String?
   providerCallId String?
-  status         String   @default("queued")          // queued | ringing | answered | no_answer | busy | failed | completed
-  channel        String   @default("call")             // call | visit (field marketing)
+  status         String    @default("queued") // queued | ringing | answered | no_answer | busy | failed | completed
+  channel        String    @default("call") // call | visit (field marketing)
   startedAt      DateTime?
   durationSec    Int?
   recordingUrl   String?
@@ -1021,7 +1021,7 @@ model CrmCallLog {
   summary        String?
   disposition    String?
   byUserId       String?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime  @default(now())
 
   @@index([tenantId])
   @@index([tenantId, contactId])
@@ -1039,24 +1039,24 @@ model CrmCatalogueItem {
   description  String?
   images       String[] @default([])
   videoUrl     String?
-  variants     Json?                              // [{name, options[]}]
+  variants     Json? // [{name, options[]}]
   size         String?
   weight       String?
   material     String?
   purity       String?
   colour       String?
-  attributes   Json?                              // custom attributes {k: v}
+  attributes   Json? // custom attributes {k: v}
   // Jewellery-specific (optional)
   grossWeight  String?
   netWeight    String?
   stoneWeight  String?
   stoneDetails String?
-  karat        String?                            // 18K | 22K | ...
+  karat        String? // 18K | 22K | ...
   // Commerce
-  pricingMode  String   @default("fixed")         // fixed | indicative | on_request
+  pricingMode  String   @default("fixed") // fixed | indicative | on_request
   price        Float?
   currency     String   @default("INR")
-  stockStatus  String   @default("available")     // available | made_to_order
+  stockStatus  String   @default("available") // available | made_to_order
   moq          Int?
   // CRM
   tags         String[] @default([])
@@ -1070,28 +1070,28 @@ model CrmCatalogueItem {
 }
 
 model CrmOrder {
-  id                 String   @id @default(cuid())
+  id                 String    @id @default(cuid())
   tenantId           String
-  orderNo            String                             // human-readable, unique per tenant
-  type               String   @default("order")         // enquiry | quotation | order
-  status             String   @default("draft")         // draft | enquiry | quotation | confirmed | payment_pending | part_paid | paid | processing | ready_dispatch | shipped | delivered | cancelled | returned
+  orderNo            String // human-readable, unique per tenant
+  type               String    @default("order") // enquiry | quotation | order
+  status             String    @default("draft") // draft | enquiry | quotation | confirmed | payment_pending | part_paid | paid | processing | ready_dispatch | shipped | delivered | cancelled | returned
   contactId          String?
   company            String?
   contactPerson      String?
   discount           Float?
   tax                Float?
   total              Float?
-  currency           String   @default("INR")
-  paymentStatus      String   @default("unpaid")        // unpaid | part_paid | paid
+  currency           String    @default("INR")
+  paymentStatus      String    @default("unpaid") // unpaid | part_paid | paid
   salesOwnerId       String?
   deliveryDetails    String?
   notes              String?
   expectedDeliveryAt DateTime?
-  source             String   @default("crm")           // whatsapp | website | sales | crm | other
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  source             String    @default("crm") // whatsapp | website | sales | crm | other
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  items              CrmOrderItem[]
+  items CrmOrderItem[]
 
   @@unique([tenantId, orderNo])
   @@index([tenantId])
@@ -1127,7 +1127,7 @@ model CrmSelection {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  items           CrmSelectionItem[]
+  items CrmSelectionItem[]
 
   @@index([tenantId])
   @@index([tenantId, status])
@@ -1151,9 +1151,9 @@ model CrmSelectionItem {
 model CrmAuditLog {
   id         String   @id @default(cuid())
   tenantId   String
-  actorId    String?                          // user who performed the action (null = system/automation)
-  action     String                           // e.g. campaign.sent | automation.ran | order.status | contact.assigned | profile.updated
-  targetType String?                           // campaign | order | contact | conversation | rule | tenant | ...
+  actorId    String? // user who performed the action (null = system/automation)
+  action     String // e.g. campaign.sent | automation.ran | order.status | contact.assigned | profile.updated
+  targetType String? // campaign | order | contact | conversation | rule | tenant | ...
   targetId   String?
   detail     String?
   at         DateTime @default(now())
@@ -1180,14 +1180,14 @@ model CrmAuditLog {
 // deactivate instead. Seeded now; Admin UI to manage is deferred.
 model SubscriptionPlan {
   id             String   @id @default(cuid())
-  code           String   @unique              // trial | starter | growth | advanced
+  code           String   @unique // trial | starter | growth | advanced
   name           String
   monthlyPrice   Decimal  @default(0) @db.Decimal(12, 2)
   quarterlyPrice Decimal  @default(0) @db.Decimal(12, 2)
   annualPrice    Decimal  @default(0) @db.Decimal(12, 2)
   currency       String   @default("INR")
-  features       Json?                          // [{key,label,included}]
-  limits         Json?                          // {users,numbers,contacts,campaigns,messages,storage,calling,ai}
+  features       Json? // [{key,label,included}]
+  limits         Json? // {users,numbers,contacts,campaigns,messages,storage,calling,ai}
   active         Boolean  @default(true)
   sortOrder      Int      @default(0)
   createdAt      DateTime @default(now())
@@ -1199,9 +1199,9 @@ model Subscription {
   id            String    @id @default(cuid())
   tenantId      String    @unique
   planId        String
-  planCode      String                          // snapshot of plan at assignment
-  cycle         String    @default("monthly")   // monthly | quarterly | annual
-  status        String    @default("trial")     // trial | active | payment_due | expired | cancelled
+  planCode      String // snapshot of plan at assignment
+  cycle         String    @default("monthly") // monthly | quarterly | annual
+  status        String    @default("trial") // trial | active | payment_due | expired | cancelled
   priceSnapshot Decimal   @default(0) @db.Decimal(12, 2)
   currency      String    @default("INR")
   startedAt     DateTime  @default(now())
@@ -1233,11 +1233,11 @@ model WalletLedger {
   id              String   @id @default(cuid())
   tenantId        String
   walletId        String
-  type            String                          // recharge | message_debit | adjustment | refund | correction
-  amount          Decimal  @db.Decimal(14, 4)     // signed: +credit / -debit
+  type            String // recharge | message_debit | adjustment | refund | correction
+  amount          Decimal  @db.Decimal(14, 4) // signed: +credit / -debit
   balanceAfter    Decimal  @db.Decimal(14, 4)
   description     String
-  refType         String?                          // payment | message | campaign | admin
+  refType         String? // payment | message | campaign | admin
   refId           String?
   idempotencyKey  String?  @unique
   createdByUserId String?
@@ -1252,14 +1252,14 @@ model WalletLedger {
 // historical billing keeps the exact price applied. Admin UI deferred.
 model MessageRate {
   id            String    @id @default(cuid())
-  market        String                            // ISO country (IN, AE, US...) or 'DEFAULT'
-  category      String                            // marketing | utility | authentication | service | marketing_lite
+  market        String // ISO country (IN, AE, US...) or 'DEFAULT'
+  category      String // marketing | utility | authentication | service | marketing_lite
   metaRate      Decimal   @db.Decimal(12, 4)
   markup        Decimal   @default(0) @db.Decimal(12, 4)
-  customerRate  Decimal   @db.Decimal(12, 4)      // metaRate + markup (billing source of truth)
+  customerRate  Decimal   @db.Decimal(12, 4) // metaRate + markup (billing source of truth)
   currency      String    @default("INR")
   effectiveFrom DateTime
-  effectiveTo   DateTime?                          // null = currently active
+  effectiveTo   DateTime? // null = currently active
   createdAt     DateTime  @default(now())
 
   @@index([market, category, effectiveFrom])
@@ -1275,13 +1275,13 @@ model MessageBillingRecord {
   recipient     String
   waMessageId   String   @unique
   campaignId    String?
-  category      String                             // Meta-recognised category at bill time
+  category      String // Meta-recognised category at bill time
   market        String
   metaRate      Decimal  @db.Decimal(12, 4)
   markup        Decimal  @db.Decimal(12, 4)
   finalRate     Decimal  @db.Decimal(12, 4)
   billable      Boolean  @default(true)
-  billingStatus String   @default("pending")       // pending | charged | not_billed | refunded
+  billingStatus String   @default("pending") // pending | charged | not_billed | refunded
   walletDebit   Decimal  @default(0) @db.Decimal(14, 4)
   ledgerId      String?
   rateId        String?
@@ -1296,14 +1296,14 @@ model MessageBillingRecord {
 model Payment {
   id             String   @id @default(cuid())
   tenantId       String
-  type           String                            // subscription | wallet_recharge | adjustment
+  type           String // subscription | wallet_recharge | adjustment
   amount         Decimal  @db.Decimal(12, 2)
   tax            Decimal  @default(0) @db.Decimal(12, 2)
   currency       String   @default("INR")
   gateway        String   @default("razorpay")
   gatewayOrderId String?
-  gatewayRef     String?  @unique                   // razorpay payment id
-  status         String   @default("initiated")     // initiated | successful | failed | refunded
+  gatewayRef     String?  @unique // razorpay payment id
+  status         String   @default("initiated") // initiated | successful | failed | refunded
   data           Json?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -1315,12 +1315,12 @@ model Payment {
 model Invoice {
   id          String    @id @default(cuid())
   tenantId    String
-  type        String                              // subscription | wallet
+  type        String // subscription | wallet
   number      String    @unique
   amount      Decimal   @db.Decimal(12, 2)
   tax         Decimal   @default(0) @db.Decimal(12, 2)
   currency    String    @default("INR")
-  status      String    @default("paid")          // paid | due | void
+  status      String    @default("paid") // paid | due | void
   periodStart DateTime?
   periodEnd   DateTime?
   lineItems   Json?
@@ -1337,9 +1337,9 @@ model NotificationEvent {
   // Null = visible to the whole tenant; set = targeted at one user (e.g. a plan
   // reminder for a specific assignee). The feed returns tenant-wide OR mine.
   userId    String?
-  category  String                                // subscription | wallet | campaign | whatsapp
-  kind      String                                // renewal_due | payment_failed | low_balance | recharge_success | campaign_paused_balance | quality_warning | plan_reminder | ...
-  severity  String    @default("info")            // info | warning | critical
+  category  String // subscription | wallet | campaign | whatsapp
+  kind      String // renewal_due | payment_failed | low_balance | recharge_success | campaign_paused_balance | quality_warning | plan_reminder | ...
+  severity  String    @default("info") // info | warning | critical
   title     String
   body      String?
   data      Json?
@@ -1373,4 +1373,179 @@ model CrmFile {
 
   @@index([tenantId, contactId])
   @@index([tenantId, kind])
+}
+
+// ---- WhatsApp Calling (Part 2 doc §5) --------------------------------------
+// Distinct from CrmCallLog, which records provider/PSTN calls made from the
+// Calling & Visits desk. These are calls that happen *inside WhatsApp* over
+// Meta's Calling API: different identifiers, different permission model,
+// different lifecycle. Folding them into one table would have meant a status
+// column that means different things depending on a sibling column.
+
+/// One WhatsApp call, user- or business-initiated.
+model WhatsAppCall {
+  id             String  @id @default(cuid())
+  tenantId       String
+  /// Our number the call ran through (Cloud API phone_number_id).
+  phoneNumberId  String
+  /// Meta's call id (wacid:...). Unique, so webhook retries are idempotent and
+  /// the connect/terminate events for one call find each other.
+  waCallId       String  @unique
+  /// The customer's WhatsApp id (E.164 without '+').
+  contactPhone   String
+  contactId      String?
+  /// Thread this call belongs in, so it shows on the customer timeline.
+  conversationId String?
+
+  /// user_initiated — the customer rang us; business_initiated — we rang them.
+  direction       String
+  /// ringing | pre_accepted | connecting | connected | ended | missed | rejected | failed
+  /// Mirrors the state list in the spec. `missed` is ours, not Meta's: it is a
+  /// terminate that arrives while we were still ringing and nobody answered.
+  status          String  @default("ringing")
+  /// Meta's terminate reason, kept verbatim for diagnosis.
+  terminateReason String?
+  errorCode       String?
+  errorMessage    String?
+
+  /// Who was rung / who answered.
+  assigneeUserId   String?
+  answeredByUserId String?
+
+  ringingAt   DateTime  @default(now())
+  acceptedAt  DateTime?
+  connectedAt DateTime?
+  endedAt     DateTime?
+  /// Meta reports duration on terminate; we also derive one, and prefer Meta's.
+  durationSec Int?
+
+  /// Where the call came from when Meta tells us: call_button | deep_link |
+  /// template | profile | unknown. Deep links can carry a payload we store
+  /// verbatim for attribution.
+  source        String  @default("unknown")
+  sourcePayload String?
+
+  /// Recording, when the tenant has it switched on and consent is handled.
+  recordingStatus  String? // requested | ready | failed | off
+  recordingFileId  String? // CrmFile id once retrieved
+  /// Transcription arrives separately from recording and may never arrive.
+  transcriptStatus String? // requested | ready | failed | off
+  transcript       Json? // [{speaker, at, text, confidence}]
+  transcriptLang   String?
+  aiSummary        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events WhatsAppCallEvent[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, contactPhone])
+  @@index([conversationId])
+  @@index([tenantId, ringingAt])
+}
+
+/// Every signalling event we received or sent for a call, in order.
+///
+/// Calls fail in ways that are invisible afterwards — an SDP we never answered,
+/// a terminate that arrived before our accept. Without the trail, "the call
+/// dropped" is unanswerable.
+model WhatsAppCallEvent {
+  id      String       @id @default(cuid())
+  callId  String
+  call    WhatsAppCall @relation(fields: [callId], references: [id], onDelete: Cascade)
+  /// inbound (from Meta) | outbound (our API action)
+  origin  String
+  /// connect | accept | pre_accept | reject | terminate | status | permission
+  kind    String
+  payload Json?
+  at      DateTime     @default(now())
+
+  @@index([callId, at])
+}
+
+/// Whether we may ring a given customer, and until when.
+///
+/// The spec is explicit that a business-initiated call is gated on permission,
+/// and permission is either a temporary window the customer opened or a
+/// longer-lived grant they can revoke. Both are modelled here; `expiresAt` null
+/// with no `revokedAt` means persistent.
+model WhatsAppCallPermission {
+  id            String @id @default(cuid())
+  tenantId      String
+  phoneNumberId String
+  contactPhone  String
+
+  /// none | pending | granted | denied | revoked | expired
+  status         String    @default("none")
+  /// temporary | persistent — null until something is granted.
+  permissionType String?
+  grantedAt      DateTime?
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  /// How it was obtained: call_permission_request | inbound_call | template | unknown
+  source         String    @default("unknown")
+
+  /// Rate limiting — agents must not be able to pester a customer with
+  /// repeated permission requests, which is a fast route to a quality hit.
+  lastRequestedAt   DateTime?
+  requestCount      Int       @default(0)
+  requestedByUserId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([phoneNumberId, contactPhone])
+  @@index([tenantId, status])
+}
+
+/// Per-number calling configuration, in SME terms.
+///
+/// The spec is firm that the SME sees "Customers can call us" and business
+/// hours, not Meta's raw option names. This table holds our side; what Meta
+/// accepts is pushed to the number's /settings endpoint and the result mirrored
+/// back into `metaCallingStatus`.
+model WhatsAppCallingSettings {
+  id            String @id @default(cuid())
+  tenantId      String
+  phoneNumberId String @unique
+
+  /// Master switch — calling off means neither direction works.
+  enabled         Boolean @default(false)
+  /// Whether the call button shows on our WhatsApp profile.
+  callIconVisible Boolean @default(true)
+  /// Can customers ring us?
+  inboundEnabled  Boolean @default(true)
+  /// May we ring customers (still gated per-contact on permission)?
+  outboundEnabled Boolean @default(false)
+
+  /// IANA zone the hours below are written in, e.g. "Asia/Kolkata".
+  timezone            String  @default("Asia/Kolkata")
+  /// [{day: 0-6, open: "10:00", close: "19:00"}] — absent day = closed.
+  businessHours       Json?
+  /// [{date: "2026-10-20", name: "Diwali"}] — closed regardless of hours.
+  holidays            Json?
+  /// What happens to a call outside business hours:
+  /// ring_anyway | voicemail | decline_with_message
+  afterHoursBehaviour String  @default("voicemail")
+  afterHoursMessage   String?
+
+  /// Recording is off until the tenant has dealt with consent and retention.
+  recordingEnabled       Boolean @default(false)
+  /// Audible announcement played when recording starts, if they use one.
+  recordingConsentText   String?
+  recordingRetentionDays Int     @default(90)
+  transcriptionEnabled   Boolean @default(false)
+
+  /// Mirrored from Meta: what it says about this number's calling status.
+  metaCallingStatus String? // ENABLED | DISABLED | RESTRICTED | null
+  /// A restriction or quality warning Meta raised, surfaced to the admin.
+  restrictionReason String?
+  callQuality       String? // GREEN | YELLOW | RED
+  syncedAt          DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
 }

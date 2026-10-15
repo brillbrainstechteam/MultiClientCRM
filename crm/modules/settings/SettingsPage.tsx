@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import {
-  Building2, Contact as ContactIcon, History, KeyRound, MessageSquare, Plug,
+  Building2, Contact as ContactIcon, History, KeyRound, MessageSquare, Phone, Plug,
   Route as RouteIcon, ShieldCheck, Users, ExternalLink, ArrowLeft, Zap,
 } from 'lucide-react';
 import { PageHeader } from '@crm/components';
@@ -35,6 +35,7 @@ function SettingsHub() {
   const sections: SectionCard[] = [
     { icon: <Building2 />, title: 'Business profile', desc: 'Name, business model, GST/CIN, entity type.', to: '/settings/profile' },
     { icon: <MessageSquare />, title: 'WhatsApp numbers', desc: 'Connected numbers, status and details.', to: '/settings/whatsapp' },
+    { icon: <Phone />, title: 'WhatsApp calling', desc: 'Voice calls, calling hours and permission.', to: '/settings/whatsapp/calling' },
     { icon: <Users />, title: 'Team & roles', desc: 'Members, roles and permissions.', to: '/settings/team' },
     { icon: <RouteIcon />, title: 'Routing & assignment', desc: 'How conversations are assigned.', to: '/settings/routing' },
     { icon: <ContactIcon />, title: 'Contact settings', desc: 'Fields, tags and contact rules.', to: '/settings/contacts' },

@@ -14,6 +14,7 @@ import {
 import { readReferral, applyReferralToContact, describeReferral } from '@/lib/whatsapp/referral';
 import { describeInbound } from '@/lib/whatsapp/inbound';
 import { storeInboundMedia, isMediaType } from '@/lib/whatsapp/media';
+import { handleCallsWebhook, handlePermissionReply } from '@/lib/whatsapp/calling';
 import { decrypt as decryptToken } from '@/lib/crypto';
 
 /**
@@ -164,10 +165,13 @@ export async function ingestWebhookPayload(payload: any): Promise<IngestResult> 
             await handleAccountUpdate(value, account, result); break;
           case 'account_alerts':
             await handleAccountAlerts(value, account, result); break;
-          case 'calls':
-            // Signalling/media handled in the Calling phase; the raw event is
-            // already persisted (WebhookEvent) so nothing is lost.
-            result.callsSeen += 1; break;
+          case 'calls': {
+            const calls = { callsSeen: 0, callsStored: 0, permissionsUpdated: 0, errors: [] as string[] };
+            await handleCallsWebhook(value, account, calls);
+            result.callsSeen += calls.callsSeen;
+            result.errors.push(...calls.errors);
+            break;
+          }
           default:
             if (field.startsWith('group')) { result.groupsSeen += 1; break; }
             if (!result.unhandledFields.includes(field)) result.unhandledFields.push(field);
@@ -196,6 +200,18 @@ async function handleMessages(value: any, account: ResolvedAccount, result: Inge
     result.inboundSeen += 1;
     try {
       const from: string = m.from;
+
+      // A call-permission answer rides in on the ordinary messages webhook as
+      // an interactive reply. It is the only moment Meta tells us a permission
+      // was granted and when it runs out, so it is recorded before anything
+      // else — and it is not a message the agent needs to read.
+      const permissionReply = m?.interactive?.type === 'call_permission_reply'
+        ? m.interactive.call_permission_reply
+        : null;
+      if (permissionReply) {
+        await handlePermissionReply({ tenantId, phoneNumberId, contactPhone: from, reply: permissionReply });
+      }
+
       // Every message type gets readable text — a location, a shared contact or
       // a reaction used to land in the thread as "[location]", which tells the
       // agent nothing about what the customer actually sent.

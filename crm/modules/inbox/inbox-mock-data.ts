@@ -440,6 +440,10 @@ function mapKind(type: string | undefined): InboxMessage['kind'] {
     case 'video': return 'video';
     case 'document': return 'document';
     case 'audio': case 'voice': return 'audio';
+    // A call is something that happened on the thread, not something anyone
+    // typed, so it renders as a centred timeline pill rather than a bubble
+    // attributed to one side.
+    case 'call': return 'system';
     default: return 'text';
   }
 }
