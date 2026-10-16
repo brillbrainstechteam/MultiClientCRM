@@ -14,8 +14,11 @@
   padding: var(--crm-space-3) 0 var(--crm-space-2);
   /* Its own value rather than --crm-surface-sunken: that token is also used
      for inset panels on white cards, where it has to stay barely-there. Here
-     the whole point is that the ground is visibly not the list's white. */
-  background: #eef1f5;
+     the whole point is that the ground is visibly not the list's white.
+     A whisper of the brand green rather than more grey — it ties the thread
+     to the product's one colour and keeps the pane from reading as another
+     slab of neutral. */
+  background: #f1f6f3;
 }
 
 /* ---- Message bubbles in the conversation detail pane -------------------- */

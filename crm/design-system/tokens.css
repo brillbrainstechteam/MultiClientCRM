@@ -56,7 +56,13 @@
   --crm-gold-border: #cdd0f7;
 
   /* ---- Ground ------------------------------------------------------------ */
-  --crm-canvas: #f6f8fa;
+  /* The ground the cards sit on. #f6f8fa read dull for two reasons at once:
+     almost no chroma, so it was a dead grey rather than a colour, and almost
+     no contrast against the white cards, so nothing looked like it was
+     floating on anything. A little more depth and a little more blue fixes
+     both — the white surfaces now read as crisp against it instead of
+     dissolving into it. */
+  --crm-canvas: #e9eef6;
   --crm-cream: var(--crm-neutral-100);
   --crm-card: #ffffff;
   --crm-table-header-band: var(--crm-neutral-50);
