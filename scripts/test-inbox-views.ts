@@ -11,7 +11,7 @@
  *
  * Pure selector logic — no database, no network.
  */
-import { applyQuickView, applyFilters } from '../crm/modules/inbox/inbox-selectors';
+import { applyQuickView, applyFilters, canSaveCurrentView } from '../crm/modules/inbox/inbox-selectors';
 import { emptyFilterState, isFilterActive } from '../crm/modules/inbox/inbox-types';
 import type { InboxConversation } from '../crm/modules/inbox/inbox-types';
 
@@ -180,6 +180,28 @@ check('adLeadsOnly counts as active',
   isFilterActive({ ...emptyFilterState(), adLeadsOnly: true }), true);
 check('favouritesOnly counts as active',
   isFilterActive({ ...emptyFilterState(), favouritesOnly: true }), true);
+
+/* ---- What is worth saving as a view ---------------------------------------- */
+
+// This gate was wrong once: it asked only whether a filter was set, so picking
+// the New Leads queue left the save control disabled with no explanation.
+check('a queue on its own is worth saving',
+  canSaveCurrentView('new-leads', emptyFilterState(), 'owner'), true);
+check('so is a filter on its own',
+  canSaveCurrentView('all', { ...emptyFilterState(), unreadOnly: true }, 'owner'), true);
+check('and the two together',
+  canSaveCurrentView('new-leads', { ...emptyFilterState(), waitingLongerThanMinutes: 1440 }, 'owner'), true);
+
+// The one list nobody needs a shortcut to is the one they already land on.
+check('the default list for an owner is not worth saving',
+  canSaveCurrentView('all', emptyFilterState(), 'owner'), false);
+check('an agent lands on Mine, so that is their unsaveable default',
+  canSaveCurrentView('mine', emptyFilterState(), 'agent'), false);
+// ...but it is NOT the default for an owner, so they can save it.
+check('an owner may save Mine, because they do not start there',
+  canSaveCurrentView('mine', emptyFilterState(), 'owner'), true);
+check('and an agent may save All Chats for the same reason',
+  canSaveCurrentView('all', emptyFilterState(), 'agent'), true);
 
 /* ---- Report ----------------------------------------------------------------- */
 

@@ -60,6 +60,7 @@ import {
   scopeConversations,
   quickViewCounts,
   defaultViewForRole,
+  canSaveCurrentView,
   searchConversationsByContact,
   searchConversationsByMessage,
 } from './inbox-selectors';
@@ -370,6 +371,8 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
   const isLoading = forceState === 'loading';
   const isViewEmpty = !isLoading && conversations.length === 0;
   const filtersActive = isFilterActive(filters);
+
+  const canSaveView = canSaveCurrentView(view, filters, role);
 
   // ---- URL helpers --------------------------------------------------------
   function setConversation(id: string) {
@@ -1039,14 +1042,14 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
                       <button
                         role="menuitem"
                         className="crm-inbox-more__save"
-                        disabled={!filtersActive}
+                        disabled={!canSaveView}
                         onClick={() => { setMoreMenuOpen(false); openOverlay('modal', 'save-view'); }}
                       >
                         <Bookmark size={13} aria-hidden="true" />
                         <span>Save this view…</span>
                       </button>
-                      {!filtersActive && (
-                        <p className="crm-inbox-more__hint">Set a filter first, then save it.</p>
+                      {!canSaveView && (
+                        <p className="crm-inbox-more__hint">Pick a queue or set a filter, then save it.</p>
                       )}
                     </div>
                   </div>
@@ -1163,7 +1166,7 @@ export default function InboxPage({ standalone = false }: { standalone?: boolean
                     icon={<SlidersHorizontal size={16} />}
                     onClick={() => openOverlay('drawer', 'filters')}
                   />
-                  {filtersActive && (
+                  {canSaveView && (
                     <IconButton
                       label="Save this view"
                       className="crm-inbox-saveview-btn"

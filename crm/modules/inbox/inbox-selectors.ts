@@ -6,6 +6,7 @@
 import type { RoleKey } from '@crm/mock-data';
 import { users } from '@crm/mock-data';
 import type { InboxConversation, QuickViewKey, InboxFilterState, ConversationSortKey } from './inbox-types';
+import { isFilterActive } from './inbox-types';
 import { allConversations } from './inbox-mock-data';
 
 // ---- Quick-view filtering -------------------------------------------------
@@ -273,6 +274,23 @@ export function quickViewCounts(
 
 export function defaultViewForRole(role: RoleKey): QuickViewKey {
   return role === 'agent' ? 'mine' : 'all';
+}
+
+/**
+ * Is the list on screen worth saving as a named view?
+ *
+ * A queue narrows the list exactly as a filter does, and the saved payload has
+ * always carried both. Gating this on filters alone left "New Leads" — one of
+ * the lists people most want to keep — with the save control disabled and
+ * nothing on screen explaining why. The only list not worth saving is the one
+ * the operator already lands on, which they do not need a shortcut to.
+ */
+export function canSaveCurrentView(
+  view: QuickViewKey,
+  filters: InboxFilterState,
+  role: RoleKey,
+): boolean {
+  return isFilterActive(filters) || view !== defaultViewForRole(role);
 }
 
 // ---- Message search ------------------------------------------------------
