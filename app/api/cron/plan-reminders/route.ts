@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { notify } from '@/lib/billing/notify';
+import { dueReminders, describeOffset, LATE_GRACE_MINUTES } from '@/lib/crm/reminders';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,45 +59,68 @@ async function run(req: Request): Promise<Response> {
   const now = new Date();
   const todayStart = startOfDay(now);
 
-  // Candidates: have a reminder configured, not yet sent, event still upcoming
-  // (within the next year). Dueness is computed per-event below.
+  // Anything with reminders left to deliver. The window reaches back a day so
+  // an overdue reminder on a just-passed event is still considered (and then
+  // either delivered or retired by the grace check), and forward a year.
   const candidates = await prisma.crmPlanEvent.findMany({
     where: {
-      remindDaysBefore: { not: null },
-      reminderSentAt: null,
-      date: { gte: todayStart, lte: new Date(todayStart.getTime() + 366 * DAY) },
+      remindOffsets: { isEmpty: false },
+      date: {
+        gte: new Date(todayStart.getTime() - DAY),
+        lte: new Date(todayStart.getTime() + 366 * DAY),
+      },
     },
   });
 
-  let notified = 0, fired = 0, whatsappSkipped = 0;
+  let notified = 0, fired = 0, whatsappSkipped = 0, retired = 0;
   for (const e of candidates) {
-    const remind = e.remindDaysBefore ?? 0;
-    const reminderDay = new Date(startOfDay(e.date).getTime() - remind * DAY);
-    if (todayStart < reminderDay) continue; // not due yet
+    const due = dueReminders(e, now);
+    if (due.length === 0) continue;
 
-    const daysOut = Math.round((startOfDay(e.date).getTime() - todayStart.getTime()) / DAY);
-    const when = daysOut <= 0 ? 'today' : daysOut === 1 ? 'tomorrow' : `in ${daysOut} days`;
     const label = TYPE_LABEL[e.type] ?? 'Activity';
-    const prettyDate = e.date.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short' });
-    const title = `Reminder: ${e.title}`;
-    const body = `${label} ${when} (${prettyDate})${e.note ? ` — ${e.note}` : ''}`;
+    const prettyDate = e.allDay
+      ? e.date.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short' })
+      : e.date.toLocaleString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-    const targets = e.assigneeUserIds.length ? e.assigneeUserIds : [null]; // null = tenant-wide
-    for (const userId of targets) {
-      await notify({
-        tenantId: e.tenantId, userId, category: 'campaign', kind: 'plan_reminder', severity: 'info',
-        title, body, data: { planEventId: e.id, type: e.type, date: e.date.toISOString(), daysOut },
-        dedupeKey: `plan:${e.id}:${userId ?? 'all'}`,
-      });
-      notified++;
+    const delivered: number[] = [];
+    for (const r of due) {
+      if (r.stale) {
+        // Too late to be true. Recording it stops the job retrying forever.
+        delivered.push(r.offset);
+        retired++;
+        continue;
+      }
+
+      const title = `Reminder: ${e.title}`;
+      const body = `${label} ${describeOffset(r.offset)} (${prettyDate})${e.note ? ` — ${e.note}` : ''}`;
+      const targets = e.assigneeUserIds.length ? e.assigneeUserIds : [null]; // null = tenant-wide
+
+      for (const userId of targets) {
+        await notify({
+          tenantId: e.tenantId, userId, category: 'campaign', kind: 'plan_reminder', severity: 'info',
+          title, body,
+          data: { planEventId: e.id, type: e.type, date: e.date.toISOString(), offsetMinutes: r.offset },
+          // Per offset, so the one-hour reminder is not swallowed as a
+          // duplicate of the two-day one sent earlier for the same event.
+          dedupeKey: `plan:${e.id}:${r.offset}:${userId ?? 'all'}`,
+        });
+        notified++;
+      }
+      if (e.notifyWhatsapp) whatsappSkipped += e.assigneeUserIds.length || 1; // no staff numbers stored yet
+      delivered.push(r.offset);
+      fired++;
     }
-    if (e.notifyWhatsapp) whatsappSkipped += e.assigneeUserIds.length || 1; // no staff numbers stored yet
 
-    await prisma.crmPlanEvent.update({ where: { id: e.id }, data: { reminderSentAt: now } });
-    fired++;
+    await prisma.crmPlanEvent.update({
+      where: { id: e.id },
+      data: { remindersSent: { set: [...e.remindersSent, ...delivered] }, reminderSentAt: now },
+    });
   }
 
-  return NextResponse.json({ ok: true, candidates: candidates.length, fired, notified, whatsappSkipped });
+  return NextResponse.json({
+    ok: true, candidates: candidates.length, fired, notified, whatsappSkipped, retired,
+    graceMinutes: LATE_GRACE_MINUTES,
+  });
 }
 
 export async function GET(req: Request) { return run(req); }

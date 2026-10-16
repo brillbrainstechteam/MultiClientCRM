@@ -17,6 +17,12 @@
   min-height: 0;
   overflow: hidden;
   background: var(--crm-surface-page);
+  /* The three columns used to butt together, separated by one hairline each,
+     all on white — so the list of conversations and the conversation itself
+     read as a single sheet and the eye had to work out where one ended. They
+     are three different jobs, so they are now three surfaces on the canvas. */
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-3);
 }
 
 /* Tablet: hide right panel (becomes a drawer) */
@@ -34,6 +40,18 @@
 @media (max-width: 767px) {
   .crm-inbox-workspace {
     grid-template-columns: 1fr;
+    /* A single pane on a phone is the whole screen; the inset would only
+       waste width it does not have. */
+    gap: 0;
+    padding: 0;
+  }
+
+  .crm-inbox-workspace__list,
+  .crm-inbox-workspace__detail,
+  .crm-inbox-workspace__context {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .crm-inbox-workspace__list {
@@ -49,27 +67,25 @@
   }
 }
 
-.crm-inbox-workspace__list {
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--crm-border-strong);
-  overflow: hidden;
-  background: var(--crm-surface-raised);
-}
-
-.crm-inbox-workspace__detail {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--crm-surface-page);
-}
-
+/* One shape for all three, so the workspace reads as a set rather than three
+   unrelated regions that happen to be adjacent. */
+.crm-inbox-workspace__list,
+.crm-inbox-workspace__detail,
 .crm-inbox-workspace__context {
   display: flex;
   flex-direction: column;
-  border-left: 1px solid var(--crm-border-strong);
+  min-height: 0;
   overflow: hidden;
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-xl);
   background: var(--crm-surface-raised);
+  box-shadow: var(--crm-shadow-sm);
+}
+
+/* The conversation is the one place work happens rather than being chosen, so
+   it carries slightly more weight than the two panes that flank it. */
+.crm-inbox-workspace__detail {
+  box-shadow: var(--crm-shadow-md);
 }
 
 /* ---- Inbox sidebar (left column) ---------------------------------------- */

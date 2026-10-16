@@ -4,12 +4,17 @@
   display: flex;
   align-items: flex-start;
   gap: var(--crm-space-3);
-  padding: var(--crm-space-3) var(--crm-space-4);
+  padding: var(--crm-space-3);
   cursor: pointer;
-  border-bottom: 1px solid var(--crm-border-subtle);
   background: var(--crm-surface-raised);
   transition: background var(--crm-motion-fast);
   position: relative;
+  /* Inset and rounded rather than full-bleed rows divided by hairlines. A
+     ruled list reads as a table of records; these are things you pick up, and
+     the hover and selected states need a shape to live inside. */
+  margin: 2px var(--crm-space-2);
+  border-radius: var(--crm-radius-lg);
+  overflow: hidden;
 }
 
 .crm-conv-row:hover {
@@ -121,7 +126,7 @@
 /* Unread count badge — pinned to the right edge, vertically centred */
 .crm-conv-row__unread-count {
   position: absolute;
-  right: var(--crm-space-4);
+  right: var(--crm-space-3);
   top: 50%;
   transform: translateY(-50%);
   min-width: 18px;

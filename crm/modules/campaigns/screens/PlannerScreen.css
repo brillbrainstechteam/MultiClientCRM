@@ -103,3 +103,57 @@
 .pn-agenda__x:hover { color: var(--crm-danger); border-color: var(--crm-danger); }
 
 @media (max-width: 720px) { .pn-cell { min-height: 76px; } .pn-ev span { font-size: 10px; } .pn-agenda__row { grid-template-columns: 1fr auto; } .pn-agenda__badge { display: none; } }
+
+/* ---- Reminder lead times ------------------------------------------------ */
+/* Chips rather than a number box: "remind me 2 days and 1 hour before" is two
+   choices, and a single "days ahead" field could only ever express one. */
+.pn-remind-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--crm-space-2);
+}
+
+.pn-remind-chip {
+  padding: 5px 11px;
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-surface-raised);
+  font-family: inherit;
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-secondary);
+  cursor: pointer;
+  transition: background var(--crm-motion-fast), border-color var(--crm-motion-fast),
+    color var(--crm-motion-fast);
+}
+
+.pn-remind-chip:hover:not(:disabled) {
+  border-color: var(--crm-brand-200);
+  background: var(--crm-brand-50);
+  color: var(--crm-brand-700);
+}
+
+.pn-remind-chip--on {
+  border-color: var(--crm-brand-600);
+  background: var(--crm-brand-600);
+  color: var(--crm-text-inverse);
+}
+
+.pn-remind-chip--on:hover:not(:disabled) {
+  border-color: var(--crm-brand-700);
+  background: var(--crm-brand-700);
+  color: var(--crm-text-inverse);
+}
+
+/* A lead time that needs a start time reads as unavailable, not as off —
+   otherwise it looks like a choice the operator simply has not made. */
+.pn-remind-chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pn-remind-none {
+  margin: var(--crm-space-2) 0 0;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}

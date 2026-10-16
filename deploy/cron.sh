@@ -3,6 +3,7 @@
 #
 #   ./deploy/cron.sh token-health
 #   ./deploy/cron.sh plan-reminders
+#   ./deploy/cron.sh calling-health
 #
 # The shared secret is read from .env.production rather than pasted into
 # crontab. That matters more than it sounds: a single mistyped or dropped
@@ -12,13 +13,18 @@
 #
 # Crontab entries then carry no secret at all:
 #
-#   30 7 * * * /home/talktrackcrm/app/deploy/cron.sh plan-reminders >> /var/log/talktrack-cron.log 2>&1
-#   0  8 * * * /home/talktrackcrm/app/deploy/cron.sh token-health   >> /var/log/talktrack-cron.log 2>&1
+#   */15 * * * * /home/talktrackcrm/app/deploy/cron.sh plan-reminders >> /var/log/talktrack-cron.log 2>&1
+#   0  8 * * *   /home/talktrackcrm/app/deploy/cron.sh token-health   >> /var/log/talktrack-cron.log 2>&1
+#   30 8 * * *   /home/talktrackcrm/app/deploy/cron.sh calling-health >> /var/log/talktrack-cron.log 2>&1
+#
+# plan-reminders runs every 15 minutes rather than daily: an activity can ask
+# to be reminded an hour or fifteen minutes ahead, and a once-a-day job cannot
+# deliver either.
 set -euo pipefail
 
 JOB="${1:-}"
 if [ -z "$JOB" ]; then
-  echo "usage: $(basename "$0") <token-health|plan-reminders>" >&2
+  echo "usage: $(basename "$0") <token-health|plan-reminders|calling-health>" >&2
   exit 2
 fi
 

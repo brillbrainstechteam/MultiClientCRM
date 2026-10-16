@@ -103,17 +103,7 @@ export function MessageHistory({
   }
 
   return (
-    <div
-      style={{
-        flex: 1,
-        overflow: 'hidden auto',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2,
-        paddingTop: 12,
-        paddingBottom: 8,
-      }}
-    >
+    <div className="crm-msg-history">
       {items.map((item, i) => {
         if (item.type === 'sep') {
           return <DaySeparator key={`sep-${i}`} label={item.label} />;

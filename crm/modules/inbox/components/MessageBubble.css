@@ -1,3 +1,23 @@
+/* ---- The conversation ground --------------------------------------------
+ * A tinted surface behind the bubbles, rather than the same white the
+ * conversation list uses. Two lists of text blocks on identical white is what
+ * made the inbox and the chat read as one thing; giving the thread its own
+ * ground is what separates "choosing a conversation" from "being in one".
+ */
+.crm-msg-history {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--crm-space-3) 0 var(--crm-space-2);
+  /* Its own value rather than --crm-surface-sunken: that token is also used
+     for inset panels on white cards, where it has to stay barely-there. Here
+     the whole point is that the ground is visibly not the list's white. */
+  background: #eef1f5;
+}
+
 /* ---- Message bubbles in the conversation detail pane -------------------- */
 
 .crm-msg-bubble {

@@ -722,15 +722,29 @@ model CrmPlanEvent {
   endDate          DateTime?
   note             String?
   createdByUserId  String?
-  // Reminders: notify the assignees `remindDaysBefore` days ahead of `date`.
-  remindDaysBefore Int? // null = no reminder; 0 = on the day
+  /// False when the activity has a real start time, so "30 minutes before"
+  /// means something. An all-day entry is reminded against 9am local, because
+  /// 30 minutes before midnight is not a reminder anybody wanted.
+  allDay           Boolean   @default(true)
+  /// How far ahead to remind, in MINUTES before the start, one entry per
+  /// reminder. [2880, 60] is "two days before, and again an hour before".
+  /// Minutes rather than days throughout: one unit means no conversion bugs
+  /// at the boundary, and days are just large numbers of minutes.
+  remindOffsets    Int[]     @default([])
+  /// Which of those offsets have already been delivered. Per-offset rather
+  /// than one timestamp, because a single `reminderSentAt` cannot express
+  /// "the two-day reminder went, the one-hour one has not".
+  remindersSent    Int[]     @default([])
+  /// Superseded by remindOffsets. Kept so an older client that still sends it
+  /// keeps working; the API translates it into an offset.
+  remindDaysBefore Int?
   assigneeUserIds  String[]  @default([]) // User ids who should be reminded
   notifyWhatsapp   Boolean   @default(false) // also attempt a WhatsApp reminder
-  reminderSentAt   DateTime? // set once the reminder has fired (idempotency)
+  reminderSentAt   DateTime? // when the most recent reminder fired
   createdAt        DateTime  @default(now())
 
   @@index([tenantId, date])
-  @@index([reminderSentAt])
+  @@index([date])
 }
 
 // Req 43: immutable log of lead-status / lifecycle transitions per contact.

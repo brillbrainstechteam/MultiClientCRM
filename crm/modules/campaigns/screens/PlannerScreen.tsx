@@ -4,9 +4,10 @@ import { PageHeader } from '@crm/components';
 import { Button, Select } from '@crm/design-system';
 import { useWorkspace } from '@crm/app/workspace-context';
 import { FESTIVALS_2026 } from '../data/festivals';
+import { REMINDER_PRESETS, MAX_REMINDERS_PER_EVENT } from '@/lib/crm/reminders';
 import './PlannerScreen.css';
 
-interface PlanEvent { id: string; title: string; type: string; date: string; endDate: string | null; note: string | null; remindDaysBefore?: number | null; assigneeUserIds?: string[]; notifyWhatsapp?: boolean; }
+interface PlanEvent { id: string; title: string; type: string; date: string; endDate: string | null; note: string | null; remindDaysBefore?: number | null; remindOffsets?: number[]; allDay?: boolean; assigneeUserIds?: string[]; notifyWhatsapp?: boolean; }
 
 const TYPE_META: Record<string, { label: string; cls: string }> = {
   field: { label: 'Field marketing', cls: 'field' },
@@ -153,7 +154,7 @@ export default function PlannerScreen() {
                 {fests.map((f, j) => <div key={`f${j}`} className="pn-ev pn-ev--fest" title={f}><Sparkles size={10} /> {f}</div>)}
                 {evs.map((e) => (
                   <div key={e.id} className={`pn-ev pn-ev--${TYPE_META[e.type]?.cls ?? 'camp'} pn-ev--clickable`} title={e.note ?? e.title} role="button" tabIndex={0} onClick={() => setEditing(e)} onKeyDown={(k) => { if (k.key === 'Enter') setEditing(e); }}>
-                    {e.remindDaysBefore != null ? <Bell size={9} aria-label="Has reminder" /> : null}
+                    {hasReminder(e) ? <Bell size={9} aria-label="Has reminder" /> : null}
                     <span>{e.title}</span>
                     {canEdit ? <button className="pn-ev__x" onClick={(ev) => { ev.stopPropagation(); remove(e.id); }} aria-label="Remove"><Trash2 size={10} /></button> : null}
                   </div>
@@ -178,7 +179,7 @@ export default function PlannerScreen() {
               >
                 <span className="pn-agenda__date">{prettyDate(r.date)}</span>
                 <span className="pn-agenda__badge">{r.kind === 'festival' ? 'Festival' : (TYPE_META[r.type ?? '']?.label ?? r.type)}</span>
-                <span className="pn-agenda__title">{r.title}{r.note ? <em> — {r.note}</em> : null}{ev?.remindDaysBefore != null ? <Bell size={11} className="pn-agenda__bell" /> : null}</span>
+                <span className="pn-agenda__title">{r.title}{r.note ? <em> — {r.note}</em> : null}{ev && hasReminder(ev) ? <Bell size={11} className="pn-agenda__bell" /> : null}</span>
                 {canEdit && r.kind === 'event' && r.id ? <button className="pn-agenda__x" onClick={(e) => { e.stopPropagation(); remove(r.id!); }} aria-label="Remove"><Trash2 size={13} /></button> : null}
               </div>
             );
@@ -202,6 +203,17 @@ export default function PlannerScreen() {
 
 interface Member { id: string; name: string; role?: string; department?: string | null }
 
+/** Lead times already on an event, falling back to the superseded single value. */
+function initialOffsets(event?: PlanEvent): number[] {
+  if (event?.remindOffsets?.length) return event.remindOffsets;
+  if (event?.remindDaysBefore != null) return [event.remindDaysBefore * 1440];
+  return [];
+}
+
+function hasReminder(e: PlanEvent): boolean {
+  return (e.remindOffsets?.length ?? 0) > 0 || e.remindDaysBefore != null;
+}
+
 /** Add a new plan (when `date` is given) or view/edit/delete an existing one (when `event` is given). */
 function PlanModal({ date, event, canEdit, onClose, onDone }: { date?: string; event?: PlanEvent; canEdit: boolean; onClose: () => void; onDone: (msg: string) => void }) {
   const isEdit = Boolean(event);
@@ -211,7 +223,11 @@ function PlanModal({ date, event, canEdit, onClose, onDone }: { date?: string; e
   const [when, setWhen] = useState(baseDate);
   const [endDate, setEndDate] = useState(event?.endDate ? event.endDate.slice(0, 10) : '');
   const [note, setNote] = useState(event?.note ?? '');
-  const [remindDays, setRemindDays] = useState(event?.remindDaysBefore != null ? String(event.remindDaysBefore) : '');
+  const [offsets, setOffsets] = useState<Set<number>>(() => new Set(initialOffsets(event)));
+  const [allDay, setAllDay] = useState(event?.allDay ?? true);
+  const [startTime, setStartTime] = useState(
+    event && event.allDay === false ? new Date(event.date).toTimeString().slice(0, 5) : '10:00',
+  );
   const [assignees, setAssignees] = useState<Set<string>>(new Set(event?.assigneeUserIds ?? []));
   const [notifyWhatsapp, setNotifyWhatsapp] = useState(Boolean(event?.notifyWhatsapp));
   const [members, setMembers] = useState<Member[]>([]);
@@ -223,6 +239,13 @@ function PlanModal({ date, event, canEdit, onClose, onDone }: { date?: string; e
       .then((r) => r.json()).then((d) => setMembers((d.allMembers ?? d.members ?? []) as Member[])).catch(() => setMembers([]));
   }, []);
 
+  const toggleOffset = (m: number) => setOffsets((prev) => {
+    const n = new Set(prev);
+    if (n.has(m)) n.delete(m);
+    else if (n.size < MAX_REMINDERS_PER_EVENT) n.add(m);
+    return n;
+  });
+
   const toggleAssignee = (id: string) => setAssignees((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const save = async () => {
@@ -230,8 +253,14 @@ function PlanModal({ date, event, canEdit, onClose, onDone }: { date?: string; e
     if (!when) { setErr('Pick a date.'); return; }
     setBusy(true); setErr(null);
     try {
-      const remindDaysBefore = remindDays.trim() === '' ? (isEdit ? null : undefined) : Math.max(0, Number(remindDays));
-      const payload = { title, type, date: when, endDate: endDate || (isEdit ? null : undefined), note, remindDaysBefore, assigneeUserIds: [...assignees], notifyWhatsapp };
+      // A timed activity sends a real local datetime so "an hour before" has
+      // something to be an hour before. An all-day one sends the bare date.
+      const dateValue = allDay ? when : `${when}T${startTime}`;
+      const payload = {
+        title, type, date: dateValue, endDate: endDate || (isEdit ? null : undefined), note,
+        allDay, remindOffsets: [...offsets],
+        assigneeUserIds: [...assignees], notifyWhatsapp,
+      };
       const r = isEdit
         ? await fetch('/api/crm/plan-events', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ id: event!.id, ...payload }) })
         : await fetch('/api/crm/plan-events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(payload) });
@@ -264,15 +293,51 @@ function PlanModal({ date, event, canEdit, onClose, onDone }: { date?: string; e
         </label>
         <label className="pn-field"><span>Title</span><input value={title} readOnly={readOnly} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Dhanteras push · North zone" /></label>
         <label className="pn-field"><span>Date</span><input type="date" value={when} readOnly={readOnly} onChange={(e) => setWhen(e.target.value)} /></label>
+        <label className="pn-assignee pn-assignee--wa">
+          <input type="checkbox" checked={!allDay} disabled={readOnly} onChange={(e) => {
+            const timed = e.target.checked;
+            setAllDay(!timed);
+            // Dropping the time would leave minute-level reminders pointing at
+            // nothing, so they come off with it rather than silently misfiring.
+            if (!timed) setOffsets((prev) => new Set([...prev].filter((m) => m % 1440 === 0)));
+          }} />
+          <span>This activity has a start time</span>
+        </label>
+        {!allDay && (
+          <label className="pn-field"><span>Starts at</span>
+            <input type="time" value={startTime} readOnly={readOnly} onChange={(e) => setStartTime(e.target.value)} />
+          </label>
+        )}
+
         <label className="pn-field"><span>End date (optional, for multi-day)</span><input type="date" value={endDate} min={when} readOnly={readOnly} onChange={(e) => setEndDate(e.target.value)} /></label>
         <label className="pn-field"><span>Note (optional)</span><textarea value={note} readOnly={readOnly} onChange={(e) => setNote(e.target.value)} rows={2} /></label>
 
         <div className="pn-reminder">
-          <label className="pn-field pn-field--inline"><span>Remind before</span>
-            <span className="pn-remind-input">
-              <input type="number" min={0} max={365} value={remindDays} readOnly={readOnly} onChange={(e) => setRemindDays(e.target.value)} placeholder="—" /> days ahead
-            </span>
-          </label>
+          <div className="pn-field">
+            <span>Remind me {offsets.size ? `(${offsets.size} of ${MAX_REMINDERS_PER_EVENT})` : ''}</span>
+            <div className="pn-remind-grid">
+              {REMINDER_PRESETS.map((pre) => {
+                const on = offsets.has(pre.minutes);
+                // An hours- or minutes-before reminder is meaningless without
+                // a start time, so those are offered only once there is one.
+                const unavailable = pre.timedOnly && allDay;
+                return (
+                  <button
+                    key={pre.minutes}
+                    type="button"
+                    className={`pn-remind-chip${on ? ' pn-remind-chip--on' : ''}`}
+                    disabled={readOnly || unavailable || (!on && offsets.size >= MAX_REMINDERS_PER_EVENT)}
+                    title={unavailable ? 'Give the activity a start time to use this' : undefined}
+                    aria-pressed={on}
+                    onClick={() => toggleOffset(pre.minutes)}
+                  >
+                    {pre.label}
+                  </button>
+                );
+              })}
+            </div>
+            {offsets.size === 0 && <p className="pn-remind-none">No reminder will be sent.</p>}
+          </div>
           <div className="pn-field">
             <span>Assign to {assignees.size ? `(${assignees.size})` : ''}</span>
             <div className="pn-assignees">
@@ -288,7 +353,7 @@ function PlanModal({ date, event, canEdit, onClose, onDone }: { date?: string; e
             <input type="checkbox" checked={notifyWhatsapp} disabled={readOnly} onChange={(e) => setNotifyWhatsapp(e.target.checked)} />
             <span>Also notify on WhatsApp <em>(needs the staff member’s number + an approved reminder template — in-app reminder always goes out)</em></span>
           </label>
-          {remindDays.trim() !== '' && assignees.size === 0 ? (
+          {offsets.size > 0 && assignees.size === 0 ? (
             <p className="pn-reminder__hint">No one assigned — the reminder will go to the whole team’s notifications.</p>
           ) : null}
         </div>

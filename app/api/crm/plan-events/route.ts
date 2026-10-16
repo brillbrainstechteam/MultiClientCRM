@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
+import { normaliseOffsets, DAY_MINUTES } from '@/lib/crm/reminders';
 
 const TYPES = ['field', 'telecalling', 'campaign', 'exhibition'];
 
@@ -32,6 +33,7 @@ export async function GET(req: Request) {
     events: events.map((e) => ({
       id: e.id, title: e.title, type: e.type,
       date: e.date.toISOString(), endDate: e.endDate ? e.endDate.toISOString() : null, note: e.note,
+      allDay: e.allDay, remindOffsets: e.remindOffsets, remindersSent: e.remindersSent,
       remindDaysBefore: e.remindDaysBefore, assigneeUserIds: e.assigneeUserIds, notifyWhatsapp: e.notifyWhatsapp,
     })),
   });
@@ -52,9 +54,17 @@ export async function POST(req: Request) {
   if (!title) return NextResponse.json({ error: 'A title is required.' }, { status: 400 });
   if (!date || isNaN(date.getTime())) return NextResponse.json({ error: 'A valid date is required.' }, { status: 400 });
 
-  // Reminder config (optional).
+  // Reminder config (optional). A client may send either the new list of lead
+  // times or the old single remindDaysBefore; the old form is translated so an
+  // older build keeps working rather than silently losing its reminder.
   const remindRaw = b.remindDaysBefore;
   const remindDaysBefore = typeof remindRaw === 'number' && remindRaw >= 0 && remindRaw <= 365 ? Math.floor(remindRaw) : null;
+  const remindOffsets = 'remindOffsets' in b
+    ? normaliseOffsets(b.remindOffsets)
+    : remindDaysBefore != null ? [remindDaysBefore * DAY_MINUTES] : [];
+  // An event with no time of day cannot honour a minutes-before reminder, so
+  // allDay is derived from whether a time was actually given.
+  const allDay = typeof b.allDay === 'boolean' ? b.allDay : !/T\d{2}:\d{2}/.test(String(b.date ?? ''));
   const assigneeUserIds = Array.isArray(b.assigneeUserIds) ? b.assigneeUserIds.map(String).filter(Boolean).slice(0, 50) : [];
   const notifyWhatsapp = b.notifyWhatsapp === true;
 
@@ -64,10 +74,15 @@ export async function POST(req: Request) {
       endDate: endDate && !isNaN(endDate.getTime()) ? endDate : null,
       note: (typeof b.note === 'string' ? b.note.trim() : '') || null,
       createdByUserId: user.id,
-      remindDaysBefore, assigneeUserIds, notifyWhatsapp,
+      remindDaysBefore, remindOffsets, allDay, assigneeUserIds, notifyWhatsapp,
     },
   });
-  return NextResponse.json({ id: created.id, title: created.title, type: created.type, date: created.date.toISOString(), endDate: created.endDate?.toISOString() ?? null, note: created.note, remindDaysBefore: created.remindDaysBefore, assigneeUserIds: created.assigneeUserIds, notifyWhatsapp: created.notifyWhatsapp }, { status: 201 });
+  return NextResponse.json({
+    id: created.id, title: created.title, type: created.type,
+    date: created.date.toISOString(), endDate: created.endDate?.toISOString() ?? null, note: created.note,
+    allDay: created.allDay, remindOffsets: created.remindOffsets, remindersSent: created.remindersSent,
+    remindDaysBefore: created.remindDaysBefore, assigneeUserIds: created.assigneeUserIds, notifyWhatsapp: created.notifyWhatsapp,
+  }, { status: 201 });
 }
 
 /** Edit a planned activity (owner/admin/manager). Accepts any subset of fields. */
@@ -90,12 +105,26 @@ export async function PATCH(req: Request) {
   if (typeof b.date === 'string') { const d = new Date(b.date); if (!isNaN(d.getTime())) data.date = d; }
   if ('endDate' in b) { const e = typeof b.endDate === 'string' && b.endDate ? new Date(b.endDate) : null; data.endDate = e && !isNaN(e.getTime()) ? e : null; }
   if ('note' in b) data.note = (typeof b.note === 'string' ? b.note.trim() : '') || null;
-  if ('remindDaysBefore' in b) data.remindDaysBefore = typeof b.remindDaysBefore === 'number' && b.remindDaysBefore >= 0 && b.remindDaysBefore <= 365 ? Math.floor(b.remindDaysBefore) : null;
+  if ('remindDaysBefore' in b) {
+    const days = typeof b.remindDaysBefore === 'number' && b.remindDaysBefore >= 0 && b.remindDaysBefore <= 365
+      ? Math.floor(b.remindDaysBefore) : null;
+    data.remindDaysBefore = days;
+    // Only when the caller did not also send the new field, so an old client
+    // cannot wipe a multi-reminder set it does not know about.
+    if (!('remindOffsets' in b)) data.remindOffsets = days != null ? [days * DAY_MINUTES] : [];
+  }
+  if ('remindOffsets' in b) data.remindOffsets = normaliseOffsets(b.remindOffsets);
+  if ('allDay' in b) data.allDay = b.allDay === true;
   if (Array.isArray(b.assigneeUserIds)) data.assigneeUserIds = b.assigneeUserIds.map(String).filter(Boolean).slice(0, 50);
   if ('notifyWhatsapp' in b) data.notifyWhatsapp = b.notifyWhatsapp === true;
 
-  // If timing or reminder config changed, let the reminder fire again.
-  if ('date' in data || 'remindDaysBefore' in data || 'assigneeUserIds' in data) data.reminderSentAt = null;
+  // Moving the event or changing who is reminded invalidates what has already
+  // gone out: the two-day warning for last Tuesday is not the two-day warning
+  // for next Friday. Clearing the delivered list lets them fire afresh.
+  if ('date' in data || 'remindOffsets' in data || 'allDay' in data || 'assigneeUserIds' in data) {
+    data.remindersSent = [];
+    data.reminderSentAt = null;
+  }
 
   if (Object.keys(data).length === 0) return NextResponse.json({ error: 'Nothing to update.' }, { status: 400 });
 
@@ -103,6 +132,7 @@ export async function PATCH(req: Request) {
   return NextResponse.json({
     id: updated.id, title: updated.title, type: updated.type,
     date: updated.date.toISOString(), endDate: updated.endDate?.toISOString() ?? null, note: updated.note,
+    allDay: updated.allDay, remindOffsets: updated.remindOffsets, remindersSent: updated.remindersSent,
     remindDaysBefore: updated.remindDaysBefore, assigneeUserIds: updated.assigneeUserIds, notifyWhatsapp: updated.notifyWhatsapp,
   });
 }
