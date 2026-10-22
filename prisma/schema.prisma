@@ -1882,3 +1882,65 @@ model CrmExhibitionContact {
   @@index([tenantId, journeyStatus])
   @@index([exhibitionId])
 }
+
+// ---- Communication Library (PRD §17, LIB-01..05) --------------------------
+// Templates and quick replies already existed but separately, and neither
+// could hold a voice note, a reel or a catalogue. More importantly neither
+// knew WHERE it could be used, which is the thing §17 actually asks for: an
+// agent must not be offered a voice note for a campaign, because Meta has no
+// way to send one.
+//
+// This does not replace CrmTemplate or CrmQuickReply. An item can point at an
+// approved template (templateId) or carry its own content; the library is the
+// one place an agent looks, not a second copy of what Meta already holds.
+model CrmLibraryItem {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// text | image | video | audio | document | link | catalogue | template
+  /// `audio` covers voice notes, which are the format most often wanted and
+  /// least often allowed — Meta templates cannot carry one.
+  kind  String
+  title String
+  /// The message body, or the caption for a media item. Supports the same
+  /// {{name}} placeholders as quick replies.
+  body  String?
+
+  /// Stored media (a CrmFile id) for image/video/audio/document.
+  fileId           String?
+  /// For `link`, and for a reel or video hosted elsewhere.
+  linkUrl          String?
+  /// For `catalogue`: which products this item is about.
+  catalogueItemIds String[] @default([])
+  /// For `template`: the approved Meta template this item sends.
+  templateId       String?
+
+  /// Who the content is for (LIB-03, LIB-04, LIB-05):
+  /// new_lead | low_interest | journey | relationship | general
+  audience String   @default("general")
+  /// Free tags for the agent's own grouping — festival, collection, language.
+  tags     String[] @default([])
+  language String   @default("en")
+
+  /// True for content the owner recorded personally (MKT-04 calls these out
+  /// specifically: an owner's voice note carries weight an agent's does not).
+  isOwnerContent Boolean @default(false)
+
+  /// workspace = everyone; personal = only its creator.
+  scope           String  @default("workspace")
+  ownerId         String?
+  createdByUserId String?
+
+  /// Soft retirement: an item that was sent last month should still be
+  /// explicable, so it is deactivated rather than deleted.
+  active     Boolean   @default(true)
+  usageCount Int       @default(0)
+  lastUsedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, active])
+  @@index([tenantId, audience])
+  @@index([tenantId, kind])
+}

@@ -26,6 +26,7 @@ WhatsApp Calling (built earlier this month).
 | §9.2, GRP-06 | **External group registry** | Existing Business App groups are not synchronised through Coexistence and their history cannot be imported. Registers the group, its owners and what people report happening in it — with no fake messages, unread counts or response times, and the limitation stated on the screen rather than in a footnote. |
 | §15, FLD-01..07 | **Field visits** | A visit was a follow-up date on the contact plus a disposition afterwards, so "planned vs visited" and "visits pending" were structurally unanswerable — there was no record of a visit planned and not made. A planned visit is now a row from the moment it is scheduled; the same row is completed later. Products shown, spend, expected vs actual grams and the §21.5 report all follow from that. |
 | §16, EXH-01..05 | **Exhibitions** | Shows, the contacts captured at each, and their journey afterwards. EXH-02 says to integrate a capture/OCR tool rather than rebuild one, so capture takes already-extracted fields plus the tool's raw text, kept verbatim. EXH-05 is enforced: a captured contact is a new customer and goes to Marketing for qualification, not straight to a salesperson. |
+| §17, LIB-01..05 | **Communication Library** | One place for messages, creatives, voice notes, videos, catalogues, documents, links and approved templates. The weight is in §17's last line: every item knows which destinations WhatsApp will actually deliver it to, so an agent is never offered a voice note for a campaign and refused afterwards. |
 | §19, TEAM-05, TGT-01..07 | **Gram targets** | There was no target of any kind in the schema, and orders carried no weight. Orders now record grams; attainment is computed from confirmed orders rather than stored, so it cannot drift from the orders it summarises. Quotations and enquiries do not count. Marketing daily calling targets share the same screen. |
 
 92 tests cover this work: the coverage rules and target arithmetic
@@ -38,6 +39,13 @@ other agent's book. And if "missed" and "pending" visits are collapsed, a field
 team builds a backlog nobody can see, because every overdue visit still reads
 as upcoming. All three look fine on screen.
 
+Decisions I had to make defaults for are tracked in `DECISIONS_NEEDED.md`.
+
+Still outstanding from §17: the library is not yet wired into the inbox
+composer or the campaign builder — the `?destination=` filter exists and is
+tested, but the pickers in those two screens still read quick replies and
+templates directly.
+
 Still outstanding from §15: the last-visit panel on Customer 360 (FLD-06) reads
 from the visit table but is not yet rendered on the contact screen.
 
@@ -45,27 +53,22 @@ from the visit table but is not yet rendered on the contact screen.
 
 Honest list, in the order I would do them.
 
-1. **Communication Library (§17, LIB-01..05).** Templates and quick replies
-   exist separately. Missing: one library covering voice notes, owner voice
-   notes, videos, reels, catalogues and PDFs, each knowing which destinations
-   it may be used in (1:1 live, 1:1 template, campaign, managed group, external
-   group manual) so unsupported formats are hidden per destination.
-2. **Capability states (§10).** The registry returns `{available, reason}`.
+1. **Capability states (§10).** The registry returns `{available, reason}`.
    The PRD wants seven states — Available, Not Available, Not Configured,
    Eligible but Disabled, Pending, Restricted, Unknown — and UI driven by them.
-3. **Managed Groups (§9.3) and Group Presets (GRP-07).** Capability-gated, and
+2. **Managed Groups (§9.3) and Group Presets (GRP-07).** Capability-gated, and
    the gate currently reports Groups as unavailable (needs an Official Business
    Account, which we do not detect). Worth building only once a tenant is
    actually eligible.
-4. **Channel model (§5.1).** Channels have no `channelType`, `connectionMode`
+3. **Channel model (§5.1).** Channels have no `channelType`, `connectionMode`
    or `ownershipType`, and permissions are a list of permitted number ids
    rather than the per-action set in §5.5 (View, Reply, Send Template, Send
    Campaign, Call, Admin). TEAM-06's "employee-owned → flag migration risk"
    depends on ownership being recorded.
-5. **Data-coverage labels (RPT-04).** Reports do not yet mark results Complete,
+4. **Data-coverage labels (RPT-04).** Reports do not yet mark results Complete,
    Partial or Manual/External. The external-group API already returns
    `coverage: 'manual_external'` for this to build on.
-6. **Notification breadth (§22).** Several listed events have no notification:
+5. **Notification breadth (§22).** Several listed events have no notification:
    agent absent with pending work, marketing member behind calling target,
    campaign content awaiting approval. Digest and per-user preferences are also
    absent — today every notification is immediate.

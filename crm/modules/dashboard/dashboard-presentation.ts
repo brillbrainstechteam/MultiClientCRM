@@ -13,6 +13,7 @@ import {
   Users,
   UsersRound,
   Target,
+  BookOpen,
   MapPin,
   Store,
 } from 'lucide-react';
@@ -109,6 +110,7 @@ export const moduleIcon: Record<ModuleKey, LucideIcon> = {
   campaigns: Megaphone,
   automation: Bot,
   'catalogue-orders': ShoppingBag,
+  library: BookOpen,
   targets: Target,
   visits: MapPin,
   exhibitions: Store,
@@ -129,6 +131,7 @@ export const moduleLabel: Record<ModuleKey, string> = {
   campaigns: 'Campaigns',
   automation: 'Automation',
   'catalogue-orders': 'Catalogue & Orders',
+  library: 'Library',
   targets: 'Targets',
   visits: 'Field Visits',
   exhibitions: 'Exhibitions',

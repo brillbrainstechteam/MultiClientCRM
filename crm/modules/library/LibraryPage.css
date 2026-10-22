@@ -1,0 +1,210 @@
+/* ---- Communication library ----------------------------------------------- */
+
+.lb {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  padding: var(--crm-space-6);
+  max-width: 1100px;
+}
+
+.lb__filters {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: var(--crm-space-3);
+}
+
+.lb__grid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--crm-space-3);
+}
+
+.lb__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-raised);
+  box-shadow: var(--crm-shadow-sm);
+}
+
+.lb__card--off { opacity: 0.6; }
+
+.lb__top {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  flex-wrap: wrap;
+}
+
+.lb__kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-semibold);
+  letter-spacing: var(--crm-eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--crm-text-muted);
+}
+
+.lb__title {
+  font-size: var(--crm-font-size-row);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.lb__body {
+  margin: 0;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+  line-height: var(--crm-line-normal);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.lb__link {
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-brand-700);
+  word-break: break-all;
+}
+
+/* The destinations an item can reach. The absences carry the information —
+   a voice note with no Campaign chip has already told the agent what they
+   would otherwise learn from a failed send. */
+.lb__dests {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.lb__dest {
+  padding: 2px 7px;
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-sm);
+  background: var(--crm-surface-band);
+  font-size: 10.5px;
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-secondary);
+}
+
+.lb__incomplete {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin: 0;
+  padding: var(--crm-space-2);
+  border: 1px solid var(--crm-warning-200);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-warning-50);
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-warning-700);
+}
+
+.lb__incomplete svg { flex-shrink: 0; margin-top: 1px; }
+
+.lb__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  margin-top: auto;
+  padding-top: var(--crm-space-2);
+  border-top: 1px solid var(--crm-border-subtle);
+}
+
+.lb__used { font-size: var(--crm-font-size-xs); color: var(--crm-text-muted); }
+
+.lb__retire {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+  cursor: pointer;
+}
+
+.lb__retire:hover { color: var(--crm-danger-700); }
+
+/* ---- Form ------------------------------------------------------------------ */
+
+.lb__form { display: flex; flex-direction: column; gap: var(--crm-space-4); }
+
+/* Said before the agent commits to a kind, not after they try to use it. */
+.lb__note {
+  margin: 0;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border: 1px solid var(--crm-info-200);
+  border-left: 3px solid var(--crm-info-600);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-info-50);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+  line-height: var(--crm-line-normal);
+}
+
+.lb__file {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  font-size: var(--crm-font-size-sm);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+}
+
+.lb__file em { font-style: normal; font-weight: 400; color: var(--crm-text-muted); }
+
+.lb__check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--crm-space-2);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+  cursor: pointer;
+}
+
+/* ---- Shared ----------------------------------------------------------------- */
+
+.lb__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-12) var(--crm-space-6);
+  border: 1px dashed var(--crm-border-strong);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-raised);
+  text-align: center;
+  color: var(--crm-text-muted);
+}
+
+.lb__empty svg { color: var(--crm-neutral-400); }
+
+.lb__empty h2 {
+  margin: 0;
+  font-size: var(--crm-font-size-lg);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.lb__empty p { margin: 0; max-width: 460px; font-size: var(--crm-font-size-md); }
+
+.lb__error {
+  margin: 0;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border: 1px solid var(--crm-danger-200);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-danger-50);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-danger-700);
+}
+
+.lb__muted { margin: 0; font-size: var(--crm-font-size-sm); color: var(--crm-text-muted); }

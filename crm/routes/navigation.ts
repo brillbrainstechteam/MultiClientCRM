@@ -13,6 +13,7 @@ import {
   UsersRound,
   FileText,
   Target,
+  BookOpen,
   MapPin,
   Store,
   UsersRound as GroupIcon,
@@ -139,6 +140,17 @@ export const navItems: NavItem[] = [
     requiresConnection: true,
     ownership:
       'Product catalogue, product sharing, cart/checkout, payment, order status, returns and commerce analytics.',
+  },
+  {
+    key: 'library',
+    label: 'Library',
+    path: '/library',
+    icon: BookOpen,
+    group: 'engage',
+    implemented: true,
+    requiresConnection: false,
+    ownership:
+      'Messages, creatives, voice notes, videos, catalogues and templates, each knowing which destinations WhatsApp will actually deliver it to.',
   },
   {
     key: 'visits',

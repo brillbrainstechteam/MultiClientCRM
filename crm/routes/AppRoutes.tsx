@@ -18,6 +18,7 @@ import LandingPage from '@crm/modules/marketing/LandingPage';
 import { OnboardingRoutes } from '@crm/modules/onboarding/OnboardingRoutes';
 import { ProviderAdminRoutes } from '@crm/modules/provider-admin/ProviderAdminRoutes';
 import ReportsPage from '@crm/modules/reports/ReportsPage';
+import LibraryPage from '@crm/modules/library/LibraryPage';
 import TargetsPage from '@crm/modules/targets/TargetsPage';
 import FieldVisitsPage from '@crm/modules/visits/FieldVisitsPage';
 import ExhibitionsPage from '@crm/modules/exhibitions/ExhibitionsPage';
@@ -72,6 +73,7 @@ export function AppRoutes() {
         <Route path="ai-agents/*" element={<AiAgentsRoutes />} />
         <Route path="ai-assistance/*" element={<AiAgentsRoutes />} />
 
+        <Route path="library" element={<LibraryPage />} />
         <Route path="targets" element={<TargetsPage />} />
         <Route path="visits" element={<FieldVisitsPage />} />
         <Route path="exhibitions" element={<ExhibitionsPage />} />
