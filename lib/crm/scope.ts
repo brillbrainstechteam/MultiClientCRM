@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { coveringFor } from '@/lib/crm/coverage';
 import type { User } from '@prisma/client';
 
 /**
@@ -82,4 +83,97 @@ export function canSeeContact(
 export async function conversationScopeWhere(user: Pick<User, 'id' | 'tenantId' | 'role' | 'teamFunction'>): Promise<Record<string, unknown>> {
   const ids = await visibleUserIds(user);
   return ids === 'all' ? {} : { assigneeUserId: { in: ids } };
+}
+
+
+// ---- Absence coverage and Relationship Team (PRD §8, §23, ZON-06) ---------
+
+/**
+ * Absent colleagues whose work this user may currently pick up.
+ *
+ * Computed, never stored: the moment the colleague is back the answer changes
+ * on its own, with no cleanup job to forget to run. An agent who covers nobody
+ * gets an empty list and their scope is exactly what it was.
+ */
+export async function coveredOwnerIds(
+  user: Pick<User, 'id' | 'tenantId' | 'role'>,
+): Promise<string[]> {
+  const now = new Date();
+  const absences = await prisma.crmAbsence.findMany({
+    where: {
+      tenantId: user.tenantId,
+      startsAt: { lte: now },
+      endedAt: null,
+      OR: [{ endsAt: null }, { endsAt: { gt: now } }],
+      // Not this user's own absence — being away does not grant access.
+      NOT: { userId: user.id },
+    },
+    select: { id: true, userId: true, kind: true, startsAt: true, endsAt: true, endedAt: true, coveredByUserIds: true },
+  });
+  if (absences.length === 0) return [];
+
+  // Zones are the fallback when an absence named nobody, so they are only read
+  // when there is actually an absence to resolve.
+  const zones = await prisma.crmZone.findMany({
+    where: { tenantId: user.tenantId },
+    select: { id: true, memberUserIds: true },
+  });
+  const zonesByUser = new Map<string, string[]>();
+  for (const z of zones) {
+    for (const uid of z.memberUserIds) {
+      zonesByUser.set(uid, [...(zonesByUser.get(uid) ?? []), z.id]);
+    }
+  }
+
+  return coveringFor(
+    {
+      absences,
+      zonesByUser,
+      supervisorIds: new Set(user.role === 'manager' ? [user.id] : []),
+    },
+    user.id,
+    now,
+  );
+}
+
+/** Contacts this user is on the Relationship Team for. */
+export async function relationshipContactIds(
+  user: Pick<User, 'id' | 'tenantId'>,
+): Promise<string[]> {
+  const rows = await prisma.crmRelationshipMember.findMany({
+    where: { tenantId: user.tenantId, userId: user.id },
+    select: { contactId: true },
+  });
+  return rows.map((r) => r.contactId);
+}
+
+/**
+ * Contact visibility including standing Relationship Team access and any
+ * absence this user is currently covering.
+ *
+ * Kept separate from `contactScopeClause` so the plain ownership rule stays
+ * available where that is genuinely what a query means (a "my customers"
+ * count, say) — widening every such query would quietly inflate an agent's own
+ * numbers with customers they are merely covering.
+ */
+export async function contactScopeClauseWithCover(
+  user: Pick<User, 'id' | 'tenantId' | 'role' | 'teamFunction'>,
+): Promise<Record<string, unknown> | null> {
+  const ids = await visibleUserIds(user);
+  if (ids === 'all') return null;
+
+  const [covered, teamContactIds] = await Promise.all([
+    coveredOwnerIds(user),
+    relationshipContactIds(user),
+  ]);
+
+  const owners = [...new Set([...ids, ...covered])];
+  const or: Record<string, unknown>[] = [
+    { ownerId: { in: owners } },
+    { marketingOwnerId: { in: owners } },
+  ];
+  if (teamContactIds.length) or.push({ id: { in: teamContactIds } });
+
+  // One OR, meant for an AND array — same contract as contactAssignedToClause.
+  return { OR: or };
 }

@@ -12,6 +12,7 @@ import {
   Sparkles,
   Users,
   UsersRound,
+  Target,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type {
@@ -106,6 +107,8 @@ export const moduleIcon: Record<ModuleKey, LucideIcon> = {
   campaigns: Megaphone,
   automation: Bot,
   'catalogue-orders': ShoppingBag,
+  targets: Target,
+  groups: UsersRound,
   'team-access': UsersRound,
   'ai-assistance': Sparkles,
   reports: ChartNoAxesCombined,
@@ -122,6 +125,8 @@ export const moduleLabel: Record<ModuleKey, string> = {
   campaigns: 'Campaigns',
   automation: 'Automation',
   'catalogue-orders': 'Catalogue & Orders',
+  targets: 'Targets',
+  groups: 'Customer Groups',
   'team-access': 'Team & Access',
   'ai-assistance': 'AI Agents',
   reports: 'Reports',

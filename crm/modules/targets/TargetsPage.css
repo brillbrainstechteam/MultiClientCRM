@@ -1,0 +1,182 @@
+/* ---- Gram targets -------------------------------------------------------- */
+
+.tg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-5);
+  padding: var(--crm-space-6);
+  max-width: 980px;
+}
+
+.tg__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--crm-space-3);
+}
+
+.tg__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-raised);
+  box-shadow: var(--crm-shadow-sm);
+}
+
+.tg__statlabel {
+  font-size: var(--crm-eyebrow-size);
+  font-weight: var(--crm-eyebrow-weight);
+  letter-spacing: var(--crm-eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--crm-text-muted);
+}
+
+.tg__stat strong {
+  font-size: var(--crm-font-size-2xl);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.tg__achieved { color: var(--crm-brand-700); }
+
+/* ---- Rows ----------------------------------------------------------------- */
+
+.tg__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.tg__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-raised);
+  box-shadow: var(--crm-shadow-sm);
+}
+
+.tg__who {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+}
+
+.tg__who strong {
+  font-size: var(--crm-font-size-row);
+  font-weight: var(--crm-weight-medium);
+  color: var(--crm-text-primary);
+}
+
+/* A bar rather than a number alone: "62%" means little, a part-filled bar
+   beside four others says instantly who is behind. */
+.tg__bar {
+  height: 8px;
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-neutral-100);
+  overflow: hidden;
+}
+
+.tg__fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--crm-radius-pill);
+  background: var(--crm-brand-600);
+  transition: width var(--crm-motion-base);
+}
+
+.tg__fill--met { background: var(--crm-success-600); }
+
+.tg__numbers {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-3);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-muted);
+}
+
+.tg__numbers em {
+  font-style: normal;
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-primary);
+}
+
+.tg__pct {
+  margin-left: auto;
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-secondary);
+}
+
+.tg__edit {
+  padding: 3px;
+  border: 0;
+  background: none;
+  line-height: 0;
+  color: var(--crm-text-muted);
+  cursor: pointer;
+}
+
+.tg__edit:hover { color: var(--crm-brand-700); }
+
+/* ---- Messages -------------------------------------------------------------- */
+
+.tg__note {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  margin: 0;
+  padding: var(--crm-space-3) var(--crm-space-4);
+  border: 1px solid var(--crm-warning-200);
+  border-left: 3px solid var(--crm-warning-600);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-warning-50);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.tg__note svg { color: var(--crm-warning-600); flex-shrink: 0; }
+
+.tg__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-12) var(--crm-space-6);
+  border: 1px dashed var(--crm-border-strong);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-raised);
+  text-align: center;
+  color: var(--crm-text-muted);
+}
+
+.tg__empty svg { color: var(--crm-neutral-400); }
+
+.tg__empty h2 {
+  margin: 0;
+  font-size: var(--crm-font-size-lg);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.tg__empty p { margin: 0; max-width: 420px; font-size: var(--crm-font-size-md); }
+
+.tg__error {
+  margin: 0;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border: 1px solid var(--crm-danger-200);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-danger-50);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-danger-700);
+}
+
+.tg__muted { margin: 0; font-size: var(--crm-font-size-sm); color: var(--crm-text-muted); }
+
+.tg__form { display: flex; flex-direction: column; gap: var(--crm-space-4); }

@@ -16,6 +16,8 @@ export type ModuleKey =
   | 'campaigns'
   | 'automation'
   | 'catalogue-orders'
+  | 'targets'
+  | 'groups'
   | 'team-access'
   | 'ai-assistance'
   | 'reports'

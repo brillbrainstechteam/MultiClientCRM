@@ -12,6 +12,8 @@ import {
   Users,
   UsersRound,
   FileText,
+  Target,
+  UsersRound as GroupIcon,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ModuleKey } from '@crm/mock-data';
@@ -135,6 +137,28 @@ export const navItems: NavItem[] = [
     requiresConnection: true,
     ownership:
       'Product catalogue, product sharing, cart/checkout, payment, order status, returns and commerce analytics.',
+  },
+  {
+    key: 'targets',
+    label: 'Targets',
+    path: '/targets',
+    icon: Target,
+    group: 'sell',
+    implemented: true,
+    requiresConnection: false,
+    ownership:
+      'Yearly gram targets per salesperson, measured against confirmed orders, plus marketing daily calling targets.',
+  },
+  {
+    key: 'groups',
+    label: 'Customer Groups',
+    path: '/groups',
+    icon: GroupIcon,
+    group: 'sell',
+    implemented: true,
+    requiresConnection: false,
+    ownership:
+      'Registry of customer WhatsApp groups that live in the WhatsApp app. Messages are not synchronised — WhatsApp does not expose existing group chats.',
   },
   /* ---- Manage ----------------------------------------------------------- */
   {

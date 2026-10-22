@@ -18,6 +18,8 @@ import LandingPage from '@crm/modules/marketing/LandingPage';
 import { OnboardingRoutes } from '@crm/modules/onboarding/OnboardingRoutes';
 import { ProviderAdminRoutes } from '@crm/modules/provider-admin/ProviderAdminRoutes';
 import ReportsPage from '@crm/modules/reports/ReportsPage';
+import TargetsPage from '@crm/modules/targets/TargetsPage';
+import ExternalGroupsPage from '@crm/modules/groups/ExternalGroupsPage';
 import HistoryCentre from '@crm/modules/settings/history/HistoryCentre';
 import QuickRepliesSettings from '@crm/modules/settings/quick-replies/QuickRepliesSettings';
 import SettingsPage from '@crm/modules/settings/SettingsPage';
@@ -68,6 +70,8 @@ export function AppRoutes() {
         <Route path="ai-agents/*" element={<AiAgentsRoutes />} />
         <Route path="ai-assistance/*" element={<AiAgentsRoutes />} />
 
+        <Route path="targets" element={<TargetsPage />} />
+        <Route path="groups" element={<ExternalGroupsPage />} />
         <Route path="reports/*" element={<ReportsPage />} />
 
         {/* Module-owned Settings subtrees must appear before the generic Settings route. */}

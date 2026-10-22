@@ -1102,6 +1102,12 @@ model CrmOrder {
   notes              String?
   expectedDeliveryAt DateTime?
   source             String    @default("crm") // whatsapp | website | sales | crm | other
+  /// Sum of the lines' grams, kept on the order so target maths is one read
+  /// rather than a join over every item of every order in a year.
+  totalGrams         Float?
+  /// Section 26 leaves "whether new-customer sales also count toward gram
+  /// targets" to the tenant, so each order records whether it counted.
+  countsTowardTarget Boolean   @default(true)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
@@ -1124,6 +1130,9 @@ model CrmOrderItem {
   variant         String?
   unitPrice       Float?
   lineTotal       Float?
+  /// Weight in grams for this line. Numeric, unlike CrmCatalogueItem's
+  /// grossWeight/netWeight strings, because a target has to be summed.
+  grams           Float?
 
   @@index([orderId])
 }
@@ -1562,4 +1571,187 @@ model WhatsAppCallingSettings {
   updatedAt DateTime @updatedAt
 
   @@index([tenantId])
+}
+
+// ---- Relationship Team (PRD §8) -------------------------------------------
+// Internal continuity for a customer: a primary salesperson plus backups and a
+// manager. Deliberately a table rather than backup1/backup2 columns, because
+// §26 lists "Relationship Team size" as tenant-configurable — fixed columns
+// would make three the permanent answer.
+//
+// This is NOT WhatsApp group membership. A backup can serve the customer
+// through the CRM without being a participant in any WhatsApp group, which is
+// the whole point of GRP-04.
+model CrmRelationshipMember {
+  id        String @id @default(cuid())
+  tenantId  String
+  contactId String
+  userId    String
+  /// primary | backup | manager
+  role      String @default("backup")
+  /// Order among backups, so "backup 1" and "backup 2" stay meaningful.
+  position  Int    @default(0)
+
+  addedByUserId String?
+  createdAt     DateTime @default(now())
+
+  /// One person holds one role on a customer; re-adding updates rather than
+  /// duplicating, which is what stops a team of "three" having five rows.
+  @@unique([contactId, userId])
+  @@index([tenantId, contactId])
+  @@index([tenantId, userId])
+}
+
+// ---- Absence and coverage (PRD §23, ZON-06, TEAM-06) ----------------------
+// Availability was a hardcoded 'available' string in the bootstrap response, so
+// every member always looked present and no pending work was ever exposed to a
+// backup.
+//
+// The rule the PRD is firm about: absence NEVER changes permanent ownership. It
+// only widens who may act, for a bounded period, and records who covered.
+model CrmAbsence {
+  id       String  @id @default(cuid())
+  tenantId String
+  userId   String
+  /// absent | leave | temporarily_unavailable
+  kind     String  @default("leave")
+  reason   String?
+
+  startsAt DateTime
+  /// Null means open-ended. Coverage still stops the moment somebody ends it,
+  /// which is what endedAt records.
+  endsAt   DateTime?
+  /// Set when the absence is closed early or on return.
+  endedAt  DateTime?
+
+  /// Who may pick up this person's pending work. Empty means anyone in their
+  /// zone with the right role, resolved at query time rather than frozen here.
+  coveredByUserIds String[] @default([])
+
+  createdByUserId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId, userId])
+  @@index([tenantId, startsAt])
+}
+
+/// One act of covering: who picked up whose work, and on what.
+///
+/// Without this, "who handled my customers while I was away" has no answer, and
+/// a covering agent's work would look like the absent owner's.
+model CrmCoverageEvent {
+  id             String   @id @default(cuid())
+  tenantId       String
+  absenceId      String?
+  /// The permanent owner, who does not change.
+  ownerUserId    String
+  coveringUserId String
+  /// contact | conversation | followup
+  targetType     String
+  targetId       String
+  note           String?
+  at             DateTime @default(now())
+
+  @@index([tenantId, ownerUserId])
+  @@index([tenantId, coveringUserId])
+  @@index([absenceId])
+}
+
+// ---- External WhatsApp groups (PRD §9.2, GRP-06) --------------------------
+// Existing Business App group chats are NOT synchronised through Coexistence and
+// their history cannot be imported. The PRD's instruction is to keep the
+// business intent and implement the documented workaround rather than pretend
+// the Meta feature exists — so this is a registry of groups that live in
+// WhatsApp, with CRM actions logged against them, and no fake messages.
+model CrmExternalGroup {
+  id                 String    @id @default(cuid())
+  tenantId           String
+  /// The customer this group is about.
+  contactId          String?
+  name               String
+  zoneId             String?
+  /// Our number the group is associated with, if any.
+  whatsappNumberId   String?
+  primaryUserId      String?
+  backupUserIds      String[]  @default([])
+  managerUserId      String?
+  /// Typed in by hand — we cannot read it from WhatsApp.
+  inviteLink         String?
+  notes              String?
+  /// active | inactive
+  status             String    @default("active")
+  /// When a human last told us something about this group. The group itself
+  /// never tells us anything, so this is the only freshness signal there is.
+  lastManualUpdateAt DateTime?
+
+  createdByUserId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  logs CrmExternalGroupLog[]
+
+  @@index([tenantId, contactId])
+  @@index([tenantId, status])
+}
+
+/// A thing somebody did or observed in an external group, recorded by hand.
+///
+/// Explicitly not messages: these never produce unread counts, response-time
+/// metrics or conversation history, because none of that would be real.
+model CrmExternalGroupLog {
+  id       String           @id @default(cuid())
+  tenantId String
+  groupId  String
+  group    CrmExternalGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  /// update | note | order_discussion | outcome | file
+  kind     String           @default("update")
+  text     String?
+  fileId   String?
+  byUserId String?
+  at       DateTime         @default(now())
+
+  @@index([groupId, at])
+  @@index([tenantId])
+}
+
+// ---- Gram targets (PRD §19, TEAM-05, TGT-01..07) --------------------------
+// Jewellery sales are measured in grams, not rupees. There was no target of any
+// kind in the schema.
+model CrmGramTarget {
+  id          String  @id @default(cuid())
+  tenantId    String
+  userId      String
+  /// Financial year label the business uses, e.g. "2026-27". A label rather
+  /// than a date pair because Indian businesses say "FY26-27" and the start
+  /// month is tenant-configurable.
+  period      String
+  targetGrams Float
+  note        String?
+
+  setByUserId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, userId, period])
+  @@index([tenantId, period])
+}
+
+/// A marketing member's daily calling / qualification target (TEAM-05, TGT-07).
+model CrmActivityTarget {
+  id       String  @id @default(cuid())
+  tenantId String
+  userId   String
+  /// calls_per_day | qualified_per_day | new_customers
+  kind     String
+  value    Int
+  /// Null means "until changed"; a period scopes it to e.g. a month.
+  period   String?
+
+  setByUserId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, userId, kind, period])
+  @@index([tenantId, kind])
 }

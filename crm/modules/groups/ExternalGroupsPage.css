@@ -1,0 +1,182 @@
+/* ---- External WhatsApp group registry ------------------------------------ */
+
+.xg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-5);
+  padding: var(--crm-space-6);
+  max-width: 980px;
+}
+
+/* The limitation is the first thing on the screen, not a footnote: an empty
+   activity list must not read as "this group is quiet". */
+.xg__banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-info-200);
+  border-left: 3px solid var(--crm-info-600);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-info-50);
+}
+
+.xg__banner svg { color: var(--crm-info-600); flex-shrink: 0; margin-top: 1px; }
+.xg__banner strong { font-size: var(--crm-font-size-md); color: var(--crm-text-primary); }
+.xg__banner p {
+  margin: 2px 0 0;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+  line-height: var(--crm-line-normal);
+}
+
+.xg__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: var(--crm-space-3);
+}
+
+.xg__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-4);
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-raised);
+  box-shadow: var(--crm-shadow-sm);
+}
+
+.xg__card--off { opacity: 0.65; }
+
+.xg__head {
+  display: flex;
+  align-items: center;
+  gap: var(--crm-space-2);
+  flex-wrap: wrap;
+}
+
+.xg__head strong {
+  font-size: var(--crm-font-size-row);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.xg__meta {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--crm-space-2) var(--crm-space-4);
+}
+
+.xg__meta dt {
+  font-size: var(--crm-font-size-xs);
+  color: var(--crm-text-muted);
+}
+
+.xg__meta dd {
+  margin: 0;
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-primary);
+}
+
+.xg__notes {
+  margin: 0;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-band);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-text-secondary);
+}
+
+.xg__actions { display: flex; gap: var(--crm-space-2); }
+
+/* ---- Activity ------------------------------------------------------------- */
+
+.xg__activity { display: flex; flex-direction: column; gap: var(--crm-space-4); }
+
+.xg__add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-3);
+  padding: var(--crm-space-3);
+  border: 1px solid var(--crm-border-strong);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-band);
+}
+
+.xg__logs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.xg__logs li {
+  padding: var(--crm-space-3);
+  border: 1px solid var(--crm-border-subtle);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-surface-raised);
+}
+
+.xg__logkind {
+  font-size: var(--crm-font-size-xs);
+  font-weight: var(--crm-weight-semibold);
+  letter-spacing: var(--crm-eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--crm-text-muted);
+}
+
+.xg__logs p {
+  margin: 4px 0;
+  font-size: var(--crm-font-size-md);
+  color: var(--crm-text-primary);
+  line-height: var(--crm-line-normal);
+}
+
+.xg__logby { font-size: var(--crm-font-size-xs); color: var(--crm-text-muted); }
+
+/* ---- Shared --------------------------------------------------------------- */
+
+.xg__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--crm-space-2);
+  padding: var(--crm-space-12) var(--crm-space-6);
+  border: 1px dashed var(--crm-border-strong);
+  border-radius: var(--crm-radius-lg);
+  background: var(--crm-surface-raised);
+  text-align: center;
+  color: var(--crm-text-muted);
+}
+
+.xg__empty svg { color: var(--crm-neutral-400); }
+
+.xg__empty h2 {
+  margin: 0;
+  font-size: var(--crm-font-size-lg);
+  font-weight: var(--crm-weight-semibold);
+  color: var(--crm-text-title);
+}
+
+.xg__empty p { margin: 0; max-width: 440px; font-size: var(--crm-font-size-md); }
+
+.xg__form { display: flex; flex-direction: column; gap: var(--crm-space-4); }
+
+.xg__error {
+  margin: 0;
+  padding: var(--crm-space-2) var(--crm-space-3);
+  border: 1px solid var(--crm-danger-200);
+  border-radius: var(--crm-radius-md);
+  background: var(--crm-danger-50);
+  font-size: var(--crm-font-size-sm);
+  color: var(--crm-danger-700);
+}
+
+.xg__muted { margin: 0; font-size: var(--crm-font-size-sm); color: var(--crm-text-muted); }
