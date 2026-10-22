@@ -13,6 +13,8 @@ import {
   Users,
   UsersRound,
   Target,
+  MapPin,
+  Store,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type {
@@ -108,6 +110,8 @@ export const moduleIcon: Record<ModuleKey, LucideIcon> = {
   automation: Bot,
   'catalogue-orders': ShoppingBag,
   targets: Target,
+  visits: MapPin,
+  exhibitions: Store,
   groups: UsersRound,
   'team-access': UsersRound,
   'ai-assistance': Sparkles,
@@ -126,6 +130,8 @@ export const moduleLabel: Record<ModuleKey, string> = {
   automation: 'Automation',
   'catalogue-orders': 'Catalogue & Orders',
   targets: 'Targets',
+  visits: 'Field Visits',
+  exhibitions: 'Exhibitions',
   groups: 'Customer Groups',
   'team-access': 'Team & Access',
   'ai-assistance': 'AI Agents',

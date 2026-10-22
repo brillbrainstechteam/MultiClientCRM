@@ -13,6 +13,8 @@ import {
   UsersRound,
   FileText,
   Target,
+  MapPin,
+  Store,
   UsersRound as GroupIcon,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -137,6 +139,28 @@ export const navItems: NavItem[] = [
     requiresConnection: true,
     ownership:
       'Product catalogue, product sharing, cart/checkout, payment, order status, returns and commerce analytics.',
+  },
+  {
+    key: 'visits',
+    label: 'Field Visits',
+    path: '/visits',
+    icon: MapPin,
+    group: 'work',
+    implemented: true,
+    requiresConnection: false,
+    ownership:
+      'Planning and logging customer visits: what was shown, what it cost, expected against actual grams, and the visits that were planned and never made.',
+  },
+  {
+    key: 'exhibitions',
+    label: 'Exhibitions',
+    path: '/exhibitions',
+    icon: Store,
+    group: 'work',
+    implemented: true,
+    requiresConnection: false,
+    ownership:
+      'Shows and fairs, the contacts captured at each, and their journey afterwards. New contacts go to Marketing for qualification.',
   },
   {
     key: 'targets',

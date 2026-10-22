@@ -1755,3 +1755,130 @@ model CrmActivityTarget {
   @@unique([tenantId, userId, kind, period])
   @@index([tenantId, kind])
 }
+
+// ---- Field visits (PRD §15, FLD-01..07) -----------------------------------
+// A visit used to be `nextFollowUpAt` on a contact, plus a CrmCallLog with
+// channel='visit' once it had happened. That cannot answer FLD-07 at all:
+// with no record of a visit that was planned, "planned vs visited" and "visits
+// pending" have nothing to count. A planned visit is now a row from the moment
+// it is scheduled, and the same row is completed afterwards.
+model CrmFieldVisit {
+  id             String  @id @default(cuid())
+  tenantId       String
+  contactId      String
+  /// The visiting salesperson (FLD-06 shows this on Customer 360).
+  assigneeUserId String?
+  zoneId         String?
+
+  /// planned | visited | cancelled | missed
+  /// `missed` is ours: a planned date that passed with nothing logged. It is
+  /// what makes "visits pending" a real number rather than a guess.
+  status    String    @default("planned")
+  plannedAt DateTime
+  visitedAt DateTime?
+
+  /// Why the visit is being made — set when planning, read on the day.
+  purpose String?
+
+  /// What was actually shown (FLD-02). Catalogue items by id where they came
+  /// from the catalogue, plus free text for anything that did not.
+  catalogueItemIds String[] @default([])
+  itemsPresented   String?
+
+  /// What it cost to make the visit (FLD-03). Travel, samples, hospitality —
+  /// the business wants one number per visit, not a ledger.
+  expenseAmount   Float?
+  expenseCurrency String  @default("INR")
+  expenseNote     String?
+
+  /// Outcome (FLD-04): interested | not_interested | converted | follow_up | no_meeting
+  outcome       String?
+  /// What the salesperson thought would come of it, set at planning or on the
+  /// day. Kept beside the actual so a habit of over-forecasting is visible.
+  expectedGrams Float?
+  /// What was actually bought, in grams. This is "volume bought" in FLD-05.
+  actualGrams   Float?
+  /// The conversation itself (FLD-06 "discussion").
+  discussion    String?
+  /// An order that came out of the visit, when one did.
+  orderId       String?
+
+  createdByUserId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, contactId])
+  @@index([tenantId, assigneeUserId])
+  @@index([tenantId, plannedAt])
+}
+
+// ---- Exhibitions (PRD §16, EXH-01..05) ------------------------------------
+// Nothing existed for this. Exhibitions are a primary source of new leads for
+// jewellery businesses, and the contacts captured at one need tracking through
+// the whole journey afterwards (EXH-04), not just dumping into the contact
+// list where their origin is lost.
+model CrmExhibition {
+  id       String    @id @default(cuid())
+  tenantId String
+  name     String
+  venue    String?
+  city     String?
+  startsAt DateTime
+  endsAt   DateTime?
+  notes    String?
+  /// planned | running | closed
+  status   String    @default("planned")
+
+  createdByUserId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  contacts CrmExhibitionContact[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, startsAt])
+}
+
+/// One contact captured at an exhibition, and what became of them.
+///
+/// Separate from CrmContact rather than a column on it, because the same
+/// person can be met at three exhibitions in a year and each meeting has its
+/// own journey. A flattened "source: exhibition" loses all of that.
+model CrmExhibitionContact {
+  id           String        @id @default(cuid())
+  tenantId     String
+  exhibitionId String
+  exhibition   CrmExhibition @relation(fields: [exhibitionId], references: [id], onDelete: Cascade)
+  /// The CRM contact this became. Always set — capture creates or matches one.
+  contactId    String
+
+  /// How they were captured (EXH-01): business_card | register | import | manual
+  captureSource String  @default("manual")
+  /// The scanned card, when there is one (a CrmFile id).
+  cardFileId    String?
+  /// Text an OCR tool gave us, stored verbatim. §16 says to integrate a tool
+  /// such as Card2Leads rather than rebuild OCR, so this holds what that tool
+  /// returned — we never pretend to have extracted it ourselves.
+  rawCapture    String?
+
+  /// EXH-04: captured | contacted | active | not_interested | qualified | converted
+  journeyStatus String   @default("captured")
+  /// Which channels were actually used to work this lead (EXH-04).
+  channelsUsed  String[] @default([])
+  /// Volume bought, in grams, where it came to that.
+  volumeGrams   Float?
+
+  /// EXH-03: what this contact was routed to after capture.
+  routeToCalling Boolean @default(true)
+  routeToVisit   Boolean @default(false)
+  zoneId         String?
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([exhibitionId, contactId])
+  @@index([tenantId, journeyStatus])
+  @@index([exhibitionId])
+}

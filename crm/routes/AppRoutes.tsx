@@ -19,6 +19,8 @@ import { OnboardingRoutes } from '@crm/modules/onboarding/OnboardingRoutes';
 import { ProviderAdminRoutes } from '@crm/modules/provider-admin/ProviderAdminRoutes';
 import ReportsPage from '@crm/modules/reports/ReportsPage';
 import TargetsPage from '@crm/modules/targets/TargetsPage';
+import FieldVisitsPage from '@crm/modules/visits/FieldVisitsPage';
+import ExhibitionsPage from '@crm/modules/exhibitions/ExhibitionsPage';
 import ExternalGroupsPage from '@crm/modules/groups/ExternalGroupsPage';
 import HistoryCentre from '@crm/modules/settings/history/HistoryCentre';
 import QuickRepliesSettings from '@crm/modules/settings/quick-replies/QuickRepliesSettings';
@@ -71,6 +73,8 @@ export function AppRoutes() {
         <Route path="ai-assistance/*" element={<AiAgentsRoutes />} />
 
         <Route path="targets" element={<TargetsPage />} />
+        <Route path="visits" element={<FieldVisitsPage />} />
+        <Route path="exhibitions" element={<ExhibitionsPage />} />
         <Route path="groups" element={<ExternalGroupsPage />} />
         <Route path="reports/*" element={<ReportsPage />} />
 

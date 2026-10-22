@@ -17,6 +17,8 @@ export type ModuleKey =
   | 'automation'
   | 'catalogue-orders'
   | 'targets'
+  | 'visits'
+  | 'exhibitions'
   | 'groups'
   | 'team-access'
   | 'ai-assistance'
