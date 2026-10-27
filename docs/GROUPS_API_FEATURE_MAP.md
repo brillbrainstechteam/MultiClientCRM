@@ -195,15 +195,142 @@ These are the features worth building *because* it is a group:
 
 ---
 
-## 6. Decisions needed from you
+## 6. OBA, and what it means for a multi-tenant platform
 
-1. **Are you an Official Business Account?** Everything here is gated on it.
-   Nothing can be tested until the answer is yes.
-2. **Which number hosts the groups** — main business number, or one per zone?
-   A zone number scopes groups naturally but means four sets of 10,000.
-3. **Will team members join from personal WhatsApp?** If salespeople will not
-   put their personal numbers in customer groups, the group holds the customer
-   and the owner only, and the Relationship Team stays internal.
-4. **Given the per-recipient pricing, is group messaging worth it for you** at
-   roughly 6× the 1:1 cost for the same reach? My recommendation is yes for
-   live enquiries, no for campaigns.
+*Answers to the questions from the first version of this document, 28 Oct 2026.*
+
+### 6.1 What an OBA actually is
+
+An **Official Business Account** is the blue checkmark beside a business name in
+WhatsApp. I implied earlier that it was a high bar. Reading Meta's page
+properly: **it is not about brand fame.** There is no notability test. It is
+five objective criteria, all of which an ordinary jeweller can meet:
+
+1. The business complies with the WhatsApp Business Messaging Policy.
+2. The number has been registered on the platform for **at least 30 days**.
+3. The **business portfolio that owns the number has passed Business
+   Verification**.
+4. The number has **two-step verification** enabled.
+5. The number's **display name has been approved**.
+
+The business then requests OBA in WhatsApp Manager (Profile - Official business
+account - Submit Request), or through the Official Business Account Status API,
+which exposes an `official_business_account` status field. Meta reviews and
+decides. **A denial means waiting 30 days** before re-requesting.
+
+So OBA is a process every client can complete - but it is a process, with a
+30-day floor, and it belongs to **the client**, not to us. We cannot hold one
+OBA on their behalf: each client's own numbers need their own status.
+
+### 6.2 The hard consequence for coexistence
+
+Meta states it twice, in two different places:
+
+- "OBA is not granted to ... **WhatsApp Business app phone numbers**."
+- "Groups are **not available** for WhatsApp Business app phone numbers."
+
+**Coexistence numbers can never host groups.** Not "not yet" - structurally
+not, because they cannot hold the status groups require.
+
+For a platform that onboards clients both ways, this splits the product:
+
+| Client onboarded with... | Groups |
+|---|---|
+| A new Cloud API number | **Possible** once that number is an OBA |
+| An existing number via coexistence | **Never** |
+
+A client who joins entirely through coexistence - the easy onboarding path, and
+the one most existing jewellers will want - gets no managed groups at all. The
+external-group registry stays their only option.
+
+### 6.3 Per-zone hosting (decided: one number per zone)
+
+With one Cloud API number per zone, each of those four numbers needs its own OBA
+request, and each gets its own 10,000-group allowance. That is 40,000 groups per
+client, which is not a constraint, and it scopes groups naturally to the zone
+that owns the customer.
+
+The cost is onboarding friction: **four display-name approvals, four 2FA
+set-ups, four 30-day waits and four OBA requests per client**, on top of
+Business Verification for the portfolio. The admin panel should track this per
+number rather than per client, because the four will not land together.
+
+### 6.4 Mixed team numbers (answer: both, depending on client)
+
+Whichever way a salesperson joins - personal WhatsApp, or their own Business app
+number - **they join as an ordinary participant via the invite link**, and that
+works in both cases. A coexistence number is still an app on a phone; it simply
+cannot be the group's business identity.
+
+The part that matters more: because **we** host the group through the zone
+number, the `messages` webhook delivers **every participant's message to us**,
+whoever sent it and however they joined. The CRM sees the whole conversation.
+
+This is the opposite of the coexistence group limitation, and the distinction is
+worth being precise about:
+
+| Group | Visible to the CRM? |
+|---|---|
+| Created by us through the Groups API | **Yes, completely** - every participant's messages |
+| Created by hand in the app, before or outside the CRM | **No** - nothing, ever |
+
+So the migration story is clean: **new orders get API-created groups that are
+fully visible; legacy groups stay in the external registry and stay invisible.**
+There is no way to convert the second into the first.
+
+### 6.5 The participant cap against a real order group
+
+The scenario is: customer, one or two more from the customer's side, two or
+three salespeople, the owner, the sales head.
+
+| | |
+|---|---|
+| Customer | 1 |
+| Customer's colleagues | 1-2 |
+| Salespeople | 2-3 |
+| Owner | 1 |
+| Sales head | 1 |
+| **Participants** | **6-8** |
+| Business identity (zone number) | not counted |
+
+It fits - **at the ceiling**. An 8-participant group has no room for a fourth
+salesperson, a second owner, or a replacement when someone leaves. TalkTrack
+should show the remaining seats while the invite list is being built, and warn
+before the group is created rather than failing on error 131204.
+
+### 6.6 Cost, with groups as the main channel for existing customers
+
+This deserves the most attention, because the stated model is that **all
+conversation with existing customers happens in groups**.
+
+Pricing is per delivered recipient. A 7-participant group costs 7 units per
+message. The free allowance is **1,000 service units per business phone number,
+shared with that number's 1:1 service messages** - so roughly **140 group
+messages a month per zone number** before anything is billable, and that is
+before a single 1:1 chat.
+
+For a zone handling 200 active customers in groups, the free tier is gone in
+days. Everything after is billed at the per-message service rate, times seven.
+
+That is not a reason to avoid groups - it is how these customers actually work,
+and matching that is worth paying for. But it does mean:
+
+- The platform must **meter and show group cost per client**, or margins erode
+  invisibly.
+- Campaigns stay 1:1 by default. The agreed exception - include a group only
+  when that group genuinely needs the message - should be an explicit opt-in per
+  group, not an audience filter.
+- Plan limits need a **group-message allowance** separate from the message
+  count, because one send is not one message.
+
+---
+
+## 7. Still to confirm
+
+1. **Does one OBA request cover every number on a WABA, or each number
+   separately?** Meta's page describes it per number; WhatsApp Manager presents
+   it under Profile. This decides whether a client makes one request or four.
+2. **Which clients will be coexistence-only?** They cannot have managed groups
+   at all, and should be sold the external registry instead.
+3. **Group allowance per plan tier** - what is included before it costs the
+   client extra.
