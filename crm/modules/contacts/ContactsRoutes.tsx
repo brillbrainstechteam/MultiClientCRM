@@ -6,6 +6,7 @@ import { ContactsScreenPlaceholder } from './ContactsScreenPlaceholder';
 import type { Capability } from './permissions';
 import AllContactsScreen from './screens/AllContactsScreen';
 import Customer360Screen from './screens/Customer360Screen';
+import IntakeQueueScreen from './screens/IntakeQueueScreen';
 import OverviewScreen from './screens/OverviewScreen';
 import SegmentsScreen from './screens/SegmentsScreen';
 import SegmentDetailScreen from './screens/SegmentDetailScreen';
@@ -33,6 +34,7 @@ import {
 const implemented: Record<string, ComponentType> = {
   '/contacts': OverviewScreen,
   '/contacts/all': AllContactsScreen,
+  '/contacts/intake': IntakeQueueScreen,
   '/contacts/customer/:contactId': Customer360Screen,
   '/contacts/segments': SegmentsScreen,
   '/contacts/segments/:segmentId': SegmentDetailScreen,

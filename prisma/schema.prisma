@@ -693,6 +693,87 @@ model CrmEnquiry {
   @@index([conversationId])
 }
 
+// Unified Intake Event (Lead Capture docs §5). Every lead source — WhatsApp,
+// walk-in, Meta Lead Ads, website/trade forms, QR, referral, exhibition, field
+// visit, telecalling, ecommerce, POS, manual — normalizes into one row that the
+// intake pipeline (lib/crm/intake.ts) processes idempotently: match/dedupe →
+// classify → upsert contact → route → SLA → notify → audit. Shared by B2B and
+// B2C; the routing JOURNEY differs (B2B marketing-first vs B2C direct), the
+// event shape does not.
+model CrmIntakeEvent {
+  id                     String   @id @default(cuid())
+  tenantId               String
+  // --- Source ---
+  sourceType             String                 // whatsapp | walk_in | meta_lead_ad | website_form | qr | referral | exhibition | field_visit | telecalling | ecommerce | pos | manual
+  sourceId               String?                // channel/number/form/qr id
+  sourceName             String?                // human label e.g. "Diwali 2026 CTWA"
+  sourceDetail           String?
+  externalSourceRecordId String?                // per-source id for idempotency (lead id, form submission id, message id)
+  occurredAt             DateTime @default(now())
+  customerType           String   @default("b2b") // b2b | b2c
+  // --- Captured identity / context (raw-ish; normalized on process) ---
+  accountName            String?
+  contactName            String?
+  mobile                 String?
+  whatsappNumber         String?
+  email                  String?
+  city                   String?
+  state                  String?
+  postalCode             String?
+  gstin                  String?
+  productInterest        String?
+  category               String?
+  budgetRange            String?
+  occasion               String?
+  expectedVolume         String?
+  messageText            String?
+  notes                  String?
+  // --- Attribution ---
+  campaignId             String?
+  adSetId                String?
+  adId                   String?
+  utmSource              String?
+  utmMedium              String?
+  utmCampaign            String?
+  qrId                   String?
+  referrerContactId      String?
+  branchId               String?
+  zoneId                 String?
+  whatsappChannelId      String?
+  appointmentId          String?
+  rawPayload             Json?
+  // --- Processing outcome ---
+  processingStatus       String   @default("new") // new | processing | processed | error
+  processingError        String?
+  // Intake operational status (kept SEPARATE from leadStatus / lifecycle):
+  status                 String   @default("new") // new | needs_review | duplicate_suspected | routed | awaiting_first_contact | contacted | closed_invalid
+  classification         String?                  // NEW_PROSPECT | EXISTING_CUSTOMER_NEW_ENQUIRY | EXISTING_OPEN_LEAD_ACTIVITY | DUPLICATE_EVENT | NEEDS_REVIEW | WALK_IN_EXISTING_CUSTOMER | POS_CUSTOMER | APPOINTMENT_ONLY
+  reviewReason           String?
+  // --- Resolution ---
+  contactId              String?                  // matched/created contact (Customer 360)
+  assignedUserId         String?
+  assignmentReason       String?                  // RELATIONSHIP_OWNER | ZONE | DEPARTMENT | ROUND_ROBIN | MANUAL | UNASSIGNED
+  zoneResolution         String?                  // AUTO_RESOLVED | MANUAL | UNKNOWN | CONFLICT
+  // --- First-response SLA ---
+  slaStartedAt           DateTime?
+  slaDueAt               DateTime?
+  firstResponseAt        DateTime?
+  breachedAt             DateTime?
+  createdByUserId        String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  // Idempotency: a source that supplies an external id cannot be processed
+  // twice. NULL external ids (manual entries) are distinct in Postgres, so they
+  // never collide.
+  @@unique([tenantId, sourceType, externalSourceRecordId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, assignedUserId])
+  @@index([tenantId, contactId])
+  @@index([tenantId, customerType, status])
+}
+
 // Import run history (Contacts → Imports & Sync). One row per import so the hub
 // shows real jobs, not fixtures.
 model CrmImportJob {

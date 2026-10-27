@@ -7,7 +7,7 @@ import type { NotificationEvent } from '@prisma/client';
  * the customer UI + (later) push read from NotificationEvent.
  */
 
-export type NotifyCategory = 'subscription' | 'wallet' | 'campaign' | 'whatsapp';
+export type NotifyCategory = 'subscription' | 'wallet' | 'campaign' | 'whatsapp' | 'lead';
 export type NotifySeverity = 'info' | 'warning' | 'critical';
 
 export interface NotifyInput {

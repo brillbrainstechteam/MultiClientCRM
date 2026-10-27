@@ -41,6 +41,15 @@ export const contactPages: ContactScreen[] = [
     batch: 1,
   },
   {
+    id: 'CON-S31',
+    path: '/contacts/intake',
+    title: 'Lead Intake',
+    surface: 'page',
+    purpose:
+      'Unified intake/triage queue for every lead source — matched, classified, routed, SLA-tracked; quick-add and triage actions.',
+    batch: 1,
+  },
+  {
     id: 'CON-S03',
     path: '/contacts/customer/:contactId',
     title: 'Customer 360',
