@@ -151,6 +151,10 @@ export default function TeamMembersReal() {
 
 function AddMemberForm({ onCreated, onCancel, onError, overageNote, roleOpts, deptOpts }: { onCreated: (m: Member) => void; onCancel: () => void; onError: (s: string) => void; overageNote: string | null; roleOpts: SelectOption[]; deptOpts: SelectOption[] }) {
   const [f, setF] = useState({ name: '', email: '', phone: '', role: 'agent', department: 'sales', password: '' });
+  const [invite, setInvite] = useState(true);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [createdMember, setCreatedMember] = useState<Member | null>(null);
+  const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   // Locally-added custom values so the Select can display the freshly-typed one.
   const [extraRole, setExtraRole] = useState<SelectOption | null>(null);
@@ -172,12 +176,30 @@ function AddMemberForm({ onCreated, onCancel, onError, overageNote, roleOpts, de
   const submit = async () => {
     setBusy(true);
     try {
-      const r = await fetch('/api/crm/team/members', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(f) });
+      const body = invite ? { name: f.name, email: f.email, phone: f.phone, role: f.role, department: f.department, invite: true } : f;
+      const r = await fetch('/api/crm/team/members', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(body) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { onError(d.error ?? 'Could not add member.'); return; }
+      if (invite && d.invitePath) { setCreatedMember(d as Member); setInviteLink(`${window.location.origin}${d.invitePath}`); return; } // show the link before closing
       onCreated(d as Member);
     } finally { setBusy(false); }
   };
+
+  if (inviteLink) {
+    return (
+      <div className="tm__form">
+        <h3 className="tm__form-title">Invite created</h3>
+        <p style={{ fontSize: 13.5, color: 'var(--crm-text-secondary)', margin: '0 0 10px' }}>Send this secure link to {f.name || 'the member'}. They set their own password and the account activates. The link expires in 7 days.</p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input readOnly value={inviteLink} onFocus={(e) => e.currentTarget.select()} style={{ flex: 1, minWidth: 0, padding: '10px 12px', borderRadius: 10, border: '1px solid var(--crm-border-subtle)', background: 'var(--crm-surface-sunken)', fontSize: 13 }} />
+          <Button variant="primary" onClick={async () => { try { await navigator.clipboard.writeText(inviteLink); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* blocked */ } }}>{copied ? 'Copied' : 'Copy'}</Button>
+        </div>
+        <div className="tm__form-foot">
+          <Button variant="primary" onClick={() => createdMember && onCreated(createdMember)}>Done</Button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="tm__form">
       <h3 className="tm__form-title">Add a team member</h3>
@@ -188,11 +210,15 @@ function AddMemberForm({ onCreated, onCancel, onError, overageNote, roleOpts, de
         <Input label="Mobile (optional)" type="tel" value={f.phone} onChange={(e) => up('phone', e.target.value)} placeholder="98100 11234" hint="A second way to sign in — easier for field sales than an email address." />
         <Select label="Role" options={roleList} value={f.role} onChange={(e) => pickRole(e.target.value)} />
         <Select label="Department" options={deptList} value={f.department} onChange={(e) => pickDept(e.target.value)} />
-        <Input label="Initial password" type="text" value={f.password} onChange={(e) => up('password', e.target.value)} hint="Share this with the member; they can change it after signing in." />
+        {!invite ? <Input label="Initial password" type="text" value={f.password} onChange={(e) => up('password', e.target.value)} hint="Share this with the member; they can change it after signing in." /> : null}
       </div>
+      <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13.5, color: 'var(--crm-text-secondary)', margin: '10px 0 2px', cursor: 'pointer' }}>
+        <input type="checkbox" checked={invite} onChange={(e) => setInvite(e.target.checked)} style={{ marginTop: 2 }} />
+        <span>Send a secure invite link instead — the member sets their own password (recommended). Uncheck to set an initial password yourself.</span>
+      </label>
       <div className="tm__form-foot">
         <Button variant="ghost" onClick={onCancel} disabled={busy}>Cancel</Button>
-        <Button variant="primary" onClick={submit} disabled={busy}>{busy ? 'Adding…' : 'Create member'}</Button>
+        <Button variant="primary" onClick={submit} disabled={busy}>{busy ? 'Adding…' : invite ? 'Create & get invite link' : 'Create member'}</Button>
       </div>
     </div>
   );

@@ -51,7 +51,10 @@ model User {
   passwordHash    String
   role            String   @default("owner") // owner | admin | manager | agent
   teamFunction    String? // sales | marketing | support | other (department, orthogonal to role)
-  status          String   @default("active") // active | disabled
+  status          String   @default("active") // active | invited | disabled
+  // Self-serve invite: the member sets their own password via /invite/<token>.
+  inviteToken     String?  @unique
+  inviteExpiresAt DateTime?
   createdByUserId String? // the admin who created this member
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

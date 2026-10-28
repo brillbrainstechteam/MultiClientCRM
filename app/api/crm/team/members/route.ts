@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { randomBytes } from 'crypto';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { hashPassword } from '@/lib/auth/password';
@@ -62,6 +63,9 @@ export async function POST(req: Request) {
   const name = str(b?.name);
   const email = str(b?.email).toLowerCase();
   const password = typeof b?.password === 'string' ? b.password : '';
+  // Invite mode: the member sets their own password via a secure link, so no
+  // password is required now and they start as 'invited'.
+  const invite = b?.invite === true;
   // Roles: base tiers (admin/manager/agent) or a custom title — but never a
   // second `owner` (protected). Custom roles get team-member access (see
   // normalizeRole in bootstrap). Departments are free-text labels.
@@ -71,7 +75,7 @@ export async function POST(req: Request) {
 
   if (!name) return NextResponse.json({ error: 'Name is required.' }, { status: 400 });
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return NextResponse.json({ error: 'Enter a valid email.' }, { status: 400 });
-  if (password.length < 6) return NextResponse.json({ error: 'Password must be at least 6 characters.' }, { status: 400 });
+  if (!invite && password.length < 6) return NextResponse.json({ error: 'Password must be at least 6 characters.' }, { status: 400 });
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return NextResponse.json({ error: 'A user with this email already exists.' }, { status: 400 });
@@ -91,19 +95,25 @@ export async function POST(req: Request) {
   // Seat handling: within included seats = free; beyond = allowed as paid
   // overage IF the plan supports it, else blocked (e.g. trial).
   const [activeSeats, plan] = await Promise.all([
-    prisma.user.count({ where: { tenantId: user.tenantId, status: 'active' } }),
+    prisma.user.count({ where: { tenantId: user.tenantId, status: { in: ['active', 'invited'] } } }),
     seatPlan(user.tenantId),
   ]);
   if (plan.included !== null && activeSeats >= plan.included && plan.overagePrice <= 0) {
     return NextResponse.json({ error: `Your plan includes ${plan.included} seats and all are in use. Upgrade your plan to add more members.`, code: 'seat_limit' }, { status: 402 });
   }
 
+  const inviteToken = invite ? randomBytes(24).toString('base64url') : null;
   const created = await prisma.user.create({
     data: {
-      tenantId: user.tenantId, name, email, phone, passwordHash: await hashPassword(password),
-      role, teamFunction: department, status: 'active', createdByUserId: user.id,
+      tenantId: user.tenantId, name, email, phone,
+      // Invited members get an unusable random hash until they set their own.
+      passwordHash: await hashPassword(invite ? randomBytes(18).toString('hex') : password),
+      role, teamFunction: department,
+      status: invite ? 'invited' : 'active',
+      inviteToken, inviteExpiresAt: invite ? new Date(Date.now() + 7 * 86_400_000) : null,
+      createdByUserId: user.id,
     },
   });
-  await audit({ tenantId: user.tenantId, actorId: user.id, action: 'member.created', targetType: 'user', targetId: created.id, detail: `${role}${department ? ` / ${department}` : ''}` });
-  return NextResponse.json(serialize(created), { status: 201 });
+  await audit({ tenantId: user.tenantId, actorId: user.id, action: invite ? 'member.invited' : 'member.created', targetType: 'user', targetId: created.id, detail: `${role}${department ? ` / ${department}` : ''}` });
+  return NextResponse.json({ ...serialize(created), ...(inviteToken ? { invitePath: `/invite/${inviteToken}` } : {}) }, { status: 201 });
 }
