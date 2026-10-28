@@ -57,6 +57,9 @@ export interface ConnectionRow {
   active: boolean;
   /** true for rows synthesised from WhatsAppAccount — managed on the WhatsApp screen, not editable here. */
   derived: boolean;
+  /** For webhook sources (Google Ads): the ingest path + key to paste into the provider. */
+  ingestPath?: string;
+  secretKey?: string;
 }
 
 /** Map a WhatsAppAccount's status to the unified connection health. */
@@ -77,20 +80,26 @@ export async function listConnections(tenantId: string): Promise<ConnectionRow[]
     prisma.whatsAppAccount.findMany({ where: { tenantId }, select: { id: true, label: true, displayPhone: true, phoneNumberId: true, status: true, statusReason: true, tokenExpiresAt: true, connectedAt: true } }),
   ]);
 
-  const explicit: ConnectionRow[] = rows.map((r) => ({
-    id: r.id,
-    provider: r.provider,
-    providerLabel: PROVIDER_LABEL[r.provider] ?? r.provider,
-    displayName: r.displayName,
-    externalAccountId: r.externalAccountId,
-    parentConnectionId: r.parentConnectionId,
-    status: r.status as ConnectionStatus,
-    authStatus: r.authStatus,
-    lastEventAt: r.lastEventAt ? r.lastEventAt.toISOString() : null,
-    lastError: r.lastError,
-    active: r.active,
-    derived: false,
-  }));
+  const explicit: ConnectionRow[] = rows.map((r) => {
+    const cfg = (r.config ?? null) as { key?: string } | null;
+    return {
+      id: r.id,
+      provider: r.provider,
+      providerLabel: PROVIDER_LABEL[r.provider] ?? r.provider,
+      displayName: r.displayName,
+      externalAccountId: r.externalAccountId,
+      parentConnectionId: r.parentConnectionId,
+      status: r.status as ConnectionStatus,
+      authStatus: r.authStatus,
+      lastEventAt: r.lastEventAt ? r.lastEventAt.toISOString() : null,
+      lastError: r.lastError,
+      active: r.active,
+      derived: false,
+      ...(r.provider === 'google_ads' && r.externalAccountId
+        ? { ingestPath: `/api/public/google-lead/${r.externalAccountId}`, secretKey: cfg?.key }
+        : {}),
+    };
+  });
 
   // WhatsApp numbers are managed on the WhatsApp screen; show them here read-only
   // so the admin sees every live channel in one place.

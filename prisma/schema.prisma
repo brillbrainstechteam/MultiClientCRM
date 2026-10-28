@@ -736,6 +736,33 @@ model CrmSourceConnection {
   @@index([tenantId, parentConnectionId])
 }
 
+// Per-tenant OAuth / delegated-access credentials for social connectors (Meta
+// Business Integration System User tokens, Instagram tokens, page tokens, …).
+// The token is encrypted at rest (lib/crypto/secrets). One row per
+// tenant+provider+externalId so a tenant can hold many pages/accounts.
+model CrmOAuthCredential {
+  id                String   @id @default(cuid())
+  tenantId          String
+  provider          String   // meta | facebook_page | instagram | google_ads | google
+  // The asset this credential is for: client_business_id, page id, ig user id…
+  externalId        String?
+  // The CrmSourceConnection this credential backs, when applicable.
+  connectionId      String?
+  accessTokenEnc    String   // AES-256-GCM ciphertext — never plaintext
+  tokenType         String   @default("bisu") // bisu | user | page | instagram | refresh
+  scopes            String[]
+  businessId        String?
+  expiresAt         DateTime? // null = never expires (BISU default)
+  refreshTokenEnc   String?
+  lastRefreshedAt   DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([tenantId, provider, externalId])
+  @@index([tenantId, provider])
+  @@index([connectionId])
+}
+
 // Unified Intake Event (Lead Capture docs §5). Every lead source — WhatsApp,
 // walk-in, Meta Lead Ads, website/trade forms, QR, referral, exhibition, field
 // visit, telecalling, ecommerce, POS, manual — normalizes into one row that the

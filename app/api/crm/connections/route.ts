@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { randomBytes } from 'crypto';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { audit } from '@/lib/crm/audit';
@@ -33,17 +34,28 @@ export async function POST(req: Request) {
   if (!provider || !PROVIDER_LABEL[provider]) return NextResponse.json({ error: 'A valid provider is required.' }, { status: 400 });
   const displayName = (typeof b.displayName === 'string' && b.displayName.trim()) || `${PROVIDER_LABEL[provider]}`;
 
+  // Webhook-based sources that need no OAuth (Google Ads lead forms) get an
+  // auto-generated per-tenant URL token + verification key to paste into the
+  // provider. The source is immediately "connected" (just awaiting its first event).
+  const webhookProvider = provider === 'google_ads';
+  let externalAccountId = typeof b.externalAccountId === 'string' ? b.externalAccountId.trim() || null : null;
+  let config: object | undefined = b.config && typeof b.config === 'object' ? (b.config as object) : undefined;
+  if (webhookProvider) {
+    externalAccountId = externalAccountId ?? randomBytes(12).toString('base64url');
+    config = { ...(config ?? {}), key: randomBytes(12).toString('base64url') };
+  }
+
   const created = await prisma.crmSourceConnection.create({
     data: {
       tenantId: user.tenantId,
       provider,
       displayName,
-      externalAccountId: typeof b.externalAccountId === 'string' ? b.externalAccountId.trim() || null : null,
+      externalAccountId,
       parentConnectionId: typeof b.parentConnectionId === 'string' ? b.parentConnectionId.trim() || null : null,
       enabledSources: Array.isArray(b.enabledSources) ? b.enabledSources.filter((s) => typeof s === 'string') : [],
-      status: 'pending',
-      authStatus: 'pending',
-      ...(b.config && typeof b.config === 'object' ? { config: b.config as object } : {}),
+      status: webhookProvider ? 'connected' : 'pending',
+      authStatus: webhookProvider ? 'ok' : 'pending',
+      ...(config ? { config } : {}),
     },
   });
   await audit({ tenantId: user.tenantId, actorId: user.id, action: 'connection.added', targetType: 'source_connection', targetId: created.id, detail: `${provider}: ${displayName}` });

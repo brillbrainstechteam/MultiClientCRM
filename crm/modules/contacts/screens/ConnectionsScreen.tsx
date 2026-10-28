@@ -1,7 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, X, RefreshCw } from 'lucide-react';
+import { Plus, X, RefreshCw, Facebook } from 'lucide-react';
 import { PageHeader } from '@crm/components';
 import { Button, Select, Input } from '@crm/design-system';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/** Load the Facebook JS SDK once, then init with the app id. */
+function loadFbSdk(appId: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const w = window as any;
+    if (w.FB) { resolve(w.FB); return; }
+    const done = () => { try { w.FB.init({ appId, cookie: true, xfbml: false, version: 'v23.0' }); resolve(w.FB); } catch (e) { reject(e); } };
+    const existing = document.getElementById('facebook-jssdk') as HTMLScriptElement | null;
+    if (existing) { existing.addEventListener('load', done); return; }
+    const s = document.createElement('script');
+    s.id = 'facebook-jssdk'; s.src = 'https://connect.facebook.net/en_US/sdk.js'; s.async = true; s.defer = true;
+    s.onload = done; s.onerror = () => reject(new Error('Could not load the Facebook SDK.'));
+    document.body.appendChild(s);
+  });
+}
 
 /**
  * Lead Sources / Connections (Lead Intake Hub). One place to see and manage
@@ -13,6 +29,7 @@ interface Conn {
   id: string; provider: string; providerLabel: string; displayName: string;
   externalAccountId: string | null; status: string; authStatus: string;
   lastEventAt: string | null; lastError: string | null; active: boolean; derived: boolean;
+  ingestPath?: string; secretKey?: string;
 }
 interface Provider { provider: string; label: string; multi: boolean; how: string }
 interface Summary { total: number; connected: number; degraded: number; disconnected: number; pending: number }
@@ -60,6 +77,20 @@ export default function ConnectionsScreen() {
     if (r.ok) { setToast('Connection removed.'); load(); } else { const d = await r.json().catch(() => ({})); setToast(d.error ?? 'Could not remove.'); }
   };
 
+  const connectMeta = async () => {
+    try {
+      const cfg = await fetch('/api/crm/connect/meta', { credentials: 'same-origin' }).then((r) => r.json()).catch(() => null);
+      if (!cfg?.configured) { setToast('Meta app is not configured on the server yet. Add the app credentials to go live.'); return; }
+      const FB = await loadFbSdk(cfg.appId);
+      FB.login((resp: any) => {
+        const code = resp?.authResponse?.code;
+        if (!code) { setToast('Meta connection was cancelled.'); return; }
+        fetch('/api/crm/connect/meta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ code }) })
+          .then(async (r) => { const d = await r.json().catch(() => ({})); if (!r.ok) { setToast(d.error ?? 'Meta connection failed.'); return; } setToast(`Connected: ${d.pages} page(s), ${d.instagram} Instagram.`); load(); });
+      }, { config_id: cfg.configId, response_type: 'code', override_default_response_type: true });
+    } catch (e) { setToast(e instanceof Error ? e.message : 'Could not start the Meta connection.'); }
+  };
+
   const grouped = useMemo(() => {
     const m = new Map<string, Conn[]>();
     for (const c of conns) { const list = m.get(c.providerLabel) ?? []; list.push(c); m.set(c.providerLabel, list); }
@@ -71,7 +102,12 @@ export default function ConnectionsScreen() {
       <PageHeader
         title="Lead Sources"
         description="Every channel that can bring in an enquiry — WhatsApp, Meta, Instagram, website and more. Connect once; every lead flows into Lead Intake and is matched, routed and tracked. Watch connector health so a dead source never loses leads silently."
-        actions={<Button variant="primary" iconLeft={<Plus />} onClick={() => setAdding(true)}>Add connection</Button>}
+        actions={
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button variant="secondary" iconLeft={<Facebook />} onClick={connectMeta}>Connect Facebook / Instagram</Button>
+            <Button variant="primary" iconLeft={<Plus />} onClick={() => setAdding(true)}>Add connection</Button>
+          </div>
+        }
       />
 
       {summary ? (
@@ -97,7 +133,7 @@ export default function ConnectionsScreen() {
             <h3 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--crm-text-muted)', margin: '0 0 8px' }}>{label}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {rows.map((c) => (
-                <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', border: '1px solid var(--crm-border-subtle)', borderRadius: 12, background: 'var(--crm-surface-raised)' }}>
+                <div key={c.id} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 14, padding: '12px 14px', border: '1px solid var(--crm-border-subtle)', borderRadius: 12, background: 'var(--crm-surface-raised)' }}>
                   <span style={{ width: 10, height: 10, borderRadius: '50%', background: STATUS_TONE[c.status], flex: '0 0 auto' }} title={STATUS_LABEL[c.status]} />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>{c.displayName}{c.derived ? <span style={{ fontSize: 11, color: 'var(--crm-text-muted)', fontWeight: 500 }}> · managed on WhatsApp settings</span> : null}</div>
@@ -112,6 +148,12 @@ export default function ConnectionsScreen() {
                       {c.lastError ? <Button variant="ghost" size="sm" onClick={() => act(c.id, { action: 'clear_error' }, 'Cleared.')}>Clear error</Button> : null}
                       <Button variant="ghost" size="sm" onClick={() => act(c.id, { action: 'set_active', enabled: !c.active }, c.active ? 'Disabled.' : 'Enabled.')}>{c.active ? 'Disable' : 'Enable'}</Button>
                       <Button variant="ghost" size="sm" onClick={() => remove(c.id)}>Remove</Button>
+                    </div>
+                  ) : null}
+                  {c.ingestPath ? (
+                    <div style={{ flexBasis: '100%', marginTop: 4, fontSize: 12, color: 'var(--crm-text-secondary)', background: 'var(--crm-surface-sunken)', borderRadius: 8, padding: '8px 10px' }}>
+                      <div>Paste into Google Ads → Webhook URL: <code style={{ fontSize: 11.5 }}>{typeof window !== 'undefined' ? window.location.origin : ''}{c.ingestPath}</code></div>
+                      {c.secretKey ? <div>Key: <code style={{ fontSize: 11.5 }}>{c.secretKey}</code></div> : null}
                     </div>
                   ) : null}
                 </div>
