@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, X, RefreshCw, Facebook } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, X, RefreshCw, Facebook, MessageCircle, Globe, Megaphone, ChevronRight } from 'lucide-react';
 import { PageHeader } from '@crm/components';
-import { Button, Select, Input } from '@crm/design-system';
+import { useScopedHref } from '@crm/app/use-scoped-href';
+import { Button } from '@crm/design-system';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /** Load the Facebook JS SDK once, then init with the app id. */
@@ -31,7 +33,6 @@ interface Conn {
   lastEventAt: string | null; lastError: string | null; active: boolean; derived: boolean;
   ingestPath?: string; secretKey?: string;
 }
-interface Provider { provider: string; label: string; multi: boolean; how: string }
 interface Summary { total: number; connected: number; degraded: number; disconnected: number; pending: number }
 
 const STATUS_TONE: Record<string, string> = {
@@ -51,8 +52,9 @@ function ago(iso: string | null): string {
 }
 
 export default function ConnectionsScreen() {
+  const navigate = useNavigate();
+  const scopedHref = useScopedHref();
   const [conns, setConns] = useState<Conn[]>([]);
-  const [providers, setProviders] = useState<Provider[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -62,7 +64,7 @@ export default function ConnectionsScreen() {
     setLoading(true);
     fetch('/api/crm/connections', { credentials: 'same-origin' })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('load'))))
-      .then((d) => { setConns(d.connections ?? []); setProviders(d.providers ?? []); setSummary(d.summary ?? null); })
+      .then((d) => { setConns(d.connections ?? []); setSummary(d.summary ?? null); })
       .catch(() => setConns([]))
       .finally(() => setLoading(false));
   }, []);
@@ -91,6 +93,14 @@ export default function ConnectionsScreen() {
     } catch (e) { setToast(e instanceof Error ? e.message : 'Could not start the Meta connection.'); }
   };
 
+  // Google Ads lead forms: no OAuth — mint a webhook URL + key to paste into Google Ads.
+  const setupGoogleAds = async () => {
+    const r = await fetch('/api/crm/connections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ provider: 'google_ads', displayName: 'Google Ads lead forms' }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { setToast(d.error ?? 'Could not set up Google Ads.'); return; }
+    setAdding(false); setToast('Google Ads source created — copy the webhook URL + key below.'); load();
+  };
+
   const grouped = useMemo(() => {
     const m = new Map<string, Conn[]>();
     for (const c of conns) { const list = m.get(c.providerLabel) ?? []; list.push(c); m.set(c.providerLabel, list); }
@@ -102,12 +112,7 @@ export default function ConnectionsScreen() {
       <PageHeader
         title="Lead Sources"
         description="Every channel that can bring in an enquiry — WhatsApp, Meta, Instagram, website and more. Connect once; every lead flows into Lead Intake and is matched, routed and tracked. Watch connector health so a dead source never loses leads silently."
-        actions={
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button variant="secondary" iconLeft={<Facebook />} onClick={connectMeta}>Connect Facebook / Instagram</Button>
-            <Button variant="primary" iconLeft={<Plus />} onClick={() => setAdding(true)}>Add connection</Button>
-          </div>
-        }
+        actions={<Button variant="primary" iconLeft={<Plus />} onClick={() => setAdding(true)}>Add lead source</Button>}
       />
 
       {summary ? (
@@ -163,45 +168,59 @@ export default function ConnectionsScreen() {
         ))
       )}
 
-      {adding ? <AddConnection providers={providers} onClose={() => setAdding(false)} onDone={() => { setAdding(false); setToast('Connection added.'); load(); }} /> : null}
+      {adding ? (
+        <ConnectCatalog
+          onClose={() => setAdding(false)}
+          onConnectMeta={() => { setAdding(false); connectMeta(); }}
+          onSetupGoogle={setupGoogleAds}
+          onWhatsApp={() => { setAdding(false); navigate(scopedHref('/settings/whatsapp')); }}
+          onWebsite={() => { setAdding(false); setToast('Open "Share form" on Lead Intake to get your website form link.'); navigate(scopedHref('/leads/intake')); }}
+        />
+      ) : null}
       {toast ? <div role="status" onAnimationEnd={() => setToast(null)} style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 80, background: 'var(--crm-brand-700)', color: '#fff', fontWeight: 600, fontSize: 13.5, padding: '11px 18px', borderRadius: 10 }}>{toast}</div> : null}
     </div>
   );
 }
 
-function AddConnection({ providers, onClose, onDone }: { providers: Provider[]; onClose: () => void; onDone: () => void }) {
-  const [provider, setProvider] = useState(providers[0]?.provider ?? 'website_form');
-  const [displayName, setDisplayName] = useState('');
-  const [externalAccountId, setExternalAccountId] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  const save = async () => {
-    setBusy(true); setErr(null);
-    try {
-      const r = await fetch('/api/crm/connections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ provider, displayName: displayName.trim(), externalAccountId: externalAccountId.trim() }) });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(d.error ?? 'Could not add the connection.'); return; }
-      onDone();
-    } finally { setBusy(false); }
-  };
+/**
+ * Connect catalog — each source routes to the RIGHT flow: Meta/WhatsApp open the
+ * provider's own login/consent (no typing IDs); Google Ads / website use a
+ * webhook. Mirrors how Jwero/Zithara connect sources.
+ */
+function ConnectCatalog({ onClose, onConnectMeta, onSetupGoogle, onWhatsApp, onWebsite }: {
+  onClose: () => void; onConnectMeta: () => void; onSetupGoogle: () => void; onWhatsApp: () => void; onWebsite: () => void;
+}) {
+  const card = (icon: ReactNode, title: string, desc: string, cta: string, onClick: () => void, tone = 'var(--crm-brand-700)') => (
+    <button onClick={onClick} style={{ textAlign: 'left', display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '14px 16px', border: '1px solid var(--crm-border-subtle)', borderRadius: 12, background: 'var(--crm-surface-raised)', cursor: 'pointer' }}>
+      <span style={{ flex: '0 0 auto', width: 38, height: 38, borderRadius: 10, display: 'grid', placeItems: 'center', background: 'var(--crm-surface-sunken)', color: tone }}>{icon}</span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', fontWeight: 600, fontSize: 14 }}>{title}</span>
+        <span style={{ display: 'block', fontSize: 12.5, color: 'var(--crm-text-muted)' }}>{desc}</span>
+      </span>
+      <span style={{ flex: '0 0 auto', fontSize: 12.5, fontWeight: 600, color: tone, display: 'inline-flex', alignItems: 'center', gap: 2 }}>{cta} <ChevronRight size={15} /></span>
+    </button>
+  );
 
   return (
     <div role="dialog" aria-modal="true" onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(15,23,42,.5)', display: 'grid', placeItems: 'center', padding: 20 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', width: 'min(460px,100%)', background: 'var(--crm-surface-raised)', borderRadius: 16, padding: 24 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', width: 'min(540px,100%)', background: 'var(--crm-surface-raised)', borderRadius: 16, padding: 24, maxHeight: '85vh', overflowY: 'auto' }}>
         <button onClick={onClose} aria-label="Close" style={{ position: 'absolute', top: 14, right: 14, border: 0, background: 'none', cursor: 'pointer', color: 'var(--crm-text-secondary)' }}><X size={18} /></button>
-        <h3 style={{ margin: '0 0 14px', fontSize: 16, fontWeight: 700 }}>Add a lead source</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <Select label="Source type" options={providers.map((p) => ({ value: p.provider, label: p.label }))} value={provider} onChange={(e) => setProvider(e.target.value)} />
-          <Input label="Name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="e.g. Aurelia Instagram, Dealer landing page" />
-          <Input label="Account / page / form ID (optional)" value={externalAccountId} onChange={(e) => setExternalAccountId(e.target.value)} placeholder="Provider's own identifier" />
-          <p style={{ fontSize: 12, color: 'var(--crm-text-muted)', margin: 0 }}>You can add several of each — multiple WhatsApp numbers, Facebook Pages or Instagram accounts are all supported.</p>
-          {err ? <p style={{ color: 'var(--crm-danger)', fontSize: 13, margin: 0 }}>{err}</p> : null}
+        <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>Add a lead source</h3>
+        <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--crm-text-secondary)' }}>Connect a channel with its own login — we discover your Pages, accounts and forms automatically. Every lead then flows into Lead Intake.</p>
+
+        <div style={{ fontSize: 11.5, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--crm-text-muted)', margin: '4px 0 8px' }}>Connect with your account</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {card(<Facebook size={20} />, 'Facebook & Instagram', 'Pages, Instagram, Lead Ads and Messenger — sign in with Facebook.', 'Connect', onConnectMeta, '#1877f2')}
+          {card(<MessageCircle size={20} />, 'WhatsApp', 'Add a WhatsApp Business number via Embedded Signup.', 'Connect', onWhatsApp, '#25d366')}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
-          <Button variant="ghost" onClick={onClose} disabled={busy}>Cancel</Button>
-          <Button variant="primary" onClick={save} disabled={busy}>{busy ? 'Adding…' : 'Add connection'}</Button>
+
+        <div style={{ fontSize: 11.5, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--crm-text-muted)', margin: '18px 0 8px' }}>Lead forms (no login needed)</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {card(<Megaphone size={20} />, 'Google Ads lead forms', 'Incl. YouTube campaigns — paste a webhook URL + key into Google Ads.', 'Set up', onSetupGoogle, '#ea4335')}
+          {card(<Globe size={20} />, 'Website form', 'Your shareable voice-enabled enquiry form.', 'Get link', onWebsite, '#0891b2')}
         </div>
+
+        <p style={{ fontSize: 12, color: 'var(--crm-text-muted)', margin: '18px 0 0' }}>Exhibitions, telecalling lists and referrals come in through Import or are logged as you capture them — they don’t need a connection here.</p>
       </div>
     </div>
   );
