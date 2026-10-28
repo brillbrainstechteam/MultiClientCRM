@@ -8,6 +8,11 @@
 export const metaConfig = {
   appId: process.env.NEXT_PUBLIC_META_APP_ID ?? '',
   configId: process.env.NEXT_PUBLIC_META_CONFIG_ID ?? '',
+  // Separate Facebook Login for Business configuration for the Lead Sources
+  // connection (Pages + Lead Ads + Instagram) — distinct from the WhatsApp
+  // Embedded Signup config above, because its token type, assets and
+  // permissions differ. Falls back to configId only if not set.
+  leadsConfigId: process.env.NEXT_PUBLIC_META_LEADS_CONFIG_ID ?? '',
   // Graph version for server-to-server calls. Keep this in step with the
   // version your webhook fields are subscribed at in the App Dashboard —
   // payloads arrive shaped by the subscription, not by this.

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { audit } from '@/lib/crm/audit';
-import { metaConfig, isMetaConfigured } from '@/lib/meta/config';
+import { metaConfig } from '@/lib/meta/config';
 import { encryptSecret } from '@/lib/crypto/secrets';
 import { exchangeCodeForToken, getClientBusinessId, listPages, subscribePage } from '@/lib/meta/connect';
 
@@ -21,7 +21,10 @@ const MANAGER_ROLES = ['owner', 'admin', 'manager'];
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
-  return NextResponse.json({ configured: isMetaConfigured(), appId: metaConfig.appId, configId: metaConfig.configId });
+  // The Lead Sources connection uses its OWN FLB configuration (Pages/Leads/IG),
+  // not the WhatsApp Embedded Signup one.
+  const configId = metaConfig.leadsConfigId || metaConfig.configId;
+  return NextResponse.json({ configured: Boolean(metaConfig.appId && configId), appId: metaConfig.appId, configId });
 }
 
 async function upsertConnection(tenantId: string, provider: string, externalAccountId: string, displayName: string, parentConnectionId: string | null) {
@@ -47,7 +50,7 @@ export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
   if (!MANAGER_ROLES.includes(user.role)) return NextResponse.json({ error: 'Only a manager can connect Meta.' }, { status: 403 });
-  if (!isMetaConfigured()) return NextResponse.json({ error: 'Meta app is not configured on the server yet.' }, { status: 400 });
+  if (!metaConfig.appId || !metaConfig.appSecret) return NextResponse.json({ error: 'Meta app is not configured on the server yet.' }, { status: 400 });
 
   const b = (await req.json().catch(() => ({}))) as { code?: string };
   if (!b.code) return NextResponse.json({ error: 'Missing authorization code.' }, { status: 400 });
