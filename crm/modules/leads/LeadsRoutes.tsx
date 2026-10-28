@@ -4,6 +4,7 @@ import { LeadsLayout } from './LeadsLayout';
 import IntakeQueueScreen from '@crm/modules/contacts/screens/IntakeQueueScreen';
 import ConnectionsScreen from '@crm/modules/contacts/screens/ConnectionsScreen';
 import ProspectingScreen from '@crm/modules/contacts/screens/ProspectingScreen';
+import LeakageScreen from './screens/LeakageScreen';
 
 /**
  * Leads module routes (the acquisition journey). The screens are shared with the
@@ -16,6 +17,10 @@ export function LeadsRoutes() {
       <Route element={<LeadsLayout />}>
         <Route index element={<Navigate to="/leads/intake" replace />} />
         <Route path="intake" element={<IntakeQueueScreen />} />
+        <Route
+          path="leakage"
+          element={<RequireCapability capability="viewReports" area="Lead Leakage"><LeakageScreen /></RequireCapability>}
+        />
         <Route
           path="sources"
           element={<RequireCapability capability="manageImports" area="Lead Sources"><ConnectionsScreen /></RequireCapability>}

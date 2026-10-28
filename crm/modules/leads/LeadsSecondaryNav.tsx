@@ -1,4 +1,4 @@
-import { Inbox, Radio, Binoculars } from 'lucide-react';
+import { Inbox, Radio, Binoculars, AlertTriangle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useWorkspace } from '@crm/app/workspace-context';
@@ -13,6 +13,7 @@ interface Item { label: string; to: string; icon: LucideIcon; matchPrefix: strin
 
 const items: Item[] = [
   { label: 'Lead Intake', to: '/leads/intake', icon: Inbox, matchPrefix: '/leads/intake' },
+  { label: 'Lead Leakage', to: '/leads/leakage', icon: AlertTriangle, matchPrefix: '/leads/leakage', requires: 'viewReports' },
   { label: 'Lead Sources', to: '/leads/sources', icon: Radio, matchPrefix: '/leads/sources', requires: 'manageImports' },
   { label: 'Find New Businesses', to: '/leads/find', icon: Binoculars, matchPrefix: '/leads/find', requires: 'manageImports' },
 ];

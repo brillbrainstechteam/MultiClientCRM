@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { normMobile } from '@/lib/crm/mobile';
 import { routeLead } from '@/lib/crm/routing';
+import { slaMinutesFor } from '@/lib/crm/sla';
 import { audit } from '@/lib/crm/audit';
 import { notify } from '@/lib/billing/notify';
 
@@ -66,14 +67,6 @@ export interface IntakeResult {
   assignmentReason: string | null;
   duplicate: boolean;
 }
-
-// Default first-response SLA by source. Overridable per call; a real per-tenant
-// config comes with the SLA engine — this is a sensible default, not hard policy.
-const DEFAULT_SLA_MINUTES: Record<string, number | null> = {
-  whatsapp: 60, meta_lead_ad: 60, website_form: 60, walk_in: 15, ecommerce: 120,
-  qr: 120, referral: 240, exhibition: 1440, field_visit: 1440, telecalling: null,
-  pos: null, manual: null,
-};
 
 const clean = (s: unknown): string | null => {
   const v = typeof s === 'string' ? s.trim() : '';
@@ -229,7 +222,7 @@ export async function processIntake(input: IntakeInput): Promise<IntakeResult> {
   }
 
   // 8) SLA clock.
-  const slaMinutes = input.slaMinutes !== undefined ? input.slaMinutes : (DEFAULT_SLA_MINUTES[sourceType] ?? 60);
+  const slaMinutes = slaMinutesFor(sourceType, input.slaMinutes);
   const now = new Date();
   const slaStartedAt = slaMinutes != null ? now : null;
   const slaDueAt = slaMinutes != null ? new Date(now.getTime() + slaMinutes * 60_000) : null;
