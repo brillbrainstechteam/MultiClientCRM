@@ -83,7 +83,16 @@ const clean = (s: unknown): string | null => {
 export async function processIntake(input: IntakeInput): Promise<IntakeResult> {
   const tenantId = input.tenantId;
   const sourceType = input.sourceType;
-  const customerType = input.customerType === 'b2c' ? 'b2c' : 'b2b';
+  // B2B vs B2C is a *tenant* property set at onboarding (Tenant.businessModel),
+  // not a per-lead choice — the whole platform is tailored to one mode. Honour
+  // an explicit override if a caller passes one, else inherit the tenant's mode.
+  let customerType: 'b2b' | 'b2c';
+  if (input.customerType === 'b2b' || input.customerType === 'b2c') {
+    customerType = input.customerType;
+  } else {
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { businessModel: true } });
+    customerType = tenant?.businessModel === 'b2c' ? 'b2c' : 'b2b';
+  }
   const ext = clean(input.externalSourceRecordId);
 
   // 1) Idempotency — a source event with an external id is processed once.

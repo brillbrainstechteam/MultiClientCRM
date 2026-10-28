@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Share2, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@crm/components';
 import { useScopedHref } from '@crm/app/use-scoped-href';
-import { Button, Select, Input } from '@crm/design-system';
+import { Button, Input } from '@crm/design-system';
 
 interface IntakeEvent {
   id: string; sourceType: string; sourceName: string | null; customerType: string;
@@ -43,11 +43,11 @@ export default function IntakeQueueScreen() {
   const navigate = useNavigate();
   const scopedHref = useScopedHref();
   const [tab, setTab] = useState('');
-  const [customerType, setCustomerType] = useState('');
   const [events, setEvents] = useState<IntakeEvent[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -56,13 +56,12 @@ export default function IntakeQueueScreen() {
     if (tab === 'unassigned') p.set('assigned', 'unassigned');
     else if (tab === 'mine') p.set('assigned', 'me');
     else if (tab) p.set('status', tab);
-    if (customerType) p.set('customerType', customerType);
     fetch(`/api/crm/intake?${p.toString()}`, { credentials: 'same-origin' })
       .then((r) => (r.ok ? r.json() : { events: [] }))
       .then((d) => setEvents(Array.isArray(d.events) ? d.events : []))
       .catch(() => setEvents([]))
       .finally(() => setLoading(false));
-  }, [tab, customerType]);
+  }, [tab]);
   useEffect(load, [load]);
 
   useEffect(() => {
@@ -88,7 +87,12 @@ export default function IntakeQueueScreen() {
       <PageHeader
         title="Lead Intake"
         description="Every lead from every source, in one triage queue — matched, classified, routed, and tracked against a first-response SLA."
-        actions={<Button variant="primary" iconLeft={<Plus />} onClick={() => setAdding(true)}>Quick add lead</Button>}
+        actions={
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button variant="secondary" iconLeft={<Share2 />} onClick={() => setSharing(true)}>Share form</Button>
+            <Button variant="primary" iconLeft={<Plus />} onClick={() => setAdding(true)}>Quick add lead</Button>
+          </div>
+        }
       />
 
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', margin: '4px 0 14px' }}>
@@ -97,7 +101,6 @@ export default function IntakeQueueScreen() {
             <button key={t.id} onClick={() => setTab(t.id)} style={{ font: 'inherit', fontSize: 12.5, fontWeight: 600, border: 0, background: tab === t.id ? 'var(--crm-surface-raised)' : 'none', color: tab === t.id ? 'var(--crm-brand-700)' : 'var(--crm-text-secondary)', padding: '5px 12px', borderRadius: 7, cursor: 'pointer' }}>{t.label}</button>
           ))}
         </div>
-        <Select label="Type" hideLabel size="sm" options={[{ value: '', label: 'All types' }, { value: 'b2b', label: 'B2B' }, { value: 'b2c', label: 'B2C' }]} value={customerType} onChange={(e) => setCustomerType(e.target.value)} />
       </div>
 
       {loading ? (
@@ -152,13 +155,16 @@ export default function IntakeQueueScreen() {
       )}
 
       {adding ? <QuickAddLead members={members} onClose={() => setAdding(false)} onDone={(msg) => { setAdding(false); setToast(msg); load(); }} /> : null}
+      {sharing ? <ShareForm onClose={() => setSharing(false)} /> : null}
       {toast ? <div role="status" onAnimationEnd={() => setToast(null)} style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 80, background: 'var(--crm-brand-700)', color: '#fff', fontWeight: 600, fontSize: 13.5, padding: '11px 18px', borderRadius: 10, animation: 'none' }}>{toast}</div> : null}
     </div>
   );
 }
 
 function QuickAddLead({ onClose, onDone }: { members: Member[]; onClose: () => void; onDone: (msg: string) => void }) {
-  const [f, setF] = useState({ customerType: 'b2b', contactName: '', mobile: '', city: '', productInterest: '', sourceName: '', notes: '' });
+  // B2B vs B2C follows the tenant's onboarding mode, so it is not asked here —
+  // the intake pipeline stamps it from Tenant.businessModel.
+  const [f, setF] = useState({ contactName: '', mobile: '', city: '', productInterest: '', sourceName: '', notes: '' });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
@@ -169,7 +175,7 @@ function QuickAddLead({ onClose, onDone }: { members: Member[]; onClose: () => v
     try {
       const r = await fetch('/api/crm/intake', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
-        body: JSON.stringify({ sourceType: 'manual', sourceName: f.sourceName.trim() || 'Manual quick-add', customerType: f.customerType, contactName: f.contactName.trim(), mobile: f.mobile.trim(), city: f.city.trim(), productInterest: f.productInterest.trim(), notes: f.notes.trim() }),
+        body: JSON.stringify({ sourceType: 'manual', sourceName: f.sourceName.trim() || 'Manual quick-add', contactName: f.contactName.trim(), mobile: f.mobile.trim(), city: f.city.trim(), productInterest: f.productInterest.trim(), notes: f.notes.trim() }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setErr(d.error ?? 'Could not add the lead.'); return; }
@@ -183,7 +189,6 @@ function QuickAddLead({ onClose, onDone }: { members: Member[]; onClose: () => v
         <button onClick={onClose} aria-label="Close" style={{ position: 'absolute', top: 14, right: 14, border: 0, background: 'none', cursor: 'pointer', color: 'var(--crm-text-secondary)' }}><X size={18} /></button>
         <h3 style={{ margin: '0 0 14px', fontSize: 16, fontWeight: 700 }}>Quick add lead</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <Select label="Type" options={[{ value: 'b2b', label: 'B2B (business)' }, { value: 'b2c', label: 'B2C (consumer)' }]} value={f.customerType} onChange={(e) => set('customerType', e.target.value)} />
           <Input label="Name" value={f.contactName} onChange={(e) => set('contactName', e.target.value)} placeholder="Contact / business name" />
           <Input label="Mobile" value={f.mobile} onChange={(e) => set('mobile', e.target.value)} placeholder="+91…" />
           <Input label="City" value={f.city} onChange={(e) => set('city', e.target.value)} />
@@ -195,6 +200,60 @@ function QuickAddLead({ onClose, onDone }: { members: Member[]; onClose: () => v
           <Button variant="ghost" onClick={onClose} disabled={busy}>Cancel</Button>
           <Button variant="primary" onClick={save} disabled={busy}>{busy ? 'Capturing…' : 'Capture lead'}</Button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** Share the public lead form: fetch/mint the link, copy, enable/disable. */
+function ShareForm({ onClose }: { onClose: () => void }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [enabled, setEnabled] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/crm/lead-form', { credentials: 'same-origin' })
+      .then(async (r) => { const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error ?? 'Could not load the form link.'); return d; })
+      .then((d) => { setUrl(`${window.location.origin}${d.path}`); setEnabled(d.enabled !== false); })
+      .catch((e) => setErr(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const toggle = async (next: boolean) => {
+    setEnabled(next);
+    await fetch('/api/crm/lead-form', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action: 'set_enabled', enabled: next }) }).catch(() => undefined);
+  };
+
+  const copy = async () => {
+    if (!url) return;
+    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* clipboard blocked */ }
+  };
+
+  return (
+    <div role="dialog" aria-modal="true" onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(15,23,42,.5)', display: 'grid', placeItems: 'center', padding: 20 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', width: 'min(520px,100%)', background: 'var(--crm-surface-raised)', borderRadius: 16, padding: 24 }}>
+        <button onClick={onClose} aria-label="Close" style={{ position: 'absolute', top: 14, right: 14, border: 0, background: 'none', cursor: 'pointer', color: 'var(--crm-text-secondary)' }}><X size={18} /></button>
+        <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700 }}>Share your lead form</h3>
+        <p style={{ margin: '0 0 16px', fontSize: 13.5, color: 'var(--crm-text-secondary)' }}>Send this link to customers. Every submission lands here in Lead Intake — matched, routed and SLA-tracked. The form supports voice input.</p>
+
+        {loading ? (
+          <p style={{ color: 'var(--crm-text-muted)' }}>Loading link…</p>
+        ) : err ? (
+          <p style={{ color: 'var(--crm-danger)', fontSize: 13.5 }}>{err}</p>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+              <input readOnly value={url ?? ''} onFocus={(e) => e.currentTarget.select()} style={{ flex: 1, minWidth: 0, padding: '10px 12px', borderRadius: 10, border: '1px solid var(--crm-border-subtle)', background: 'var(--crm-surface-sunken)', color: 'var(--crm-text-primary)', fontSize: 13 }} />
+              <Button variant="primary" iconLeft={copied ? <Check /> : <Copy />} onClick={copy}>{copied ? 'Copied' : 'Copy'}</Button>
+            </div>
+            <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 14, fontSize: 13.5, color: 'var(--crm-text-secondary)', cursor: 'pointer' }}>
+              <input type="checkbox" checked={enabled} onChange={(e) => toggle(e.target.checked)} />
+              Form is active (customers can submit)
+            </label>
+          </>
+        )}
       </div>
     </div>
   );

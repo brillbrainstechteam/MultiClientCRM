@@ -24,6 +24,10 @@ model Tenant {
   // Selling model — drives contact fields and business-unit structure.
   businessModel String   @default("b2b") // b2b | b2c | both
   plan          String   @default("trial") // trial | starter | growth | advanced
+  // Public lead-capture form: one shareable form per tenant. The token is the
+  // only thing in the public URL (/f/<token>); it is generated on first share.
+  leadFormToken   String?  @unique
+  leadFormEnabled Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
