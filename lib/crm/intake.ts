@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db';
 import { normMobile } from '@/lib/crm/mobile';
-import { routeLocation } from '@/lib/crm/zone-routing';
+import { routeLead } from '@/lib/crm/routing';
 import { audit } from '@/lib/crm/audit';
 import { notify } from '@/lib/billing/notify';
 
@@ -140,44 +140,46 @@ export async function processIntake(input: IntakeInput): Promise<IntakeResult> {
       ? await prisma.crmContact.findFirst({ where: { tenantId, email } })
       : null;
 
-  // 5–7) Classify + resolve contact + route.
-  let contactId: string;
-  let assignedUserId: string | null = null;
-  let assignmentReason: string;
-  let zoneResolution: string | null = null;
+  // 5) Classify.
   let classification: string;
-
   if (matched) {
-    contactId = matched.id;
     classification =
       sourceType === 'pos' ? 'POS_CUSTOMER'
         : customerType === 'b2c' && sourceType === 'walk_in' ? 'WALK_IN_EXISTING_CUSTOMER'
           : 'EXISTING_CUSTOMER_NEW_ENQUIRY';
+  } else {
+    classification = sourceType === 'pos' ? 'POS_CUSTOMER' : 'NEW_PROSPECT';
+  }
 
-    // Respect the existing relationship owner — never re-route a known customer.
-    if (matched.ownerId) {
-      assignedUserId = matched.ownerId;
-      assignmentReason = 'RELATIONSHIP_OWNER';
-    } else {
-      const routed = await routeLocation(tenantId, matched.city, matched.state);
-      assignedUserId = routed.assigneeUserId;
-      assignmentReason = assignedUserId ? 'ZONE' : 'UNASSIGNED';
-      zoneResolution = routed.zoneName ? 'AUTO_RESOLVED' : 'UNKNOWN';
-      if (assignedUserId) await prisma.crmContact.update({ where: { id: matched.id }, data: { ownerId: assignedUserId } });
-    }
+  // 6) Route through the precedence engine (records reason + method). B2B new
+  //    prospects go to Marketing first; B2C and known accounts route direct.
+  const route = await routeLead({
+    tenantId,
+    customerType,
+    existingOwnerId: matched?.ownerId || null,
+    existingMarketingOwnerId: matched?.marketingOwnerId || null,
+    city: matched ? matched.city : clean(input.city),
+    state: matched ? matched.state : clean(input.state),
+    branchId: clean(input.branchId),
+    appointmentId: clean(input.appointmentId),
+  });
+  const assignedUserId = route.assigneeUserId;
+  const assignmentReason = route.assignmentReason;
+  const zoneResolution = route.zoneResolution;
 
+  // 7) Upsert the contact, writing the owner into the slot the engine chose.
+  let contactId: string;
+  if (matched) {
+    contactId = matched.id;
+    const ownerPatch: Record<string, unknown> = {};
+    if (assignedUserId && route.ownerSlot === 'sales' && !matched.ownerId) ownerPatch.ownerId = assignedUserId;
+    if (assignedUserId && route.ownerSlot === 'marketing' && !matched.marketingOwnerId) ownerPatch.marketingOwnerId = assignedUserId;
     // Attach this touch: update the CURRENT source (keep createdSource/original).
     await prisma.crmContact.update({
       where: { id: matched.id },
-      data: { source: sourceLabel, lastActivityAt: new Date(), ...(clean(input.productInterest) ? { interestedIn: clean(input.productInterest) } : {}) },
+      data: { ...ownerPatch, source: sourceLabel, lastActivityAt: new Date(), ...(clean(input.productInterest) ? { interestedIn: clean(input.productInterest) } : {}) },
     });
   } else {
-    classification = sourceType === 'pos' ? 'POS_CUSTOMER' : 'NEW_PROSPECT';
-    const routed = await routeLocation(tenantId, clean(input.city), clean(input.state));
-    assignedUserId = routed.assigneeUserId;
-    assignmentReason = assignedUserId ? 'ZONE' : 'UNASSIGNED';
-    zoneResolution = routed.zoneName ? 'AUTO_RESOLVED' : 'UNKNOWN';
-
     const id = `contact_${Math.random().toString(36).slice(2, 10)}`;
     const created = await prisma.crmContact.create({
       data: {
@@ -189,7 +191,10 @@ export async function processIntake(input: IntakeInput): Promise<IntakeResult> {
         mobile: mobile || `no-mobile-${id}`, // keep the row even if only email arrived
         email,
         city: clean(input.city) ?? '—',
-        ownerId: assignedUserId ?? '', // '' = unassigned (surfaces in the queue)
+        // '' = unassigned sales owner (surfaces in the queue); for the B2B
+        // marketing-first journey the sales slot stays empty until qualified.
+        ownerId: route.ownerSlot === 'sales' ? (assignedUserId ?? '') : '',
+        marketingOwnerId: route.ownerSlot === 'marketing' ? assignedUserId : null,
         stage: 'new',
         leadStatus: 'new',
         lifecycleStage: sourceType === 'pos' ? 'customer' : 'prospect',
@@ -200,7 +205,7 @@ export async function processIntake(input: IntakeInput): Promise<IntakeResult> {
         consent: 'pending',
         salesTier: 'standard',
         state: clean(input.state),
-        zone: routed.zoneName,
+        zone: route.zoneName,
         pincode: clean(input.postalCode),
         gstin: clean(input.gstin),
         interestedIn: clean(input.productInterest),
@@ -229,13 +234,14 @@ export async function processIntake(input: IntakeInput): Promise<IntakeResult> {
 
   // 9) Notify.
   if (assignedUserId) {
-    await notify({ tenantId, userId: assignedUserId, category: 'lead', kind: 'lead_assigned', severity: 'info', title: 'New lead assigned', body: `${classification.replace(/_/g, ' ').toLowerCase()} via ${sourceLabel}${contactName ? ` — ${contactName}` : ''}.`, data: { intakeEventId: event.id, contactId }, dedupeKey: `lead:${event.id}` });
+    const toMarketing = route.ownerSlot === 'marketing';
+    await notify({ tenantId, userId: assignedUserId, category: 'lead', kind: toMarketing ? 'lead_to_qualify' : 'lead_assigned', severity: 'info', title: toMarketing ? 'New lead to qualify' : 'New lead assigned', body: `${classification.replace(/_/g, ' ').toLowerCase()} via ${sourceLabel}${contactName ? ` — ${contactName}` : ''}.`, data: { intakeEventId: event.id, contactId }, dedupeKey: `lead:${event.id}` });
   } else {
     await notify({ tenantId, category: 'lead', kind: 'lead_unassigned', severity: 'warning', title: 'Lead needs assignment', body: `A ${sourceLabel} lead could not be auto-routed${contactName ? ` — ${contactName}` : ''}.`, data: { intakeEventId: event.id, contactId }, dedupeKey: `lead:${event.id}` });
   }
 
-  // 10) Audit.
-  await audit({ tenantId, actorId: input.createdByUserId ?? null, action: 'intake.processed', targetType: 'intake_event', targetId: event.id, detail: `${sourceLabel}: ${classification} → ${assignmentReason}` });
+  // 10) Audit (records the routing reason AND the method that picked the owner).
+  await audit({ tenantId, actorId: input.createdByUserId ?? null, action: 'intake.processed', targetType: 'intake_event', targetId: event.id, detail: `${sourceLabel}: ${classification} → ${assignmentReason}/${route.assignmentMethod}${route.ownerSlot === 'marketing' ? ' (marketing)' : ''}` });
 
   return { eventId: event.id, contactId, classification, status, assignedUserId, assignmentReason, duplicate: false };
 }
