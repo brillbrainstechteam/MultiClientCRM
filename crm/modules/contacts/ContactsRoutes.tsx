@@ -7,6 +7,7 @@ import type { Capability } from './permissions';
 import AllContactsScreen from './screens/AllContactsScreen';
 import Customer360Screen from './screens/Customer360Screen';
 import IntakeQueueScreen from './screens/IntakeQueueScreen';
+import ConnectionsScreen from './screens/ConnectionsScreen';
 import OverviewScreen from './screens/OverviewScreen';
 import SegmentsScreen from './screens/SegmentsScreen';
 import SegmentDetailScreen from './screens/SegmentDetailScreen';
@@ -35,6 +36,7 @@ const implemented: Record<string, ComponentType> = {
   '/contacts': OverviewScreen,
   '/contacts/all': AllContactsScreen,
   '/contacts/intake': IntakeQueueScreen,
+  '/contacts/connections': ConnectionsScreen,
   '/contacts/customer/:contactId': Customer360Screen,
   '/contacts/segments': SegmentsScreen,
   '/contacts/segments/:segmentId': SegmentDetailScreen,
@@ -63,6 +65,7 @@ const implemented: Record<string, ComponentType> = {
  * access-denied state instead of the protected view (CLAUDE.md §9).
  */
 const routeGuards: Record<string, { capability: Capability; area: string }> = {
+  '/contacts/connections': { capability: 'manageImports', area: 'Lead Sources' },
   '/contacts/prospecting': { capability: 'manageImports', area: 'Find New Businesses' },
   '/contacts/imports': { capability: 'manageImports', area: 'Imports & Sync' },
   '/contacts/imports/jobs/:jobId': { capability: 'manageImports', area: 'Imports & Sync' },

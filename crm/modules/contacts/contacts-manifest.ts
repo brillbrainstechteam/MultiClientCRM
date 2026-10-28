@@ -50,6 +50,15 @@ export const contactPages: ContactScreen[] = [
     batch: 1,
   },
   {
+    id: 'CON-S32',
+    path: '/contacts/connections',
+    title: 'Lead Sources',
+    surface: 'page',
+    purpose:
+      'Connect and monitor every lead channel — multiple WhatsApp numbers, Facebook Pages, Instagram accounts, website forms and more — with connector health so no source loses leads silently.',
+    batch: 1,
+  },
+  {
     id: 'CON-S03',
     path: '/contacts/customer/:contactId',
     title: 'Customer 360',

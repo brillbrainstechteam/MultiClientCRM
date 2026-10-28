@@ -3,11 +3,12 @@ import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { audit } from '@/lib/crm/audit';
 import { notify } from '@/lib/billing/notify';
+import { qualifiedSalesCandidates } from '@/lib/crm/routing';
 
 /**
- * Triage actions on an intake event (Lead Capture docs §12/§14 quick actions):
- * assign, mark contacted (stops the first-response SLA), mark invalid, mark
- * reviewed. Assigning also sets the owner on the linked contact.
+ * Triage actions on an intake event (Lead Capture §12/§14 + Marketing→Sales
+ * handoff MKT-05/06/07/08): assign, mark contacted (stops the SLA), mark
+ * invalid, mark reviewed, qualify (Marketing → Sales), not_interested (nurture).
  */
 const MANAGER_ROLES = ['owner', 'admin', 'manager'];
 
@@ -47,6 +48,49 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       data.status = e.assignedUserId ? 'routed' : 'new';
       data.reviewReason = null;
       break;
+
+    case 'qualify': {
+      // Marketing marks an interested B2B lead Qualified → hand to Sales.
+      if (!MANAGER_ROLES.includes(user.role) && e.assignedUserId !== user.id) {
+        return NextResponse.json({ error: 'Only the lead’s marketing owner or a manager can qualify it.' }, { status: 403 });
+      }
+      const contact = e.contactId ? await prisma.crmContact.findFirst({ where: { id: e.contactId, tenantId: user.tenantId }, select: { id: true, city: true, state: true, name: true } }) : null;
+      const candidates = await qualifiedSalesCandidates(user.tenantId, contact?.city ?? e.city, contact?.state ?? e.state);
+      data.qualifiedAt = new Date();
+      data.qualifiedByUserId = user.id;
+
+      if (candidates.length === 1) {
+        // MKT-05: exactly one eligible salesperson → auto-assign.
+        const salesId = candidates[0];
+        data.assignedUserId = salesId;
+        data.assignmentReason = 'QUALIFIED_AUTO';
+        data.status = 'routed';
+        if (e.contactId) await prisma.crmContact.update({ where: { id: e.contactId }, data: { ownerId: salesId } }).catch(() => undefined);
+        await notify({ tenantId: user.tenantId, userId: salesId, category: 'lead', kind: 'lead_assigned', severity: 'info', title: 'Qualified lead assigned', body: `${e.contactName ?? contact?.name ?? 'A lead'} was qualified and assigned to you.`, data: { intakeEventId: e.id, contactId: e.contactId } });
+        if (e.assignedUserId && e.assignedUserId !== salesId) {
+          await notify({ tenantId: user.tenantId, userId: e.assignedUserId, category: 'lead', kind: 'lead_qualified', severity: 'info', title: 'Lead handed to Sales', body: `${e.contactName ?? 'The lead'} you qualified is now with Sales.`, data: { intakeEventId: e.id, contactId: e.contactId } });
+        }
+      } else {
+        // MKT-06: zero or several eligible → Pending Assignment for the Owner.
+        data.status = 'pending_assignment';
+        data.assignmentReason = 'QUALIFIED_PENDING';
+        // MKT-07: tell the Owner/Manager pool and each eligible salesperson.
+        await notify({ tenantId: user.tenantId, category: 'lead', kind: 'lead_pending_assignment', severity: 'warning', title: 'Qualified lead needs Sales assignment', body: `${e.contactName ?? contact?.name ?? 'A lead'} was qualified${candidates.length ? ` — ${candidates.length} eligible salespeople` : ' — no eligible salesperson yet'}.`, data: { intakeEventId: e.id, contactId: e.contactId }, dedupeKey: `qualify:${e.id}` });
+        for (const sid of candidates) {
+          await notify({ tenantId: user.tenantId, userId: sid, category: 'lead', kind: 'lead_pending_assignment', severity: 'info', title: 'A qualified lead may be assigned to you', body: `${e.contactName ?? contact?.name ?? 'A lead'} is awaiting Sales assignment.`, data: { intakeEventId: e.id, contactId: e.contactId } });
+        }
+      }
+      break;
+    }
+
+    case 'not_interested':
+      // MKT-08: stays with Marketing for follow-up / nurture (Communication Library).
+      if (!MANAGER_ROLES.includes(user.role) && e.assignedUserId !== user.id) {
+        return NextResponse.json({ error: 'Only the lead’s marketing owner or a manager can update it.' }, { status: 403 });
+      }
+      data.status = 'nurturing';
+      break;
+
     default:
       return NextResponse.json({ error: 'Unknown action.' }, { status: 400 });
   }

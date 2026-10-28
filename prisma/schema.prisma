@@ -697,6 +697,45 @@ model CrmEnquiry {
   @@index([conversationId])
 }
 
+// Lead Source Connection (Lead Intake Hub — Source Connections). One row per
+// connected channel/account a tenant can receive enquiries on: each WhatsApp
+// number, each Facebook Page, each Instagram account, each website form, etc.
+// Multi-account by design — a tenant may hold many of each provider. Child
+// assets (a Page's lead forms, an IG under a Meta business) reference their
+// parent via parentConnectionId. Carries the health the admin must see so a
+// dead connector never looks fine.
+model CrmSourceConnection {
+  id                 String   @id @default(cuid())
+  tenantId           String
+  // whatsapp | meta | facebook | instagram | messenger | website_form |
+  // website_chat | google_ads | exhibition | telecalling | card2leads |
+  // erp_pos | ecommerce | referral | other
+  provider           String
+  displayName        String
+  // The provider's own id for this account: phone_number_id, FB page id, IG
+  // user id, lead form id, website form token, etc.
+  externalAccountId  String?
+  // Groups a Meta business's Pages / IG accounts / lead forms together.
+  parentConnectionId String?
+  // Which lead kinds this connection is enabled to generate (e.g. lead_ad,
+  // ctwa, dm, form). Empty = all the provider's defaults.
+  enabledSources     String[]
+  status             String   @default("pending") // connected | degraded | disconnected | pending
+  authStatus         String   @default("pending") // ok | expired | revoked | pending
+  lastEventAt        DateTime?
+  lastError          String?
+  active             Boolean  @default(true)
+  // Provider-specific detail: wabaId, pageAccessToken ref, igUsername, formIds,
+  // campaign defaults, UTM map, webhook verify state, etc.
+  config             Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([tenantId, provider])
+  @@index([tenantId, status])
+  @@index([tenantId, parentConnectionId])
+}
+
 // Unified Intake Event (Lead Capture docs §5). Every lead source — WhatsApp,
 // walk-in, Meta Lead Ads, website/trade forms, QR, referral, exhibition, field
 // visit, telecalling, ecommerce, POS, manual — normalizes into one row that the
@@ -756,8 +795,11 @@ model CrmIntakeEvent {
   // --- Resolution ---
   contactId              String?                  // matched/created contact (Customer 360)
   assignedUserId         String?
-  assignmentReason       String?                  // RELATIONSHIP_OWNER | ZONE | DEPARTMENT | ROUND_ROBIN | MANUAL | UNASSIGNED
+  assignmentReason       String?                  // RELATIONSHIP_OWNER | MARKETING_QUEUE | ZONE | QUALIFIED_AUTO | QUALIFIED_PENDING | MANUAL | UNASSIGNED
   zoneResolution         String?                  // AUTO_RESOLVED | MANUAL | UNKNOWN | CONFLICT
+  // --- Marketing → Sales qualification handoff (B2B) ---
+  qualifiedAt            DateTime?
+  qualifiedByUserId      String?
   // --- First-response SLA ---
   slaStartedAt           DateTime?
   slaDueAt               DateTime?

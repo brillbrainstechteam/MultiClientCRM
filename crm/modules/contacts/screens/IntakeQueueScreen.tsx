@@ -19,12 +19,14 @@ const TABS = [
   { id: '', label: 'All' },
   { id: 'unassigned', label: 'Unassigned' },
   { id: 'needs_review', label: 'Needs review' },
+  { id: 'pending_assignment', label: 'Pending sales' },
   { id: 'mine', label: 'Mine' },
 ];
 
 const STATUS_LABEL: Record<string, string> = {
   new: 'New', needs_review: 'Needs review', duplicate_suspected: 'Duplicate?', routed: 'Routed',
   awaiting_first_contact: 'Awaiting contact', contacted: 'Contacted', closed_invalid: 'Invalid',
+  pending_assignment: 'Pending sales', nurturing: 'Nurturing', qualified: 'Qualified',
 };
 
 function slaBadge(e: IntakeEvent): { text: string; tone: string } {
@@ -48,6 +50,7 @@ export default function IntakeQueueScreen() {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [assignFor, setAssignFor] = useState<IntakeEvent | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -78,8 +81,11 @@ export default function IntakeQueueScreen() {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
       body: JSON.stringify({ action, userId }),
     });
-    if (r.ok) { setToast(action === 'assign' ? 'Assigned.' : action === 'mark_contacted' ? 'Marked contacted.' : 'Updated.'); load(); }
-    else { const d = await r.json().catch(() => ({})); setToast(d.error ?? 'Could not update.'); }
+    if (r.ok) {
+      const msg = action === 'assign' ? 'Assigned.' : action === 'mark_contacted' ? 'Marked contacted.'
+        : action === 'qualify' ? 'Qualified — handed to Sales.' : action === 'not_interested' ? 'Moved to nurture.' : 'Updated.';
+      setToast(msg); load();
+    } else { const d = await r.json().catch(() => ({})); setToast(d.error ?? 'Could not update.'); }
   };
 
   return (
@@ -142,9 +148,20 @@ export default function IntakeQueueScreen() {
                     <td style={{ padding: '10px', color: sla.tone, fontWeight: 600 }}>{sla.text}</td>
                     <td style={{ padding: '10px' }}>{STATUS_LABEL[e.status] ?? e.status}</td>
                     <td style={{ padding: '10px', whiteSpace: 'nowrap' }}>
-                      {!e.assignedUserId ? <Button variant="secondary" size="sm" onClick={() => act(e.id, 'assign')}>Take</Button> : null}
-                      {e.status !== 'contacted' && e.status !== 'closed_invalid' ? <Button variant="ghost" size="sm" onClick={() => act(e.id, 'mark_contacted')}>Contacted</Button> : null}
-                      {e.status !== 'closed_invalid' ? <Button variant="ghost" size="sm" onClick={() => act(e.id, 'mark_invalid')}>Invalid</Button> : null}
+                      {e.status === 'pending_assignment' ? (
+                        <Button variant="secondary" size="sm" onClick={() => setAssignFor(e)}>Assign sales</Button>
+                      ) : e.assignmentReason === 'MARKETING_QUEUE' && (e.status === 'routed' || e.status === 'new') ? (
+                        <>
+                          <Button variant="secondary" size="sm" onClick={() => act(e.id, 'qualify')}>Qualify</Button>
+                          <Button variant="ghost" size="sm" onClick={() => act(e.id, 'not_interested')}>Nurture</Button>
+                        </>
+                      ) : (
+                        <>
+                          {!e.assignedUserId ? <Button variant="secondary" size="sm" onClick={() => act(e.id, 'assign')}>Take</Button> : null}
+                          {e.status !== 'contacted' && e.status !== 'closed_invalid' ? <Button variant="ghost" size="sm" onClick={() => act(e.id, 'mark_contacted')}>Contacted</Button> : null}
+                          {e.status !== 'closed_invalid' ? <Button variant="ghost" size="sm" onClick={() => act(e.id, 'mark_invalid')}>Invalid</Button> : null}
+                        </>
+                      )}
                     </td>
                   </tr>
                 );
@@ -156,6 +173,7 @@ export default function IntakeQueueScreen() {
 
       {adding ? <QuickAddLead members={members} onClose={() => setAdding(false)} onDone={(msg) => { setAdding(false); setToast(msg); load(); }} /> : null}
       {sharing ? <ShareForm onClose={() => setSharing(false)} /> : null}
+      {assignFor ? <AssignPicker members={members} onClose={() => setAssignFor(null)} onPick={(uid) => { const id = assignFor.id; setAssignFor(null); act(id, 'assign', uid); }} /> : null}
       {toast ? <div role="status" onAnimationEnd={() => setToast(null)} style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 80, background: 'var(--crm-brand-700)', color: '#fff', fontWeight: 600, fontSize: 13.5, padding: '11px 18px', borderRadius: 10, animation: 'none' }}>{toast}</div> : null}
     </div>
   );
@@ -199,6 +217,24 @@ function QuickAddLead({ onClose, onDone }: { members: Member[]; onClose: () => v
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
           <Button variant="ghost" onClick={onClose} disabled={busy}>Cancel</Button>
           <Button variant="primary" onClick={save} disabled={busy}>{busy ? 'Capturing…' : 'Capture lead'}</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Owner picks the salesperson for a qualified lead in Pending Assignment (MKT-06). */
+function AssignPicker({ members, onClose, onPick }: { members: Member[]; onClose: () => void; onPick: (userId: string) => void }) {
+  return (
+    <div role="dialog" aria-modal="true" onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(15,23,42,.5)', display: 'grid', placeItems: 'center', padding: 20 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', width: 'min(420px,100%)', background: 'var(--crm-surface-raised)', borderRadius: 16, padding: 24, maxHeight: '80vh', overflowY: 'auto' }}>
+        <button onClick={onClose} aria-label="Close" style={{ position: 'absolute', top: 14, right: 14, border: 0, background: 'none', cursor: 'pointer', color: 'var(--crm-text-secondary)' }}><X size={18} /></button>
+        <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700 }}>Assign to salesperson</h3>
+        <p style={{ margin: '0 0 14px', fontSize: 13, color: 'var(--crm-text-secondary)' }}>This lead is qualified and ready for Sales. Choose who takes it.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {members.length === 0 ? <p style={{ color: 'var(--crm-text-muted)', fontSize: 13 }}>No team members found.</p> : members.map((m) => (
+            <button key={m.id} onClick={() => onPick(m.id)} style={{ textAlign: 'left', font: 'inherit', fontSize: 14, fontWeight: 600, padding: '10px 12px', border: '1px solid var(--crm-border-subtle)', borderRadius: 10, background: 'var(--crm-surface-sunken)', cursor: 'pointer', color: 'var(--crm-text-primary)' }}>{m.name}</button>
+          ))}
         </div>
       </div>
     </div>

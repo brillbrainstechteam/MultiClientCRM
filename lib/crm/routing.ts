@@ -104,6 +104,21 @@ async function marketingUsers(tenantId: string): Promise<string[]> {
   return users.map((u) => u.id);
 }
 
+/**
+ * Eligible Sales members for a qualified lead's zone (Marketing→Sales handoff,
+ * MKT-05/06). Prefers explicit sales-function users, else anyone who isn't
+ * marketing; prefers those covering the lead's zone, else the whole pool.
+ */
+export async function qualifiedSalesCandidates(tenantId: string, city?: string | null, state?: string | null): Promise<string[]> {
+  const active = await prisma.user.findMany({ where: { tenantId, status: 'active' }, select: { id: true, teamFunction: true }, orderBy: { createdAt: 'asc' } });
+  const sales = active.filter((u) => u.teamFunction === 'sales').map((u) => u.id);
+  const pool = sales.length ? sales : active.filter((u) => u.teamFunction !== 'marketing').map((u) => u.id);
+
+  const zone = await routeLocation(tenantId, city, state);
+  const inZone = zone.memberUserIds.filter((id) => pool.includes(id));
+  return inZone.length ? inZone : pool;
+}
+
 export async function routeLead(input: RouteInput): Promise<RouteResult> {
   const { tenantId, customerType } = input;
   const base = { zoneId: null as string | null, zoneName: null as string | null, zoneResolution: null as string | null, candidates: [] as string[] };
