@@ -103,6 +103,7 @@ export const qualityLabel: Record<WhatsAppQualityRating, string> = {
 
 export const moduleIcon: Record<ModuleKey, LucideIcon> = {
   dashboard: LayoutDashboard,
+  leads: Users,
   contacts: Users,
   inbox: MessageSquare,
   calling: PhoneCall,
@@ -124,6 +125,7 @@ export const moduleIcon: Record<ModuleKey, LucideIcon> = {
 
 export const moduleLabel: Record<ModuleKey, string> = {
   dashboard: 'Dashboard',
+  leads: 'Leads',
   contacts: 'Contacts',
   inbox: 'Inbox',
   calling: 'Calling',

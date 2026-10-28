@@ -41,24 +41,6 @@ export const contactPages: ContactScreen[] = [
     batch: 1,
   },
   {
-    id: 'CON-S31',
-    path: '/contacts/intake',
-    title: 'Lead Intake',
-    surface: 'page',
-    purpose:
-      'Unified intake/triage queue for every lead source — matched, classified, routed, SLA-tracked; quick-add and triage actions.',
-    batch: 1,
-  },
-  {
-    id: 'CON-S32',
-    path: '/contacts/connections',
-    title: 'Lead Sources',
-    surface: 'page',
-    purpose:
-      'Connect and monitor every lead channel — multiple WhatsApp numbers, Facebook Pages, Instagram accounts, website forms and more — with connector health so no source loses leads silently.',
-    batch: 1,
-  },
-  {
     id: 'CON-S03',
     path: '/contacts/customer/:contactId',
     title: 'Customer 360',
@@ -90,14 +72,6 @@ export const contactPages: ContactScreen[] = [
     surface: 'page',
     purpose: 'Dynamic vs Snapshot, AND/OR condition groups, live match count and sample.',
     batch: 2,
-  },
-  {
-    id: 'CON-S29',
-    path: '/contacts/prospecting',
-    title: 'Find New Businesses',
-    surface: 'page',
-    purpose: 'B2B prospecting via Google Places — search by location, dedupe against the CRM, add as prospects.',
-    batch: 3,
   },
   {
     id: 'CON-S07',

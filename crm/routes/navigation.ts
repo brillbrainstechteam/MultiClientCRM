@@ -9,6 +9,7 @@ import {
   Settings,
   ShoppingBag,
   Sparkles,
+  UserPlus,
   Users,
   UsersRound,
   FileText,
@@ -53,8 +54,18 @@ export const navItems: NavItem[] = [
       'Operational control centre: business health, work requiring attention and cross-module summaries with drill-down to exact records.',
   },
   {
+    key: 'leads',
+    label: 'Leads',
+    path: '/leads',
+    icon: UserPlus,
+    group: 'work',
+    implemented: true,
+    ownership:
+      'Lead acquisition journey: connected lead sources, the unified intake/triage queue, Marketing→Sales qualification handoff and B2B prospecting.',
+  },
+  {
     key: 'contacts',
-    label: 'Contacts & Leads',
+    label: 'Contacts',
     path: '/contacts',
     icon: Users,
     group: 'work',

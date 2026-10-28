@@ -6,14 +6,11 @@ import { ContactsScreenPlaceholder } from './ContactsScreenPlaceholder';
 import type { Capability } from './permissions';
 import AllContactsScreen from './screens/AllContactsScreen';
 import Customer360Screen from './screens/Customer360Screen';
-import IntakeQueueScreen from './screens/IntakeQueueScreen';
-import ConnectionsScreen from './screens/ConnectionsScreen';
 import OverviewScreen from './screens/OverviewScreen';
 import SegmentsScreen from './screens/SegmentsScreen';
 import SegmentDetailScreen from './screens/SegmentDetailScreen';
 import SegmentBuilderScreen from './screens/SegmentBuilderScreen';
 import ImportsHubScreen from './screens/ImportsHubScreen';
-import ProspectingScreen from './screens/ProspectingScreen';
 import ImportJobDetailScreen from './screens/ImportJobDetailScreen';
 import ConsentScreen from './screens/ConsentScreen';
 import DataQualityScreen from './screens/DataQualityScreen';
@@ -35,14 +32,11 @@ import {
 const implemented: Record<string, ComponentType> = {
   '/contacts': OverviewScreen,
   '/contacts/all': AllContactsScreen,
-  '/contacts/intake': IntakeQueueScreen,
-  '/contacts/connections': ConnectionsScreen,
   '/contacts/customer/:contactId': Customer360Screen,
   '/contacts/segments': SegmentsScreen,
   '/contacts/segments/:segmentId': SegmentDetailScreen,
   '/contacts/segments/new': SegmentBuilderScreen,
   '/contacts/segments/:segmentId/edit': SegmentBuilderScreen,
-  '/contacts/prospecting': ProspectingScreen,
   '/contacts/imports': ImportsHubScreen,
   '/contacts/imports/jobs/:jobId': ImportJobDetailScreen,
   '/contacts/consent': ConsentScreen,
@@ -65,8 +59,6 @@ const implemented: Record<string, ComponentType> = {
  * access-denied state instead of the protected view (CLAUDE.md §9).
  */
 const routeGuards: Record<string, { capability: Capability; area: string }> = {
-  '/contacts/connections': { capability: 'manageImports', area: 'Lead Sources' },
-  '/contacts/prospecting': { capability: 'manageImports', area: 'Find New Businesses' },
   '/contacts/imports': { capability: 'manageImports', area: 'Imports & Sync' },
   '/contacts/imports/jobs/:jobId': { capability: 'manageImports', area: 'Imports & Sync' },
   '/contacts/imports/new/method': { capability: 'manageImports', area: 'Imports & Sync' },
@@ -114,6 +106,10 @@ function screenRoute(screen: ContactScreen) {
 export function ContactsRoutes() {
   return (
     <Routes>
+      {/* Moved to the Leads module — keep redirects for existing links/bookmarks. */}
+      <Route path="intake" element={<Navigate to="/leads/intake" replace />} />
+      <Route path="connections" element={<Navigate to="/leads/sources" replace />} />
+      <Route path="prospecting" element={<Navigate to="/leads/find" replace />} />
       <Route element={<ContactsLayout />}>
         {contactPages.map(screenRoute)}
         {screenRoute(segmentEditScreen)}

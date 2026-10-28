@@ -159,6 +159,7 @@ export let workspace: Workspace = {
   plan: 'growth',
   enabledModules: [
     'dashboard',
+    'leads',
     'contacts',
     'inbox',
     'calling',

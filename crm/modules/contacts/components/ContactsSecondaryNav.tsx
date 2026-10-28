@@ -1,11 +1,8 @@
 import {
-  Binoculars,
   BadgeCheck,
   ChartNoAxesCombined,
-  Inbox,
   LayoutGrid,
   MapPin,
-  Radio,
   ShieldCheck,
   Upload,
   Users,
@@ -31,11 +28,8 @@ interface SecondaryNavItem {
 const items: SecondaryNavItem[] = [
   { label: 'Overview', to: '/contacts', icon: LayoutGrid, matchPrefix: '/contacts', end: true },
   { label: 'All Contacts', to: '/contacts/all', icon: Users, matchPrefix: '/contacts/all' },
-  { label: 'Lead Intake', to: '/contacts/intake', icon: Inbox, matchPrefix: '/contacts/intake' },
-  { label: 'Lead Sources', to: '/contacts/connections', icon: Radio, matchPrefix: '/contacts/connections', requires: 'manageImports' },
   { label: 'Segments', to: '/contacts/segments', icon: Layers, matchPrefix: '/contacts/segments' },
   { label: 'Import & Export', to: '/contacts/imports', icon: Upload, matchPrefix: '/contacts/imports', requires: 'manageImports' },
-  { label: 'Find New Businesses', to: '/contacts/prospecting', icon: Binoculars, matchPrefix: '/contacts/prospecting', requires: 'manageImports' },
   { label: 'Consent', to: '/contacts/consent', icon: BadgeCheck, matchPrefix: '/contacts/consent' },
   {
     label: 'Data Quality',

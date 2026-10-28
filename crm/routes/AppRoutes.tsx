@@ -8,6 +8,7 @@ import { CampaignsRoutes } from '@crm/modules/campaigns/CampaignsRoutes';
 import { CatalogueOrdersRoutes } from '@crm/modules/catalogue-orders/CatalogueOrdersRoutes';
 import { ContactsRoutes } from '@crm/modules/contacts/ContactsRoutes';
 import { ContactSettingsRoutes } from '@crm/modules/contacts/settings/ContactSettingsRoutes';
+import { LeadsRoutes } from '@crm/modules/leads/LeadsRoutes';
 import DashboardPage from '@crm/modules/dashboard/DashboardPage';
 import InboxPage from '@crm/modules/inbox/InboxPage';
 import InboxWindowScreen from '@crm/modules/inbox/InboxWindowScreen';
@@ -56,6 +57,7 @@ export function AppRoutes() {
 
       <Route element={<AppShell />}>
         <Route path="dashboard/*" element={<DashboardPage />} />
+        <Route path="leads/*" element={<LeadsRoutes />} />
         <Route path="contacts/*" element={<ContactsRoutes />} />
 
         <Route path="inbox/analytics" element={<InboxAnalyticsPage />} />

@@ -9,6 +9,7 @@
 
 export type ModuleKey =
   | 'dashboard'
+  | 'leads'
   | 'contacts'
   | 'inbox'
   | 'calling'
