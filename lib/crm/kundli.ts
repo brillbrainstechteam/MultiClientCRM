@@ -151,8 +151,9 @@ WHAT THE CRM KNOWS:
 ${knownFacts(input)}
 
 TASK: establish ONLY whether this specific business can be identified online.
-Run AT MOST 2 web searches. Prefer Google Business Profile and the business's own
-website or Instagram. Do not research products, pitch or history yet.
+Run AT MOST 3 web searches. Prefer Google Business Profile, the business's own
+website/Instagram, and Justdial / Facebook listings. Do not research products,
+pitch or history yet.
 
 Judge identity by: name + city + area/address + phone + owner name + website/social handle.
 - high: name + city plus at least one of address / phone / website / owner match.
@@ -188,10 +189,13 @@ hinglishScript (Hinglish) so either can be shown.
 WHAT THE CRM KNOWS:
 ${knownFacts(input)}
 
-SEARCH BUDGET: run AT MOST 5 web searches, choosing from the sources most likely to
-carry something: Google Business Profile, the business's website, Instagram,
-Justdial / IndiaMART, and local news or association listings. Stop early once you
-have enough; do not sweep every source.
+SEARCH BUDGET: run AT MOST 8 web searches. Start with the business's OWN Google
+Business Profile, website and Instagram (best for what they actually sell), then
+widen only as needed to: Facebook, YouTube, LinkedIn, Justdial, IndiaMART,
+TradeIndia, Sulekha, jewellery association / exhibition listings, local news and
+reviews, and public company data (MCA / Tofler / Zauba) for ownership and size.
+Stop early once identity is confirmed and you know what they sell; do not blindly
+sweep every source. Never merge two jewellers with a similar name in the same city.
 
 THE ONLY THING THAT MATTERS is: what JEWELLERY does this retailer sell, and what
 jewellery stock could the supplier sell THEM. Everything must help the rep decide
