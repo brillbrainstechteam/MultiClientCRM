@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   // Webhook-based sources that need no OAuth (Google Ads lead forms) get an
   // auto-generated per-tenant URL token + verification key to paste into the
   // provider. The source is immediately "connected" (just awaiting its first event).
-  const webhookProvider = provider === 'google_ads';
+  const webhookProvider = ['google_ads', 'website', 'shopify', 'woocommerce', 'ecommerce'].includes(provider);
   let externalAccountId = typeof b.externalAccountId === 'string' ? b.externalAccountId.trim() || null : null;
   let config: object | undefined = b.config && typeof b.config === 'object' ? (b.config as object) : undefined;
   if (webhookProvider) {

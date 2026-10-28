@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, X, RefreshCw, Facebook, MessageCircle, Globe, Megaphone, ChevronRight } from 'lucide-react';
+import { Plus, X, RefreshCw, Facebook, MessageCircle, Globe, Megaphone, Youtube, FileText, ChevronRight } from 'lucide-react';
 import { PageHeader } from '@crm/components';
 import { useScopedHref } from '@crm/app/use-scoped-href';
 import { Button } from '@crm/design-system';
@@ -93,13 +93,16 @@ export default function ConnectionsScreen() {
     } catch (e) { setToast(e instanceof Error ? e.message : 'Could not start the Meta connection.'); }
   };
 
-  // Google Ads lead forms: no OAuth — mint a webhook URL + key to paste into Google Ads.
-  const setupGoogleAds = async () => {
-    const r = await fetch('/api/crm/connections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ provider: 'google_ads', displayName: 'Google Ads lead forms' }) });
+  // Webhook sources (no OAuth) — mint a URL + key to paste into the provider.
+  const setupWebhook = async (provider: string, displayName: string, okMsg: string) => {
+    const r = await fetch('/api/crm/connections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ provider, displayName }) });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) { setToast(d.error ?? 'Could not set up Google Ads.'); return; }
-    setAdding(false); setToast('Google Ads source created — copy the webhook URL + key below.'); load();
+    if (!r.ok) { setToast(d.error ?? 'Could not set up the source.'); return; }
+    setAdding(false); setToast(okMsg); load();
   };
+  const setupGoogleAds = () => setupWebhook('google_ads', 'Google Ads lead forms', 'Google Ads source created — copy the webhook URL + key below.');
+  const setupYouTube = () => setupWebhook('google_ads', 'YouTube (Google Ads lead forms)', 'YouTube source created — use it on your YouTube Google Ads lead forms.');
+  const setupWebsite = () => setupWebhook('website', 'Website / ecommerce', 'Website source created — copy the webhook URL + key below.');
 
   const grouped = useMemo(() => {
     const m = new Map<string, Conn[]>();
@@ -173,8 +176,10 @@ export default function ConnectionsScreen() {
           onClose={() => setAdding(false)}
           onConnectMeta={() => { setAdding(false); connectMeta(); }}
           onSetupGoogle={setupGoogleAds}
+          onSetupYouTube={setupYouTube}
+          onSetupWebsite={setupWebsite}
           onWhatsApp={() => { setAdding(false); navigate(scopedHref('/settings/whatsapp')); }}
-          onWebsite={() => { setAdding(false); setToast('Open "Share form" on Lead Intake to get your website form link.'); navigate(scopedHref('/leads/intake')); }}
+          onHostedForm={() => { setAdding(false); setToast('Open "Share form" on Lead Intake to get your hosted form link.'); navigate(scopedHref('/leads/intake')); }}
         />
       ) : null}
       {toast ? <div role="status" onAnimationEnd={() => setToast(null)} style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 80, background: 'var(--crm-brand-700)', color: '#fff', fontWeight: 600, fontSize: 13.5, padding: '11px 18px', borderRadius: 10 }}>{toast}</div> : null}
@@ -187,8 +192,8 @@ export default function ConnectionsScreen() {
  * provider's own login/consent (no typing IDs); Google Ads / website use a
  * webhook. Mirrors how Jwero/Zithara connect sources.
  */
-function ConnectCatalog({ onClose, onConnectMeta, onSetupGoogle, onWhatsApp, onWebsite }: {
-  onClose: () => void; onConnectMeta: () => void; onSetupGoogle: () => void; onWhatsApp: () => void; onWebsite: () => void;
+function ConnectCatalog({ onClose, onConnectMeta, onSetupGoogle, onSetupYouTube, onSetupWebsite, onWhatsApp, onHostedForm }: {
+  onClose: () => void; onConnectMeta: () => void; onSetupGoogle: () => void; onSetupYouTube: () => void; onSetupWebsite: () => void; onWhatsApp: () => void; onHostedForm: () => void;
 }) {
   const card = (icon: ReactNode, title: string, desc: string, cta: string, onClick: () => void, tone = 'var(--crm-brand-700)') => (
     <button onClick={onClick} style={{ textAlign: 'left', display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '14px 16px', border: '1px solid var(--crm-border-subtle)', borderRadius: 12, background: 'var(--crm-surface-raised)', cursor: 'pointer' }}>
@@ -214,10 +219,16 @@ function ConnectCatalog({ onClose, onConnectMeta, onSetupGoogle, onWhatsApp, onW
           {card(<MessageCircle size={20} />, 'WhatsApp', 'Add a WhatsApp Business number via Embedded Signup.', 'Connect', onWhatsApp, '#25d366')}
         </div>
 
-        <div style={{ fontSize: 11.5, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--crm-text-muted)', margin: '18px 0 8px' }}>Lead forms (no login needed)</div>
+        <div style={{ fontSize: 11.5, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--crm-text-muted)', margin: '18px 0 8px' }}>Ads &amp; forms (webhook — no login)</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {card(<Megaphone size={20} />, 'Google Ads lead forms', 'Incl. YouTube campaigns — paste a webhook URL + key into Google Ads.', 'Set up', onSetupGoogle, '#ea4335')}
-          {card(<Globe size={20} />, 'Website form', 'Your shareable voice-enabled enquiry form.', 'Get link', onWebsite, '#0891b2')}
+          {card(<Megaphone size={20} />, 'Google Ads lead forms', 'Search & Display lead form extensions — paste a webhook URL + key into Google Ads.', 'Set up', onSetupGoogle, '#ea4335')}
+          {card(<Youtube size={20} />, 'YouTube', 'YouTube ad leads arrive through Google Ads lead forms on YouTube campaigns.', 'Set up', onSetupYouTube, '#ff0000')}
+        </div>
+
+        <div style={{ fontSize: 11.5, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--crm-text-muted)', margin: '18px 0 8px' }}>Website &amp; ecommerce</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {card(<Globe size={20} />, 'Website / ecommerce', 'Any site — custom, WordPress, Shopify or WooCommerce. POST leads to a webhook URL + key.', 'Set up', onSetupWebsite, '#0891b2')}
+          {card(<FileText size={20} />, 'Hosted enquiry form', 'Our shareable voice-enabled form — no website needed.', 'Get link', onHostedForm, '#7c3aed')}
         </div>
 
         <p style={{ fontSize: 12, color: 'var(--crm-text-muted)', margin: '18px 0 0' }}>Exhibitions, telecalling lists and referrals come in through Import or are logged as you capture them — they don’t need a connection here.</p>

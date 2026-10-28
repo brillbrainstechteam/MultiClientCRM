@@ -33,6 +33,10 @@ export const PROVIDERS: ProviderDef[] = [
   { provider: 'website_form', label: 'Website form', multi: true, how: 'webhook' },
   { provider: 'website_chat', label: 'Website chat', multi: true, how: 'webhook' },
   { provider: 'google_ads', label: 'Google Ads lead forms', multi: true, how: 'webhook' },
+  { provider: 'website', label: 'Website / ecommerce', multi: true, how: 'webhook' },
+  { provider: 'shopify', label: 'Shopify', multi: true, how: 'webhook' },
+  { provider: 'woocommerce', label: 'WooCommerce', multi: true, how: 'webhook' },
+  { provider: 'youtube', label: 'YouTube (via Google Ads)', multi: true, how: 'webhook' },
   { provider: 'exhibition', label: 'Exhibitions', multi: true, how: 'import' },
   { provider: 'telecalling', label: 'Telecalling lists', multi: true, how: 'import' },
   { provider: 'card2leads', label: 'Card2Leads', multi: true, how: 'import' },
@@ -95,9 +99,11 @@ export async function listConnections(tenantId: string): Promise<ConnectionRow[]
       lastError: r.lastError,
       active: r.active,
       derived: false,
-      ...(r.provider === 'google_ads' && r.externalAccountId
+      ...(r.externalAccountId && r.provider === 'google_ads'
         ? { ingestPath: `/api/public/google-lead/${r.externalAccountId}`, secretKey: cfg?.key }
-        : {}),
+        : r.externalAccountId && ['website', 'shopify', 'woocommerce', 'ecommerce'].includes(r.provider)
+          ? { ingestPath: `/api/public/webhook/${r.externalAccountId}`, secretKey: cfg?.key }
+          : {}),
     };
   });
 
