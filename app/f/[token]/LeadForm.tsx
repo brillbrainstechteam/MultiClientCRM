@@ -43,7 +43,7 @@ const B2B_FIELDS: FieldDef[] = [
 const GOLD = '#b4883b';
 const INK = '#2a2318';
 
-export function LeadForm({ token, businessName, mode }: { token: string; businessName: string; mode: Mode }) {
+export function LeadForm({ token, mode }: { token: string; mode: Mode }) {
   const fields = mode === 'b2c' ? B2C_FIELDS : B2B_FIELDS;
   const [values, setValues] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState(false);
@@ -104,18 +104,18 @@ export function LeadForm({ token, businessName, mode }: { token: string; busines
 
   if (done) {
     return (
-      <Shell businessName={businessName}>
+      <Shell>
         <div style={{ textAlign: 'center', padding: '28px 8px' }}>
           <div style={{ fontSize: 44 }}>✓</div>
           <h2 style={{ margin: '8px 0 6px', fontFamily: 'var(--font-fraunces), serif', color: INK, fontSize: 24 }}>Thank you!</h2>
-          <p style={{ color: '#6b6150', fontSize: 15, lineHeight: 1.5 }}>Your enquiry has reached {businessName}. Our team will be in touch with you shortly.</p>
+          <p style={{ color: '#6b6150', fontSize: 15, lineHeight: 1.5 }}>Your enquiry has been received. Our team will be in touch with you shortly.</p>
         </div>
       </Shell>
     );
   }
 
   return (
-    <Shell businessName={businessName}>
+    <Shell>
       <p style={{ color: '#6b6150', fontSize: 14.5, margin: '0 0 18px', lineHeight: 1.5 }}>
         Share a few details and our team will get back to you. {voiceSupported ? 'Tap the mic to speak instead of typing.' : ''}
       </p>
@@ -193,21 +193,15 @@ const inputStyle: React.CSSProperties = {
   fontFamily: 'inherit', outline: 'none',
 };
 
-function Shell({ businessName, children }: { businessName: string; children: React.ReactNode }) {
+function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main style={{ minHeight: '100dvh', background: '#faf7f2', fontFamily: 'var(--font-inter), system-ui, sans-serif', padding: '28px 16px 48px' }}>
+    <main style={{ minHeight: '100dvh', background: '#faf7f2', fontFamily: 'var(--font-inter), system-ui, sans-serif', padding: '36px 16px 48px' }}>
       <style>{`@keyframes ttpulse{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,.45)}50%{box-shadow:0 0 0 6px rgba(192,57,43,0)}}`}</style>
       <div style={{ maxWidth: 520, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 18 }}>
-          <div style={{ display: 'inline-block', width: 46, height: 46, lineHeight: '46px', borderRadius: 12, background: INK, color: '#f6e7c4', fontFamily: 'var(--font-fraunces), serif', fontWeight: 700, fontSize: 22 }}>
-            {businessName.charAt(0).toUpperCase()}
-          </div>
-          <h1 style={{ margin: '10px 0 0', fontFamily: 'var(--font-fraunces), serif', color: INK, fontSize: 22, fontWeight: 600 }}>{businessName}</h1>
-        </div>
+        <h1 style={{ margin: '0 0 14px', fontFamily: 'var(--font-fraunces), serif', color: INK, fontSize: 22, fontWeight: 600, textAlign: 'center' }}>Enquiry</h1>
         <div style={{ background: '#fffdf9', border: '1px solid #ece2cf', borderRadius: 18, padding: '22px 20px', boxShadow: '0 8px 30px rgba(42,35,24,.06)' }}>
           {children}
         </div>
-        <p style={{ textAlign: 'center', color: '#b4a98f', fontSize: 11.5, marginTop: 16 }}>Powered by TalkTrack</p>
       </div>
     </main>
   );
