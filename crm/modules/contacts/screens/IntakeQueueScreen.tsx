@@ -28,6 +28,19 @@ const STATUS_LABEL: Record<string, string> = {
   awaiting_first_contact: 'Awaiting contact', contacted: 'Contacted', closed_invalid: 'Invalid',
   pending_assignment: 'Pending sales', nurturing: 'Nurturing', qualified: 'Qualified',
 };
+const STATUS_TONE: Record<string, string> = {
+  new: '#2563eb', needs_review: '#d97706', duplicate_suspected: '#0891b2', routed: '#0d9488',
+  awaiting_first_contact: '#d97706', contacted: '#059669', closed_invalid: '#dc2626',
+  pending_assignment: '#7c3aed', nurturing: '#64748b', qualified: '#059669',
+};
+function StatusBadge({ status }: { status: string }) {
+  const tone = STATUS_TONE[status] ?? '#64748b';
+  return (
+    <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: 999, fontSize: 12, fontWeight: 600, color: tone, background: `${tone}1a`, whiteSpace: 'nowrap' }}>
+      {STATUS_LABEL[status] ?? status}
+    </span>
+  );
+}
 
 function slaBadge(e: IntakeEvent): { text: string; tone: string } {
   if (e.firstResponseAt) return { text: 'Responded', tone: '#059669' };
@@ -126,7 +139,7 @@ export default function IntakeQueueScreen() {
                 <th style={{ padding: '8px 10px' }}>Owner</th>
                 <th style={{ padding: '8px 10px' }}>SLA</th>
                 <th style={{ padding: '8px 10px' }}>Status</th>
-                <th style={{ padding: '8px 10px' }}></th>
+                <th style={{ padding: '8px 10px', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -146,22 +159,26 @@ export default function IntakeQueueScreen() {
                     <td style={{ padding: '10px', fontSize: 12 }}>{e.classification ? e.classification.replace(/_/g, ' ').toLowerCase() : '—'}</td>
                     <td style={{ padding: '10px' }}>{e.assignedUserId ? (memberName.get(e.assignedUserId) ?? 'Assigned') : <span style={{ color: '#d97706', fontWeight: 600 }}>Unassigned</span>}</td>
                     <td style={{ padding: '10px', color: sla.tone, fontWeight: 600 }}>{sla.text}</td>
-                    <td style={{ padding: '10px' }}>{STATUS_LABEL[e.status] ?? e.status}</td>
+                    <td style={{ padding: '10px' }}><StatusBadge status={e.status} /></td>
                     <td style={{ padding: '10px', whiteSpace: 'nowrap' }}>
-                      {e.status === 'pending_assignment' ? (
-                        <Button variant="secondary" size="sm" onClick={() => setAssignFor(e)}>Assign sales</Button>
-                      ) : e.assignmentReason === 'MARKETING_QUEUE' && (e.status === 'routed' || e.status === 'new') ? (
-                        <>
-                          <Button variant="secondary" size="sm" onClick={() => act(e.id, 'qualify')}>Qualify</Button>
-                          <Button variant="ghost" size="sm" onClick={() => act(e.id, 'not_interested')}>Nurture</Button>
-                        </>
-                      ) : (
-                        <>
-                          {!e.assignedUserId ? <Button variant="secondary" size="sm" onClick={() => act(e.id, 'assign')}>Take</Button> : null}
-                          {e.status !== 'contacted' && e.status !== 'closed_invalid' ? <Button variant="ghost" size="sm" onClick={() => act(e.id, 'mark_contacted')}>Contacted</Button> : null}
-                          {e.status !== 'closed_invalid' ? <Button variant="ghost" size="sm" onClick={() => act(e.id, 'mark_invalid')}>Invalid</Button> : null}
-                        </>
-                      )}
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+                        {e.status === 'pending_assignment' ? (
+                          <Button variant="secondary" size="sm" onClick={() => setAssignFor(e)}>Assign sales</Button>
+                        ) : e.assignmentReason === 'MARKETING_QUEUE' && (e.status === 'routed' || e.status === 'new') ? (
+                          <>
+                            <Button variant="secondary" size="sm" onClick={() => act(e.id, 'qualify')}>Qualify</Button>
+                            <Button variant="ghost" size="sm" onClick={() => act(e.id, 'not_interested')}>Nurture</Button>
+                          </>
+                        ) : e.status === 'contacted' || e.status === 'closed_invalid' ? (
+                          <span style={{ fontSize: 12, color: 'var(--crm-text-muted)' }}>—</span>
+                        ) : (
+                          <>
+                            {!e.assignedUserId ? <Button variant="secondary" size="sm" onClick={() => act(e.id, 'assign')}>Take</Button> : null}
+                            <Button variant="secondary" size="sm" onClick={() => act(e.id, 'mark_contacted')}>Mark contacted</Button>
+                            <Button variant="ghost" size="sm" onClick={() => act(e.id, 'mark_invalid')}>Invalid</Button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -272,7 +289,7 @@ function ShareForm({ onClose }: { onClose: () => void }) {
       <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', width: 'min(520px,100%)', background: 'var(--crm-surface-raised)', borderRadius: 16, padding: 24 }}>
         <button onClick={onClose} aria-label="Close" style={{ position: 'absolute', top: 14, right: 14, border: 0, background: 'none', cursor: 'pointer', color: 'var(--crm-text-secondary)' }}><X size={18} /></button>
         <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700 }}>Share your lead form</h3>
-        <p style={{ margin: '0 0 16px', fontSize: 13.5, color: 'var(--crm-text-secondary)' }}>Send this link to customers. Every submission lands here in Lead Intake — matched, routed and SLA-tracked. The form supports voice input.</p>
+        <p style={{ margin: '0 0 16px', fontSize: 13.5, color: 'var(--crm-text-secondary)' }}>Send this link to customers.</p>
 
         {loading ? (
           <p style={{ color: 'var(--crm-text-muted)' }}>Loading link…</p>
