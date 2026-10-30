@@ -13,7 +13,7 @@ export default async function PublicLeadFormPage({ params }: { params: Promise<{
   const { token } = await params;
   const tenant = await prisma.tenant.findUnique({
     where: { leadFormToken: token },
-    select: { businessModel: true, leadFormEnabled: true },
+    select: { businessName: true, businessModel: true, leadFormEnabled: true },
   });
 
   if (!tenant || !tenant.leadFormEnabled) {
@@ -30,6 +30,7 @@ export default async function PublicLeadFormPage({ params }: { params: Promise<{
   return (
     <LeadForm
       token={token}
+      businessName={tenant.businessName}
       mode={tenant.businessModel === 'b2c' ? 'b2c' : 'b2b'}
     />
   );
