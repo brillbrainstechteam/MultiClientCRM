@@ -91,6 +91,10 @@ export default function LoginPage() {
         Sign in with Google
       </a>
 
+      <p className="crm-authform__footer" style={{ marginTop: 14 }}>
+        <Link href="/login/otp" className="crm-authform__link">Sign in with a one-time code (OTP)</Link>
+      </p>
+
       <p className="crm-authform__footer">
         New to TalkTrack? <Link href="/signup" className="crm-authform__link">Create an account</Link>
       </p>
