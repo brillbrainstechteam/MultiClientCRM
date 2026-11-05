@@ -4,15 +4,15 @@
  *
  * Enabled when:
  *  - the tenant's business model is b2b or both (never b2c); AND
- *  - the feature is configured — a Places key (Google search) and/or a Gemini
- *    key (AI discovery) is present on the server.
+ *  - the feature is configured — a Places key (Google search) and/or an
+ *    OpenAI / Gemini key (AI discovery) is present on the server.
  *
  * A specific-tenant allowlist (PROSPECTING_TENANTS) is still honoured if set, so
  * the feature can be scoped to named tenants when desired; empty = all B2B.
  */
 export function prospectingAllowed(tenant: { id: string; businessModel: string }): boolean {
   const isB2B = tenant.businessModel === 'b2b' || tenant.businessModel === 'both';
-  const configured = Boolean(process.env.PLACES_API_KEY || process.env.GEMINI_API_KEY);
+  const configured = Boolean(process.env.PLACES_API_KEY || process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY);
   const allow = (process.env.PROSPECTING_TENANTS ?? '')
     .split(',')
     .map((s) => s.trim())
