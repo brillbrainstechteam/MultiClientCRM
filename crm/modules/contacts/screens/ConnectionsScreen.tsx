@@ -211,7 +211,6 @@ function ConnectCatalog({ onClose, onConnectMeta, onSetupGoogle, onSetupYouTube,
       <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', width: 'min(540px,100%)', background: 'var(--crm-surface-raised)', borderRadius: 16, padding: 24, maxHeight: '85vh', overflowY: 'auto' }}>
         <button onClick={onClose} aria-label="Close" style={{ position: 'absolute', top: 14, right: 14, border: 0, background: 'none', cursor: 'pointer', color: 'var(--crm-text-secondary)' }}><X size={18} /></button>
         <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>Add a lead source</h3>
-        <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--crm-text-secondary)' }}>Connect a channel with its own login — we discover your Pages, accounts and forms automatically. Every lead then flows into Lead Intake.</p>
 
         <div style={{ fontSize: 11.5, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--crm-text-muted)', margin: '4px 0 8px' }}>Connect with your account</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -231,7 +230,6 @@ function ConnectCatalog({ onClose, onConnectMeta, onSetupGoogle, onSetupYouTube,
           {card(<FileText size={20} />, 'Hosted enquiry form', 'Our shareable voice-enabled form — no website needed.', 'Get link', onHostedForm, '#7c3aed')}
         </div>
 
-        <p style={{ fontSize: 12, color: 'var(--crm-text-muted)', margin: '18px 0 0' }}>Exhibitions, telecalling lists and referrals come in through Import or are logged as you capture them — they don’t need a connection here.</p>
       </div>
     </div>
   );
