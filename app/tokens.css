@@ -5,30 +5,30 @@
 
 :root {
   /* ---- Raw palette ----------------------------------------------------- */
-  --crm-navy: #0e2438;
-  --crm-navy-2: #12304c;
-  --crm-navy-line: #1e3a57;
+  --crm-navy: #0c3a31;
+  --crm-navy-2: #11473b;
+  --crm-navy-line: #1c5a4b;
 
-  --crm-green: #1b7a6b;
-  --crm-green-dark: #14655a;
-  --crm-green-tint: #e7f3f0;
-  --crm-green-border: #a9d5cb;
+  --crm-green: #0ba36d;
+  --crm-green-dark: #077a52;
+  --crm-green-tint: #e9f8f1;
+  --crm-green-border: #b7e6cf;
 
-  --crm-gold: #6366f1;
-  --crm-gold-dark: #4f46e5;
-  --crm-gold-tint: #eef2ff;
-  --crm-gold-border: #c7d2fe;
+  --crm-gold: #b78a34;
+  --crm-gold-dark: #936c22;
+  --crm-gold-tint: #faf5e7;
+  --crm-gold-border: #ecddae;
 
-  --crm-canvas: #fcfbf9;
-  --crm-cream: #fbf8f2;
+  --crm-canvas: #edf3ef;
+  --crm-cream: #f1f5f9;
   --crm-card: #ffffff;
-  --crm-table-header-band: #f6f3ec;
-  --crm-rule: #e7e2d6;
-  --crm-rule-soft: #efebe1;
+  --crm-table-header-band: #f8fafc;
+  --crm-rule: #e8edf2;
+  --crm-rule-soft: #eff3f7;
 
-  --crm-ink: #12263a;
-  --crm-ink-2: #4a5d6e;
-  --crm-muted: #8c8578;
+  --crm-ink: #131b25;
+  --crm-ink-2: #4e5c6e;
+  --crm-muted: #6b7a8d;
   --crm-on-dark: #ffffff;
   --crm-on-dark-muted: #93a9be;
 
@@ -112,7 +112,7 @@
   /* ---- Motion / focus / z ---------------------------------------------- */
   --crm-motion-fast: 120ms ease;
   --crm-motion-base: 180ms ease;
-  --crm-focus-ring: 0 0 0 3px rgba(27, 122, 107, 0.22);
+  --crm-focus-ring: 0 0 0 3px rgba(11, 163, 109, 0.22);
   --crm-z-sticky: 100;
   --crm-z-popover: 200;
   --crm-z-drawer: 300;

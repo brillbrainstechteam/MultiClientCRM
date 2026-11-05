@@ -1,9 +1,10 @@
+/* The brand header sits inside the deep-green sidebar, so its marks read light. */
 .crm-brand {
   display: flex;
   flex-direction: column;
   gap: var(--crm-space-3);
   padding: var(--crm-space-4);
-  border-bottom: 1px solid var(--crm-rule);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
 }
 
 .crm-brand__lockup {
@@ -32,7 +33,7 @@
   font-family: var(--crm-font-brand);
   font-weight: var(--crm-weight-bold);
   font-size: var(--crm-font-size-xl);
-  color: var(--crm-ink);
+  color: var(--crm-on-dark);
   letter-spacing: 0.01em;
 }
 
@@ -46,7 +47,7 @@
 .crm-brand__workspace-name {
   font-size: var(--crm-font-size-sm);
   font-weight: var(--crm-weight-medium);
-  color: var(--crm-ink);
+  color: var(--crm-on-dark);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -56,8 +57,8 @@
   flex: none;
   padding: 1px 8px;
   border-radius: var(--crm-radius-pill);
-  background: var(--crm-green-tint);
-  color: var(--crm-green-dark);
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--crm-on-dark);
   font-size: var(--crm-font-size-xs);
   font-weight: var(--crm-weight-semibold);
   text-transform: uppercase;

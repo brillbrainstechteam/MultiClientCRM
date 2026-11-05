@@ -3,9 +3,9 @@
  *
  * Role rules baked into the semantic tokens:
  *   Green  = the product   → primary actions, active nav pill, avatars, links, positive status
- *   Navy   = structure/brand → sidebar background, page titles, table-header text, endorsement
- *   Indigo = rationed highlight → logo tile, tier badges, starred items
- *   Cream/white = the ground → cool canvas, white cards
+ *   Deep teal-green = structure/brand → sidebar background, endorsement
+ *   Gold   = rationed, premium accent → logo tile, tier badges, starred items
+ *   White on a soft green-neutral ground → crisp cards float on the canvas
  *
  * Components read only the semantic tokens; the raw palette below feeds them.
  *
@@ -37,23 +37,25 @@
   --crm-neutral-800: #252f3b;
   --crm-neutral-900: #131b25;
 
-  --crm-navy: #131b25;   /* page titles / table-header text */
-  --crm-navy-2: #252f3b;
-  --crm-navy-line: #2e3a47;
+  /* Structure/brand — a deep teal-green so the sidebar reads as a WhatsApp-first
+   * product rather than a generic near-black admin shell. */
+  --crm-navy: #0c3a31;
+  --crm-navy-2: #11473b;
+  --crm-navy-line: #1c5a4b;
 
   /* ---- Green — the one interaction colour -------------------------------
    * Deepened from emerald-500. #10b981 is a signage green: it glows on white,
    * fails contrast on its own tint, and cheapens everything beside it. */
-  --crm-green: #0e9f6e;         /* solid fill */
-  --crm-green-dark: #07845a;    /* hover / text-on-tint */
-  --crm-green-tint: #effaf4;    /* near-white, so a flooded row stays readable */
-  --crm-green-border: #bfe8d4;
+  --crm-green: #0ba36d;         /* solid fill — a confident WhatsApp emerald */
+  --crm-green-dark: #077a52;    /* hover / text-on-tint */
+  --crm-green-tint: #e9f8f1;    /* near-white, so a flooded row stays readable */
+  --crm-green-border: #b7e6cf;
 
-  /* ---- Indigo — the rationed accent ------------------------------------- */
-  --crm-gold: #5b60e0;
-  --crm-gold-dark: #4348c7;
-  --crm-gold-tint: #f0f1fe;
-  --crm-gold-border: #cdd0f7;
+  /* ---- Gold — the rationed, premium accent (jewellery) ------------------ */
+  --crm-gold: #b78a34;
+  --crm-gold-dark: #936c22;
+  --crm-gold-tint: #faf5e7;
+  --crm-gold-border: #ecddae;
 
   /* ---- Ground ------------------------------------------------------------ */
   /* The ground the cards sit on. #f6f8fa read dull for two reasons at once:
@@ -62,7 +64,7 @@
      floating on anything. A little more depth and a little more blue fixes
      both — the white surfaces now read as crisp against it instead of
      dissolving into it. */
-  --crm-canvas: #e9eef6;
+  --crm-canvas: #edf3ef;
   --crm-cream: var(--crm-neutral-100);
   --crm-card: #ffffff;
   --crm-table-header-band: var(--crm-neutral-50);
@@ -118,7 +120,7 @@
   --crm-gold-50: var(--crm-gold-tint);
   --crm-gold-200: var(--crm-gold-border);
   --crm-gold-600: var(--crm-gold-dark);
-  --crm-gold-700: #383ca8;
+  --crm-gold-700: #7a5a1c;
 
   /* ---- Semantic surfaces ------------------------------------------------- */
   --crm-surface-page: var(--crm-canvas);
@@ -138,7 +140,7 @@
   --crm-text-muted: var(--crm-muted);
   --crm-text-inverse: var(--crm-on-dark);
   --crm-text-brand: var(--crm-green-dark);
-  --crm-text-title: var(--crm-navy);
+  --crm-text-title: var(--crm-neutral-900);
 
   /* ---- Typography -------------------------------------------------------- */
   --crm-font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial,
