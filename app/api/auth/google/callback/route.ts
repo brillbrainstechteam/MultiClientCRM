@@ -3,10 +3,11 @@ import { cookies } from 'next/headers';
 import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { exchangeCode, emailFromIdToken } from '@/lib/crm/google';
+import { publicOrigin } from '@/lib/http/origin';
 
 /** Where to land the user after the OAuth round-trip (the Imports & Sync hub). */
 const done = (req: Request, params: Record<string, string>) => {
-  const url = new URL('/crm/contacts/imports', req.url);
+  const url = new URL('/crm/contacts/imports', publicOrigin(req));
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   return NextResponse.redirect(url);
 };
@@ -30,7 +31,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const t = await exchangeCode(code, url.origin);
+    const t = await exchangeCode(code, publicOrigin(req));
     const email = emailFromIdToken(t.id_token) ?? 'google-account';
     const expiresAt = new Date(Date.now() + t.expires_in * 1000);
 

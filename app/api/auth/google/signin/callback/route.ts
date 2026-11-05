@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { createSession } from '@/lib/auth/session';
 import { audit } from '@/lib/crm/audit';
 import { exchangeSignInCode, identityFromIdToken } from '@/lib/auth/google-signin';
+import { publicOrigin } from '@/lib/http/origin';
 
 /**
  * Google Sign-In callback. Verify state, exchange the code, read the verified
@@ -12,7 +13,8 @@ import { exchangeSignInCode, identityFromIdToken } from '@/lib/auth/google-signi
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const origin = url.origin;
+  // The redirect_uri sent to Google MUST match what the start route used.
+  const origin = publicOrigin(req);
   const back = (error: string) => NextResponse.redirect(new URL(`/login?error=${error}`, origin));
 
   const code = url.searchParams.get('code');

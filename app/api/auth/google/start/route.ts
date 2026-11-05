@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getSessionUser } from '@/lib/auth/session';
 import { buildAuthUrl, googleConfigured } from '@/lib/crm/google';
+import { publicOrigin } from '@/lib/http/origin';
 
 /** Kick off Google OAuth: set an anti-CSRF state cookie and redirect to consent. */
 export async function GET(req: Request) {
@@ -12,7 +13,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Google integration is not configured on the server.' }, { status: 500 });
   }
 
-  const origin = new URL(req.url).origin;
+  const origin = publicOrigin(req);
   const state = randomBytes(16).toString('base64url');
 
   const store = await cookies();

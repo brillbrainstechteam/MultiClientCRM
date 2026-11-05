@@ -2,13 +2,14 @@ import { randomBytes } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { buildSignInUrl, googleSignInConfigured } from '@/lib/auth/google-signin';
+import { publicOrigin } from '@/lib/http/origin';
 
 /** Start Google Sign-In: set an anti-CSRF state cookie, redirect to Google consent. */
 export async function GET(req: Request) {
   if (!googleSignInConfigured()) {
     return NextResponse.redirect(new URL('/login?error=google_unconfigured', req.url));
   }
-  const origin = new URL(req.url).origin;
+  const origin = publicOrigin(req);
   const state = randomBytes(16).toString('base64url');
 
   const store = await cookies();
