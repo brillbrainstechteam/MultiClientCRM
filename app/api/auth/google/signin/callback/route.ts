@@ -5,6 +5,7 @@ import { createSession } from '@/lib/auth/session';
 import { audit } from '@/lib/crm/audit';
 import { exchangeSignInCode, identityFromIdToken } from '@/lib/auth/google-signin';
 import { publicOrigin } from '@/lib/http/origin';
+import { PENDING_COOKIE, encodePending, pendingCookieOptions } from '@/lib/auth/pending-signup';
 
 /**
  * Google Sign-In callback. Verify state, exchange the code, read the verified
@@ -23,7 +24,9 @@ export async function GET(req: Request) {
 
   const store = await cookies();
   const expected = store.get('g_signin_state')?.value;
+  const mode = store.get('g_signin_mode')?.value === 'signup' ? 'signup' : 'login';
   store.delete('g_signin_state');
+  store.delete('g_signin_mode');
   if (!state || !expected || state !== expected) return back('google_state');
 
   let email: string | null = null;
@@ -39,7 +42,15 @@ export async function GET(req: Request) {
   if (!email || !emailVerified) return back('google_email');
 
   const user = await prisma.user.findUnique({ where: { email }, select: { id: true, tenantId: true, status: true } });
-  if (!user || user.status !== 'active') return back('no_account');
+  if (!user || user.status !== 'active') {
+    // No account: signup mode → stash the verified email and collect business
+    // details; login mode → tell them to ask their admin.
+    if (mode === 'signup') {
+      store.set(PENDING_COOKIE, encodePending({ provider: 'google', email }), pendingCookieOptions);
+      return NextResponse.redirect(new URL('/signup/details', origin));
+    }
+    return back('no_account');
+  }
 
   await createSession(user.id);
   await audit({ tenantId: user.tenantId, actorId: user.id, action: 'auth.google_signin', targetType: 'user', targetId: user.id });

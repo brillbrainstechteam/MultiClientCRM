@@ -11,15 +11,13 @@ export async function GET(req: Request) {
   }
   const origin = publicOrigin(req);
   const state = randomBytes(16).toString('base64url');
+  // login (default) = sign in an existing member; signup = create on first use.
+  const mode = new URL(req.url).searchParams.get('mode') === 'signup' ? 'signup' : 'login';
 
   const store = await cookies();
-  store.set('g_signin_state', state, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: 600,
-  });
+  const opts = { httpOnly: true as const, sameSite: 'lax' as const, secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 600 };
+  store.set('g_signin_state', state, opts);
+  store.set('g_signin_mode', mode, opts);
 
   return NextResponse.redirect(buildSignInUrl(origin, state));
 }
