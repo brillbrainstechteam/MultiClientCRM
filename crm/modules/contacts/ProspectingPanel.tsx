@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Lock, MapPin, Search } from 'lucide-react';
+import { Lock, MapPin, Search, Sparkles } from 'lucide-react';
 import { Badge, Button, Checkbox, Input, Select, Toast } from '@crm/design-system';
 import { importContacts } from '@crm/app/crm-data';
 
 interface Result { name: string; address: string; phone?: string; mobile: string; existsInCrm: boolean }
+interface AiResult { name: string; area: string | null; city: string | null; category: string | null; note: string | null; existsInCrm: boolean }
 
 /**
  * Locked, B2B-only Maps prospecting. Finds businesses via the Places API by
@@ -24,6 +25,11 @@ export function ProspectingPanel() {
   const [results, setResults] = useState<Result[]>([]);
   const [picked, setPicked] = useState<Set<number>>(new Set());
   const [toast, setToast] = useState<string | null>(null);
+  // AI discovery (free-text brief → candidate businesses).
+  const [brief, setBrief] = useState('');
+  const [aiResults, setAiResults] = useState<AiResult[]>([]);
+  const [aiPicked, setAiPicked] = useState<Set<number>>(new Set());
+  const [aiBusy, setAiBusy] = useState(false);
 
   useEffect(() => {
     fetch('/api/crm/prospecting/status', { credentials: 'same-origin' })
@@ -86,11 +92,45 @@ export function ProspectingPanel() {
     }
   };
 
+  const aiToggle = (i: number) => setAiPicked((prev) => { const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n; });
+
+  const aiSearch = async () => {
+    if (!brief.trim()) { setToast('Describe who you want to find.'); return; }
+    setAiBusy(true); setAiResults([]); setAiPicked(new Set());
+    try {
+      const res = await fetch('/api/crm/prospecting/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ brief }) });
+      const data = await res.json();
+      if (!res.ok) { setToast(data.error ?? 'Discovery failed.'); return; }
+      setAiResults(data.results ?? []);
+      if ((data.results ?? []).length === 0) setToast('No suggestions for that brief.');
+    } catch { setToast('Discovery failed.'); } finally { setAiBusy(false); }
+  };
+
+  // AI candidates have no phone yet — create them as prospects through intake
+  // (handles no-phone, routes, and dedupes), to enrich later via the pre-call brief.
+  const aiAdd = async () => {
+    const chosen = [...aiPicked].map((i) => aiResults[i]).filter(Boolean);
+    if (chosen.length === 0) { setToast('Select at least one business.'); return; }
+    setAiBusy(true);
+    let added = 0;
+    try {
+      for (const r of chosen) {
+        const res = await fetch('/api/crm/intake', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+          body: JSON.stringify({ sourceType: 'prospecting', sourceName: 'AI discovery', accountName: r.name, city: r.city ?? '', customerType: 'b2b' }),
+        });
+        if (res.ok) added += 1;
+      }
+      setToast(`Added ${added} prospect(s). Open each to run the pre-call brief.`);
+      setAiPicked(new Set());
+    } finally { setAiBusy(false); }
+  };
+
   return (
     <section className="crm-hub__section">
       {toast ? <Toast tone="success" message={toast} onDismiss={() => setToast(null)} /> : null}
       <h2 className="crm-prospect__title"><MapPin aria-hidden="true" /> Find new businesses (B2B prospecting)</h2>
-      <p className="crm-prospect__sub">Search businesses by location and add them as prospects. Results are capped and phones checked against your CRM.</p>
+      <p className="crm-prospect__sub">Search businesses by location.</p>
 
       <div className="crm-prospect__form">
         <Input label="Business type" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="e.g. jewellery wholesalers" />
@@ -125,6 +165,39 @@ export function ProspectingPanel() {
               ))}
             </tbody>
           </table>
+        </div>
+      ) : null}
+
+      <h2 className="crm-prospect__title" style={{ marginTop: 28 }}><Sparkles aria-hidden="true" /> Find with AI</h2>
+      <p className="crm-prospect__sub">Describe who you want to find — e.g. “22k gold jewellery retailers in Jaipur”.</p>
+      <div className="crm-prospect__form">
+        <Input label="Describe your target" value={brief} onChange={(e) => setBrief(e.target.value)} placeholder="e.g. bridal jewellery showrooms in South Delhi" />
+        <div className="crm-prospect__search">
+          <Button variant="primary" iconLeft={<Sparkles />} disabled={aiBusy} onClick={aiSearch}>{aiBusy ? 'Finding…' : 'Find with AI'}</Button>
+        </div>
+      </div>
+
+      {aiResults.length > 0 ? (
+        <div className="crm-prospect__results">
+          <div className="crm-prospect__results-head">
+            <span>{aiResults.length} suggested · {aiPicked.size} selected</span>
+            <Button variant="primary" size="sm" disabled={aiBusy || aiPicked.size === 0} onClick={aiAdd}>Add selected as prospects</Button>
+          </div>
+          <table className="crm-prospect__table">
+            <thead><tr><th></th><th>Business</th><th>Location</th><th>Why it fits</th><th></th></tr></thead>
+            <tbody>
+              {aiResults.map((r, i) => (
+                <tr key={i}>
+                  <td><Checkbox label="select" hideLabel checked={aiPicked.has(i)} onChange={() => aiToggle(i)} /></td>
+                  <td>{r.name}{r.category ? <div style={{ fontSize: 12, color: 'var(--crm-text-muted)' }}>{r.category}</div> : null}</td>
+                  <td>{[r.area, r.city].filter(Boolean).join(', ') || '—'}</td>
+                  <td className="crm-prospect__addr">{r.note ?? '—'}</td>
+                  <td>{r.existsInCrm ? <Badge tone="neutral">In CRM</Badge> : <Badge tone="success">New</Badge>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="crm-prospect__sub" style={{ marginTop: 8 }}>AI suggestions have no phone yet — added prospects land in Lead Intake; open each to run the pre-call brief.</p>
         </div>
       ) : null}
     </section>

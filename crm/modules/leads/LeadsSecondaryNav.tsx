@@ -12,9 +12,9 @@ import { can, type Capability } from '@crm/modules/contacts/permissions';
 interface Item { label: string; to: string; icon: LucideIcon; matchPrefix: string; requires?: Capability }
 
 const items: Item[] = [
+  { label: 'Lead Sources', to: '/leads/sources', icon: Radio, matchPrefix: '/leads/sources', requires: 'manageImports' },
   { label: 'Lead Intake', to: '/leads/intake', icon: Inbox, matchPrefix: '/leads/intake' },
   { label: 'Lead Leakage', to: '/leads/leakage', icon: AlertTriangle, matchPrefix: '/leads/leakage', requires: 'viewReports' },
-  { label: 'Lead Sources', to: '/leads/sources', icon: Radio, matchPrefix: '/leads/sources', requires: 'manageImports' },
   { label: 'Find New Businesses', to: '/leads/find', icon: Binoculars, matchPrefix: '/leads/find', requires: 'manageImports' },
 ];
 
