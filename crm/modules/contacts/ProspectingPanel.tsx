@@ -5,6 +5,14 @@ import { importContacts } from '@crm/app/crm-data';
 
 interface Result { name: string; address: string; phone?: string; mobile: string; existsInCrm: boolean }
 interface AiResult { name: string; area: string | null; city: string | null; category: string | null; note: string | null; existsInCrm: boolean }
+interface Cost { usd: number; model: string; inputTokens: number; outputTokens: number; searchCalls: number; placesRequests: number }
+
+function CostNote({ cost, label }: { cost: Cost; label: string }) {
+  const detail = cost.placesRequests
+    ? `${cost.placesRequests} Places request${cost.placesRequests > 1 ? 's' : ''}`
+    : `${cost.model} · ${cost.searchCalls} web search · ${cost.inputTokens + cost.outputTokens} tokens`;
+  return <p className="crm-prospect__sub" style={{ marginTop: 6 }}>Est. cost this run: <strong>~${cost.usd.toFixed(4)}</strong> · {label} ({detail})</p>;
+}
 
 /**
  * Locked, B2B-only Maps prospecting. Finds businesses via the Places API by
@@ -26,10 +34,12 @@ export function ProspectingPanel() {
   const [picked, setPicked] = useState<Set<number>>(new Set());
   const [toast, setToast] = useState<string | null>(null);
   // AI discovery (free-text brief → candidate businesses).
+  const [cost, setCost] = useState<Cost | null>(null);
   const [brief, setBrief] = useState('');
   const [aiResults, setAiResults] = useState<AiResult[]>([]);
   const [aiPicked, setAiPicked] = useState<Set<number>>(new Set());
   const [aiBusy, setAiBusy] = useState(false);
+  const [aiCost, setAiCost] = useState<Cost | null>(null);
 
   useEffect(() => {
     fetch('/api/crm/prospecting/status', { credentials: 'same-origin' })
@@ -64,6 +74,7 @@ export function ProspectingPanel() {
       const data = await res.json();
       if (!res.ok) { setToast(data.error ?? 'Search failed.'); return; }
       setResults(data.results ?? []);
+      setCost(data.cost ?? null);
       if ((data.results ?? []).length === 0) setToast('No businesses found for that search.');
     } catch {
       setToast('Search failed.');
@@ -102,6 +113,7 @@ export function ProspectingPanel() {
       const data = await res.json();
       if (!res.ok) { setToast(data.error ?? 'Discovery failed.'); return; }
       setAiResults(data.results ?? []);
+      setAiCost(data.cost ?? null);
       if ((data.results ?? []).length === 0) setToast('No suggestions for that brief.');
     } catch { setToast('Discovery failed.'); } finally { setAiBusy(false); }
   };
@@ -144,6 +156,7 @@ export function ProspectingPanel() {
           <Button variant="primary" iconLeft={<Search />} disabled={busy} onClick={search}>{busy ? 'Searching…' : 'Search'}</Button>
         </div>
       </div>
+      {cost ? <CostNote cost={cost} label="Google Places" /> : null}
 
       {results.length > 0 ? (
         <div className="crm-prospect__results">
@@ -176,6 +189,7 @@ export function ProspectingPanel() {
           <Button variant="primary" iconLeft={<Sparkles />} disabled={aiBusy} onClick={aiSearch}>{aiBusy ? 'Finding…' : 'Find with AI'}</Button>
         </div>
       </div>
+      {aiCost ? <CostNote cost={aiCost} label="AI discovery" /> : null}
 
       {aiResults.length > 0 ? (
         <div className="crm-prospect__results">

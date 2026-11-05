@@ -3,6 +3,7 @@ import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { prospectingAllowed } from '@/lib/crm/prospecting-access';
 import { searchBusinesses } from '@/lib/crm/places';
+import { estimateRunCost } from '@/lib/crm/prospecting-cost';
 
 const norm = (m: string) => (m ? (m.trim().startsWith('+') ? m.replace(/[^\d+]/g, '') : `+91${m.replace(/\D/g, '')}`) : '');
 
@@ -33,6 +34,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       results: results.map((r) => ({ ...r, mobile: norm(r.phone ?? ''), existsInCrm: have.has(norm(r.phone ?? '')) })),
+      cost: estimateRunCost({ placesRequests: 1 }),
     });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Search failed.' }, { status: 502 });

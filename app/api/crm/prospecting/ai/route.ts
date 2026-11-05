@@ -3,6 +3,7 @@ import { getSessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/db';
 import { prospectingAllowed } from '@/lib/crm/prospecting-access';
 import { discoverBusinesses } from '@/lib/crm/prospecting-ai';
+import { estimateRunCost } from '@/lib/crm/prospecting-cost';
 
 /**
  * AI business discovery (Find New Businesses). Given a free-text brief, returns
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
   if (!brief) return NextResponse.json({ error: 'Describe who you want to find.' }, { status: 400 });
 
   try {
-    const found = await discoverBusinesses(brief, typeof b?.count === 'number' ? b.count : 15);
+    const { results: found, usage, provider } = await discoverBusinesses(brief, typeof b?.count === 'number' ? b.count : 15);
 
     // Best-effort: flag names that already appear in the CRM company/name.
     const names = found.map((f) => f.name.toLowerCase());
@@ -33,7 +34,11 @@ export async function POST(req: Request) {
       : [];
     const have = new Set(existing.flatMap((e) => [e.company?.toLowerCase(), e.name?.toLowerCase()].filter(Boolean) as string[]));
 
-    return NextResponse.json({ results: found.map((f) => ({ ...f, existsInCrm: have.has(f.name.toLowerCase()) })) });
+    return NextResponse.json({
+      results: found.map((f) => ({ ...f, existsInCrm: have.has(f.name.toLowerCase()) })),
+      cost: estimateRunCost(usage),
+      provider,
+    });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Discovery failed.' }, { status: 502 });
   }
