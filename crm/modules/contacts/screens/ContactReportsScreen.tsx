@@ -22,7 +22,7 @@ const TIER_ORDER: Contact['salesTier'][] = ['platinum', 'gold', 'silver', 'stand
 export default function ContactReportsScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
   const scopedHref = useScopedHref();
-  const { branchId, whatsappNumberId, branch, whatsappNumber } = useWorkspace();
+  const { branchId, whatsappNumberId } = useWorkspace();
 
   const period = searchParams.get('period') ?? '30';
   const scope = {
@@ -88,7 +88,6 @@ export default function ContactReportsScreen() {
       .sort((a, b) => b.value - a.value);
   }, [rows]);
 
-  const scopeNote = [branch ? branch.name : 'All branches', whatsappNumber ? whatsappNumber.displayName : 'All numbers'].join(' · ');
 
   const state = searchParams.get('state');
   const stateView = contentStateView(state, {
@@ -99,7 +98,7 @@ export default function ContactReportsScreen() {
     <div className="crm-reports">
       <PageHeader
         title="Contact Reports"
-        description={`Growth and quality across ${scopeNote}. Click any bar to open the exact contacts behind it.`}
+        description="Click any bar to open those contacts."
         actions={
           <Select
             label="Period"

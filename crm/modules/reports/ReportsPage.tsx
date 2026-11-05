@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { Contact as ContactIcon, MessageSquare, Phone, PhoneCall, UserCheck, Users, Send, FileText, ShoppingBag } from 'lucide-react';
 import { PageHeader } from '@crm/components';
 import { KpiCard, Badge, type BadgeTone } from '@crm/design-system';
@@ -29,7 +30,8 @@ export default function ReportsPage() {
     <div style={sx.page}>
       <PageHeader
         title="Reports"
-        description="A live snapshot of your workspace — contacts, pipeline, conversations and team, computed from real records."
+        description="Your workspace at a glance."
+        actions={<Link to="/contacts/reports" style={{ color: 'var(--crm-brand-700)', fontWeight: 600, fontSize: 13.5, textDecoration: 'none' }}>Contact breakdowns →</Link>}
       />
 
       <div style={sx.kpiRow}>

@@ -105,7 +105,7 @@ export default function IntakeQueueScreen() {
     <div className="crm-intake">
       <PageHeader
         title="Lead Intake"
-        description="Every lead from every source, in one triage queue — matched, classified, routed, and tracked against a first-response SLA."
+        description="Every lead source, one triage queue."
         actions={
           <div style={{ display: 'flex', gap: 8 }}>
             <Button variant="secondary" iconLeft={<Share2 />} onClick={() => setSharing(true)}>Share form</Button>

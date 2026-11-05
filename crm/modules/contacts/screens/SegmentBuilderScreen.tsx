@@ -140,7 +140,7 @@ function SegmentBuilderForm({ existing }: { existing: Segment | undefined }) {
           { label: isEdit ? 'Edit' : 'New segment' },
         ]}
         title={isEdit ? `Edit · ${existing?.name}` : 'Segment Builder'}
-        description="Define who belongs to this audience. The match count updates as you edit."
+        description="Define this audience."
         actions={
           <>
             <Button variant="secondary" onClick={() => navigate(-1)}>

@@ -14,7 +14,7 @@ export default function ProspectingScreen() {
     <div className="crm-prospecting-page">
       <PageHeader
         title="Find new businesses"
-        description="Search businesses by location and add them as prospects. Results are capped, and every phone number is checked against your CRM before you add it."
+        description="Find B2B prospects by location."
       />
       <ProspectingPanel />
     </div>

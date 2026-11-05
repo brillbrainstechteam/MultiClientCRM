@@ -114,7 +114,7 @@ export default function ConnectionsScreen() {
     <div className="crm-connections">
       <PageHeader
         title="Lead Sources"
-        description="Every channel that can bring in an enquiry — WhatsApp, Meta, Instagram, website and more. Connect once; every lead flows into Lead Intake and is matched, routed and tracked. Watch connector health so a dead source never loses leads silently."
+        description="Connect your lead channels."
         actions={<Button variant="primary" iconLeft={<Plus />} onClick={() => setAdding(true)}>Add lead source</Button>}
       />
 

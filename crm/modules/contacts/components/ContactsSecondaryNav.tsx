@@ -1,6 +1,5 @@
 import {
   BadgeCheck,
-  ChartNoAxesCombined,
   LayoutGrid,
   MapPin,
   ShieldCheck,
@@ -36,13 +35,6 @@ const items: SecondaryNavItem[] = [
     to: '/contacts/data-quality',
     icon: ShieldCheck,
     matchPrefix: '/contacts/data-quality',
-  },
-  {
-    label: 'Reports',
-    to: '/contacts/reports',
-    icon: ChartNoAxesCombined,
-    matchPrefix: '/contacts/reports',
-    requires: 'viewReports',
   },
   {
     label: 'Zones',

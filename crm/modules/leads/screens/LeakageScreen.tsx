@@ -45,7 +45,7 @@ export default function LeakageScreen() {
     <div className="crm-leakage">
       <PageHeader
         title="Lead Leakage"
-        description="Leads at risk of being forgotten — no owner, waiting too long, SLA breached, unresolved or failed. Fix these first so no lead goes invisible."
+        description="Leads at risk of slipping away."
       />
 
       {loading ? (
