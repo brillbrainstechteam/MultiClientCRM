@@ -8,14 +8,19 @@ export interface ContactIdentityProps {
   variant?: 'cell' | 'header';
   /** When set, the name links to the given route (usually Customer 360). */
   to?: string;
+  /** When set and the contact has a company, the company becomes a link
+   *  (e.g. all contacts at that company). Returns the route for a company name. */
+  companyTo?: (company: string) => string;
 }
 
 /**
  * Canonical way to render "who this contact is": avatar + name + company/mobile.
  * Used by the contact table (CON-S02) and Customer 360 header (CON-S03).
  */
-export function ContactIdentity({ contact, variant = 'cell', to }: ContactIdentityProps) {
-  const secondary = contact.company ?? contact.mobile;
+export function ContactIdentity({ contact, variant = 'cell', to, companyTo }: ContactIdentityProps) {
+  const company = contact.company;
+  const secondary = company ?? contact.mobile;
+  const companyLink = companyTo && company ? companyTo(company) : null;
 
   return (
     <div className={`crm-contact-identity crm-contact-identity--${variant}`}>
@@ -33,8 +38,12 @@ export function ContactIdentity({ contact, variant = 'cell', to }: ContactIdenti
           <span className="crm-contact-identity__name">{contact.name}</span>
         )}
         <span className="crm-contact-identity__secondary">
-          {secondary}
-          {variant === 'header' && contact.company ? ` · ${contact.mobile}` : ''}
+          {companyLink ? (
+            <Link to={companyLink} className="crm-contact-identity__company-link" title={`All contacts at ${company}`}>{company}</Link>
+          ) : (
+            secondary
+          )}
+          {variant === 'header' && company ? ` · ${contact.mobile}` : ''}
         </span>
       </div>
     </div>

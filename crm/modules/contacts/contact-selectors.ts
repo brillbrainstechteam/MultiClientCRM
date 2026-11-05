@@ -119,6 +119,8 @@ export interface ContactFilters {
   consent?: string | null;
   ownerId?: string | null;
   source?: string | null;
+  /** All contacts at one company (case-insensitive exact match). */
+  company?: string | null;
 }
 
 export function filterContacts(scope: ContactScope, filters: ContactFilters): Contact[] {
@@ -132,6 +134,7 @@ export function filterContacts(scope: ContactScope, filters: ContactFilters): Co
     if (filters.consent && contact.consent !== filters.consent) return false;
     if (filters.ownerId && contact.ownerId !== filters.ownerId) return false;
     if (filters.source && contact.source !== filters.source) return false;
+    if (filters.company && (contact.company ?? '').toLowerCase() !== filters.company.toLowerCase()) return false;
     if (q) {
       const haystack = [
         contact.name,

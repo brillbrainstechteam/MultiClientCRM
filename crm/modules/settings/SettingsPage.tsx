@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import {
-  Building2, Contact as ContactIcon, History, KeyRound, MessageSquare, Phone, Plug,
+  Building2, Contact as ContactIcon, History, KeyRound, MapPin, MessageSquare, Phone, Plug,
   Route as RouteIcon, ShieldCheck, Users, ExternalLink, ArrowLeft, Zap,
 } from 'lucide-react';
 import { PageHeader } from '@crm/components';
@@ -38,6 +38,7 @@ function SettingsHub() {
     { icon: <Phone />, title: 'WhatsApp calling', desc: 'Voice calls, calling hours and permission.', to: '/settings/whatsapp/calling' },
     { icon: <Users />, title: 'Team & roles', desc: 'Members, roles and permissions.', to: '/settings/team' },
     { icon: <RouteIcon />, title: 'Routing & assignment', desc: 'How conversations are assigned.', to: '/settings/routing' },
+    { icon: <MapPin />, title: 'Zones', desc: 'Geographic routing areas and members.', to: '/contacts/zones' },
     { icon: <ContactIcon />, title: 'Contact settings', desc: 'Fields, tags and contact rules.', to: '/settings/contacts' },
     { icon: <Zap />, title: 'Quick replies', desc: 'Canned answers your team inserts with a /shortcut.', to: '/settings/quick-replies' },
     { icon: <Plug />, title: 'Integrations', desc: 'Google, telephony and other connections.', to: '/settings/integrations' },
@@ -47,7 +48,7 @@ function SettingsHub() {
 
   return (
     <div style={sx.page}>
-      <PageHeader title="Settings" description="Configure your workspace — business profile, numbers, team, integrations and more." />
+      <PageHeader title="Settings" description="Configure your workspace." />
       <div style={sx.grid}>
         {sections.map((s) => (
           <button key={s.to} style={sx.card} onClick={() => navigate(scopedHref(s.to))}>

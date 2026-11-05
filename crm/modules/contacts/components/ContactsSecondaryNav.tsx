@@ -1,7 +1,6 @@
 import {
   BadgeCheck,
   LayoutGrid,
-  MapPin,
   ShieldCheck,
   Upload,
   Users,
@@ -35,12 +34,6 @@ const items: SecondaryNavItem[] = [
     to: '/contacts/data-quality',
     icon: ShieldCheck,
     matchPrefix: '/contacts/data-quality',
-  },
-  {
-    label: 'Zones',
-    to: '/contacts/zones',
-    icon: MapPin,
-    matchPrefix: '/contacts/zones',
   },
 ];
 

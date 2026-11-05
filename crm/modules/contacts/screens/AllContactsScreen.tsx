@@ -67,12 +67,13 @@ export default function AllContactsScreen() {
     consent: searchParams.get('consent'),
     ownerId: searchParams.get('ownerId'),
     source: searchParams.get('source'),
+    company: searchParams.get('company'),
   };
 
   const forcedNoResults = searchParams.get('state') === 'no-results';
   const rows = useMemo(
     () => (forcedNoResults ? [] : filterContacts(scope, filters)),
-    [forcedNoResults, scope.branchId, scope.whatsappNumberId, filters.q, filters.stage, filters.leadStatus, filters.lifecycle, filters.customerType, filters.consent, filters.ownerId, filters.source],
+    [forcedNoResults, scope.branchId, scope.whatsappNumberId, filters.q, filters.stage, filters.leadStatus, filters.lifecycle, filters.customerType, filters.consent, filters.ownerId, filters.source, filters.company],
   );
 
   const setParam = (key: string, value: string | null) => {
@@ -98,6 +99,7 @@ export default function AllContactsScreen() {
     filters.consent ? { key: 'consent', field: 'Consent', label: consentLabel[filters.consent as keyof typeof consentLabel] ?? filters.consent } : null,
     filters.ownerId ? { key: 'ownerId', field: 'Owner', label: findUser(filters.ownerId)?.name ?? filters.ownerId } : null,
     filters.source ? { key: 'source', field: 'Source', label: filters.source } : null,
+    filters.company ? { key: 'company', field: 'Company', label: filters.company } : null,
   ].filter((chip): chip is { key: string; field: string; label: string } => chip !== null);
 
   const hasFilters = activeChips.length > 0 || Boolean(filters.q);
@@ -125,7 +127,7 @@ export default function AllContactsScreen() {
     {
       key: 'identity',
       header: 'Contact',
-      render: (c) => <ContactIdentity contact={c} to={scopedHref(`/contacts/customer/${c.id}`)} />,
+      render: (c) => <ContactIdentity contact={c} to={scopedHref(`/contacts/customer/${c.id}`)} companyTo={(company) => scopedHref('/contacts/all', { company })} />,
       width: '24%',
     },
     { key: 'leadStatus', header: 'Lead status', render: (c) => <LeadStatusBadge status={c.leadStatus} /> },

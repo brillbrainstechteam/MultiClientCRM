@@ -32,6 +32,15 @@ a.crm-contact-identity__name:hover {
   white-space: nowrap;
 }
 
+.crm-contact-identity__company-link {
+  color: var(--crm-text-secondary);
+  text-decoration: none;
+}
+.crm-contact-identity__company-link:hover {
+  color: var(--crm-brand-700);
+  text-decoration: underline;
+}
+
 .crm-contact-identity--header .crm-contact-identity__name {
   font-size: var(--crm-font-size-xl);
 }
