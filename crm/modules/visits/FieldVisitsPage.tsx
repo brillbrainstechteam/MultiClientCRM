@@ -91,7 +91,7 @@ export default function FieldVisitsPage() {
     <div className="fv">
       <PageHeader
         title="Field visits"
-        description="Planned and completed customer visits, what they cost and what they brought in."
+        description="Planned and completed customer visits."
         actions={<Button variant="primary" iconLeft={<Plus />} onClick={() => setPlanning(true)}>Plan a visit</Button>}
       />
 

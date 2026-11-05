@@ -123,7 +123,7 @@ export default function CreateOrderRequestScreen() {
       <PageHeader
         breadcrumbs={[{ label: 'Orders', to: scopedHref('/catalogue-orders/orders') }, { label: 'Create order request' }]}
         title="Create Order Request"
-        description="Build a B2B order request for a customer without an existing Saved Selection — final rate/weight is confirmed before it becomes a firm order."
+        description="Build a B2B order request."
       />
 
       <div className="crm-eco-createorder__grid">

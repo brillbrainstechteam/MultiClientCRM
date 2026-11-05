@@ -74,7 +74,7 @@ export default function SelectionsRealScreen() {
   return (
     <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
       {toast ? <Toast tone="success" message={toast} onDismiss={() => setToast(null)} /> : null}
-      <PageHeader title="Selections" description="Curate a set of items to share with a customer, then convert it to an order."
+      <PageHeader title="Selections" description="Curate items to share, then order."
         actions={<Button variant="primary" iconLeft={<Plus />} onClick={() => setOpen(true)}>New selection</Button>} />
       {loading ? <LoadingSkeleton height={56} /> : sels.length === 0
         ? <EmptyState title="No selections yet" description="Build a curated set of catalogue items to share." actions={<Button variant="primary" onClick={() => setOpen(true)}>New selection</Button>} />

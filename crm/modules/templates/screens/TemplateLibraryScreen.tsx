@@ -133,7 +133,7 @@ export default function TemplateLibraryScreen() {
     <div className="crm-tpl-library">
       <PageHeader
         title="WhatsApp Template Library"
-        description="Meta's pre-written utility & authentication templates. Add one and it's APPROVED instantly — no review wait — and it's available in many languages."
+        description="Meta's pre-approved templates — add instantly."
       />
 
       <div className="crm-tpl-library__toolbar">

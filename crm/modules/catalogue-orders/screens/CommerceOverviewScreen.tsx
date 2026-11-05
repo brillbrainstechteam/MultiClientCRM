@@ -85,7 +85,7 @@ export default function CommerceOverviewScreen() {
     <div className="crm-eco-overview">
       <PageHeader
         title="Commerce Overview"
-        description="Catalogue, order and exception activity that needs attention right now."
+        description="Activity that needs attention."
       />
 
       <div className="crm-eco-overview__kpis">

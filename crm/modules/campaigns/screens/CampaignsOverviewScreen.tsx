@@ -276,7 +276,7 @@ export default function CampaignsOverviewScreen() {
     <div className="crm-camp-list">
       <PageHeader
         title="Campaigns"
-        description="Create, launch and track WhatsApp campaigns from one connected lifecycle."
+        description="Create, launch and track campaigns."
         actions={
           <>
             <Button variant="secondary" iconLeft={<CalendarDays />} onClick={() => navigate(scopedHref('/campaigns/planner'))}>

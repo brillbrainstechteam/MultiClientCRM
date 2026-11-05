@@ -103,7 +103,7 @@ export default function PlannerScreen() {
 
   return (
     <div className="pn">
-      <PageHeader title="Planning calendar" description="Plan field marketing, calling, campaigns & exhibitions around the festive calendar — and get reminded before each one." />
+      <PageHeader title="Planning calendar" description="Plan activity around the festive calendar." />
 
       <div className="pn-bar">
         <div className="pn-nav">

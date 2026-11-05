@@ -188,7 +188,7 @@ export default function AgentsLibraryScreen() {
     <div className="crm-aia__page">
       <PageHeader
         title="AI Agents"
-        description="Define a role, knowledge, permissions and safety boundaries — test it, then activate it."
+        description="Build, test and activate AI agents."
         actions={
           <Button
             variant="primary"

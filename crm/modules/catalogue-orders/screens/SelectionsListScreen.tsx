@@ -69,7 +69,7 @@ export default function SelectionsListScreen() {
     <div className="crm-eco-selections">
       <PageHeader
         title="Selections & Carts"
-        description="B2B Saved Selections move to Order Requests; B2C carts move to checkout. Same list, same builder — the label adapts to what the customer actually does."
+        description="Saved selections and carts."
         breadcrumbs={contact ? [{ label: 'Catalogue & Orders', to: scopedHref('/catalogue-orders/catalogues') }, { label: `${contact.name} — selections & carts` }] : undefined}
         actions={
           can(role, 'selection.create') ? (

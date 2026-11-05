@@ -87,7 +87,7 @@ export default function ExhibitionsPage() {
     <div className="ex">
       <PageHeader
         title="Exhibitions"
-        description="Shows and fairs, the contacts captured at each, and what became of them."
+        description="Shows, captured contacts and outcomes."
         actions={canEdit ? <Button variant="primary" iconLeft={<Plus />} onClick={() => setAdding(true)}>Add an exhibition</Button> : undefined}
       />
 

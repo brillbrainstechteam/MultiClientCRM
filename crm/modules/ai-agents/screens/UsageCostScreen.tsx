@@ -75,7 +75,7 @@ export default function UsageCostScreen() {
     <div className="crm-aia__page">
       <PageHeader
         title="Usage & Cost"
-        description="Estimated cost — prototype data for planning only, not authoritative provider billing."
+        description="Estimated cost for planning, not billing."
         actions={<Button variant="secondary" onClick={() => navigate(scopedHref('/ai-agents'))}>Back to AI Agents</Button>}
       />
 

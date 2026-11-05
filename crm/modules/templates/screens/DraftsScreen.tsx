@@ -37,7 +37,7 @@ export default function DraftsScreen() {
 
   return (
     <div className="crm-tpl-drafts">
-      <PageHeader title="Drafts" description="Templates you saved to finish later. Resume one to keep editing, or submit it for approval." />
+      <PageHeader title="Drafts" description="Templates saved to finish later." />
 
       {flash ? (
         <div role="status" onAnimationEnd={clearFlash} style={{ background: 'var(--crm-surface-sunken)', border: '1px solid var(--crm-border-subtle)', borderRadius: 10, padding: '10px 14px', marginBottom: 12, fontSize: 13.5, fontWeight: 600 }}>{flash}</div>

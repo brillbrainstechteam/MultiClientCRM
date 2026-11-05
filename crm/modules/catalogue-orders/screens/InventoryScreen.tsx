@@ -137,7 +137,7 @@ export default function InventoryScreen() {
     <div className="crm-eco-inventory">
       <PageHeader
         title="Inventory & Availability"
-        description="Stock across every catalogue and branch — integrated sources stay read-only here; spreadsheet and CRM-managed catalogues can be adjusted directly."
+        description="Stock across catalogues and branches."
       />
 
       <div className="crm-eco-inventory__toolbar">

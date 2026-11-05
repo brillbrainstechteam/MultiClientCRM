@@ -69,7 +69,7 @@ export default function CatalogueListScreen() {
     <div className="crm-eco-catlist">
       <PageHeader
         title="Catalogues"
-        description="Create, connect and manage every catalogue this workspace sells from — jewellery, décor, apparel or anything else."
+        description="Manage your catalogues."
         actions={
           can(role, 'catalogue.create') ? (
             <Button variant="primary" onClick={() => navigate(scopedHref('/catalogue-orders/catalogues/new'))}>

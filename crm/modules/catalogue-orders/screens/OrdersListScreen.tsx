@@ -122,7 +122,7 @@ export default function OrdersListScreen() {
     <div className="crm-eco-orders">
       <PageHeader
         title="Order Requests & Orders"
-        description="CRM order requests and synchronized external orders in one operational queue — source and sync state are always explicit."
+        description="Order requests and synced orders."
         breadcrumbs={contact ? [{ label: 'Catalogue & Orders', to: scopedHref('/catalogue-orders/catalogues') }, { label: `${contact.name} — orders` }] : undefined}
         actions={
           can(role, 'orderRequest.create') ? (

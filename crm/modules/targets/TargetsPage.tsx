@@ -77,7 +77,7 @@ export default function TargetsPage() {
     <div className="tg">
       <PageHeader
         title="Targets"
-        description="Yearly gram targets for the sales team, measured against confirmed orders."
+        description="Yearly gram targets vs confirmed orders."
         actions={
           <Select
             label="Year" hideLabel size="sm"

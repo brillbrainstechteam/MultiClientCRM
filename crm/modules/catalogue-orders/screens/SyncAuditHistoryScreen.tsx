@@ -100,7 +100,7 @@ export default function SyncAuditHistoryScreen() {
     <div className="crm-eco-sync">
       <PageHeader
         title="Sync & Audit History"
-        description="Every inbound/outbound connector event across catalogues, inventory, orders, payments and fulfilment — with eligible retries."
+        description="Connector events, with eligible retries."
       />
 
       <div className="crm-eco-sync__toolbar">

@@ -92,7 +92,7 @@ export default function ReturnsListScreen() {
     <div className="crm-eco-returns">
       <PageHeader
         title="Returns & Exceptions"
-        description="Return, replacement and refund-only cases in one customer-service queue — eligibility, evidence and refund method stay explicit."
+        description="Returns, replacements and refunds."
         breadcrumbs={contact ? [{ label: 'Catalogue & Orders', to: scopedHref('/catalogue-orders/catalogues') }, { label: `${contact.name} — returns` }] : undefined}
       />
 

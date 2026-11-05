@@ -31,7 +31,7 @@ export default function CommerceRealScreen() {
 
   return (
     <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <PageHeader title="Catalogue & Orders" description="Your products, and the enquiries, quotations and orders against them — all live." />
+      <PageHeader title="Catalogue & Orders" description="Products, enquiries, quotations and orders." />
       <Tabs tabs={TABS} activeId={tab} onChange={setTab} ariaLabel="Commerce sections" />
       {tab === 'catalogue' ? <CatalogueTab /> : <OrdersTab />}
     </div>
