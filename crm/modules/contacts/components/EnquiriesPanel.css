@@ -9,8 +9,8 @@
 .enq__row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
 .enq__no { font-size: 12.5px; font-weight: 800; color: var(--enq-ink); }
 .enq__badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
-.enq__badge--ok { color: #157061; background: rgba(27,122,107,.12); }
-.enq__badge--warn { color: #9a5b12; background: rgba(201,162,39,.16); }
+.enq__badge--ok { color: #077a52; background: rgba(11,163,109,.12); }
+.enq__badge--warn { color: #936c22; background: rgba(183,138,52,.16); }
 .enq__badge--info { color: #2451b8; background: rgba(47,111,237,.12); }
 .enq__badge--bad { color: #c0392b; background: rgba(192,57,43,.1); }
 .enq__badge--muted { color: var(--enq-muted); background: rgba(100,116,139,.12); }

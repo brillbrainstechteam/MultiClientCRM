@@ -14,7 +14,12 @@ import { execSync } from 'node:child_process';
 
 const BUNDLE = 'app/crm/crm-bundle.css';
 const src = readFileSync(BUNDLE, 'utf8');
-const marker = /\/\* ===== (.+?) ===== \*\//g;
+// Only a `/* ===== <path>.css ===== */` line is a section boundary. Source files
+// may use the same `===== comment =====` style internally (e.g. DashboardHome.css);
+// those inner comments must stay part of their file's content, not be mistaken for
+// section markers — otherwise the file fragments into phantom sections that are
+// kept stale on every rebuild and silently override the fresh CSS in production.
+const marker = /\/\* ===== (.+?\.css) ===== \*\//g;
 
 // Split into [preamble, path, content, path, content, ...]
 const parts = src.split(marker);
