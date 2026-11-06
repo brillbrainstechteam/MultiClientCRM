@@ -78,7 +78,7 @@ export function ScopeBar() {
         <span className="crm-scopebar__meta">
           {availableWhatsAppNumbers.length === 0
             ? 'No WhatsApp numbers are in your access scope.'
-            : `${availableWhatsAppNumbers.length} numbers in scope`}
+            : `${availableWhatsAppNumbers.length} ${availableWhatsAppNumbers.length === 1 ? 'number' : 'numbers'} in scope`}
         </span>
       )}
     </div>
