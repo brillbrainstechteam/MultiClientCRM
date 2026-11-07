@@ -1,5 +1,4 @@
 import {
-  BadgeCheck,
   LayoutGrid,
   ShieldCheck,
   Upload,
@@ -25,10 +24,9 @@ interface SecondaryNavItem {
 
 const items: SecondaryNavItem[] = [
   { label: 'Overview', to: '/contacts', icon: LayoutGrid, matchPrefix: '/contacts', end: true },
+  { label: 'Import & Export', to: '/contacts/imports', icon: Upload, matchPrefix: '/contacts/imports', requires: 'manageImports' },
   { label: 'All Contacts', to: '/contacts/all', icon: Users, matchPrefix: '/contacts/all' },
   { label: 'Segments', to: '/contacts/segments', icon: Layers, matchPrefix: '/contacts/segments' },
-  { label: 'Import & Export', to: '/contacts/imports', icon: Upload, matchPrefix: '/contacts/imports', requires: 'manageImports' },
-  { label: 'Consent', to: '/contacts/consent', icon: BadgeCheck, matchPrefix: '/contacts/consent' },
   {
     label: 'Data Quality',
     to: '/contacts/data-quality',
@@ -36,6 +34,11 @@ const items: SecondaryNavItem[] = [
     matchPrefix: '/contacts/data-quality',
   },
 ];
+
+// Consent has no tab of its own: consent state is a column and a filter on All
+// Contacts, which is where people look for it. The bulk request workflow is
+// still at /contacts/consent, reached from a customer's own record and from the
+// setup checklist — an occasional task, opened in the context that prompts it.
 
 /**
  * Contacts secondary navigation — the module's own tabs inside the global CRM

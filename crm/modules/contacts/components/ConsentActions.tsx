@@ -122,7 +122,7 @@ export function ConsentActions({
         Send this by hand while the 24-hour window is open. To ask contacts who are
         not in an open conversation, use the approved template from{' '}
         <a className="ca-link" href="/crm/contacts/consent">
-          Contacts &amp; Leads → Consent <ExternalLink size={11} />
+          the consent request page <ExternalLink size={11} />
         </a>
         — a reply there is captured automatically.
       </p>

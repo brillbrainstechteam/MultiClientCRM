@@ -23,7 +23,7 @@ export default function OverviewScreen() {
   const navigate = useNavigate();
   const scopedHref = useScopedHref();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { branchId, whatsappNumberId, branch, whatsappNumber } = useWorkspace();
+  const { branchId, whatsappNumberId } = useWorkspace();
 
   const scope = {
     branchId: branchId === 'all' ? null : branchId,
@@ -41,16 +41,10 @@ export default function OverviewScreen() {
     });
   const stateView = contentStateView(state, { onRetry: clearState });
 
-  const scopeNote = [
-    branch ? branch.name : 'All branches',
-    whatsappNumber ? whatsappNumber.displayName : 'All numbers',
-  ].join(' · ');
-
   return (
     <div className="crm-overview">
       <PageHeader
         title="Contacts Overview"
-        description={`Operational snapshot for ${scopeNote}.`}
         actions={
           <>
             <Button
